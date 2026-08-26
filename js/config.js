@@ -7,6 +7,12 @@
  */
 
 window.LOVE_CONFIG = {
+  // ================= 0. 主题视觉配置 =================
+  theme: {
+    currentTheme: "sunset-twilight", // 默认：暮色星河
+    customBgUrl: "" // 可选：自定义高清背景大图直链
+  },
+
   // ================= 1. 基础档案 =================
   meta: {
     boyName: "张小阳",
