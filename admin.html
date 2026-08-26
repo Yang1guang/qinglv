@@ -30,6 +30,7 @@
         </div>
       </div>
       <div class="admin-header-actions">
+        <button class="btn-tool" style="background: rgba(239, 68, 68, 0.15); color:#fca5a5; border-color: rgba(239, 68, 68, 0.3);" onclick="cleanOrphanR2Cache()">🧹 清理无用缓存</button>
         <a href="index.html" target="_blank" class="btn-tool">👁️ 预览主页</a>
         <button class="btn-tool" onclick="exportBackupJSON()">📦 备份配置</button>
         <button class="btn-tool" onclick="document.getElementById('importFileInput').click()">📥 导入配置</button>
@@ -51,6 +52,7 @@
       </nav>
 
       <div class="admin-content">
+        <!-- 1. 基础档案 -->
         <section id="tab-meta" class="tab-pane active">
           <div class="pane-header">
             <h3>👫 基础档案与重大纪念日设置</h3>
@@ -67,6 +69,7 @@
           </div>
         </section>
 
+        <!-- 2. 门禁关卡 -->
         <section id="tab-gatekeeper" class="tab-pane">
           <div class="pane-header">
             <h3>🔒 门禁关卡与密码设置</h3>
@@ -88,6 +91,7 @@
           </div>
         </section>
 
+        <!-- 3. 打字机告白 -->
         <section id="tab-letter" class="tab-pane">
           <div class="pane-header">
             <h3>💌 打字机真情告白信</h3>
@@ -101,6 +105,7 @@
           </div>
         </section>
 
+        <!-- 4. 时光轴 -->
         <section id="tab-timeline" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -112,6 +117,7 @@
           <div id="timelineListContainer" class="dynamic-list"></div>
         </section>
 
+        <!-- 5. 100 件事 -->
         <section id="tab-checklist" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -123,6 +129,7 @@
           <div id="checklistItemsContainer" class="dynamic-list"></div>
         </section>
 
+        <!-- 6. 刮刮乐 -->
         <section id="tab-scratch" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -134,11 +141,23 @@
           <div id="scratchCardsContainer" class="dynamic-list"></div>
         </section>
 
+        <!-- 7. 音乐与云端曲库在线搜索 -->
         <section id="tab-audio" class="tab-pane">
           <div class="pane-header">
             <h3>🎵 背景音乐与拟真黑胶唱片设置</h3>
-            <p>上传背景音乐 MP3 与黑胶封面，支持在线试听。</p>
+            <p>支持在线搜索云端音乐直连添加、选用推荐曲目，或直接上传本地 MP3。</p>
           </div>
+
+          <!-- 🔍 在线音乐云端搜索器 -->
+          <div style="background: rgba(3, 7, 18, 0.6); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 16px; margin-bottom: 20px;">
+            <label style="font-size:12.5px; font-weight:800; color:#fde68a; margin-bottom:8px; display:block;">🔍 在线搜索云端音乐 (免上传，一键加入播放)</label>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+              <input type="text" id="musicSearchKeyword" class="admin-input" placeholder="输入歌名/歌手 (例如: 晴天 / 告白气球 / 唯美钢琴)..." onkeydown="if(event.key==='Enter') executeOnlineMusicSearch();">
+              <button class="btn-tool" style="background:var(--gold); color:#fff; flex-shrink:0;" onclick="executeOnlineMusicSearch()">🔎 搜索歌曲</button>
+            </div>
+            <div id="onlineSearchResultList" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto;"></div>
+          </div>
+
           <div class="form-grid">
             <div class="form-group">
               <label>是否尝试自动播放 BGM</label>
@@ -147,17 +166,17 @@
                 <option value="true">开启自动播放</option>
               </select>
             </div>
-            <div class="form-group"><label>BGM 曲名</label><input type="text" id="audio_bgmTitle" class="admin-input"></div>
-            <div class="form-group"><label>BGM 艺术家</label><input type="text" id="audio_bgmArtist" class="admin-input"></div>
+            <div class="form-group"><label>当前 BGM 曲名</label><input type="text" id="audio_bgmTitle" class="admin-input"></div>
+            <div class="form-group"><label>当前 BGM 艺术家</label><input type="text" id="audio_bgmArtist" class="admin-input"></div>
             <div class="form-group">
-              <label>背景音乐音频链接 (支持上传 MP3)</label>
+              <label>背景音乐音频链接 (已支持云端直连)</label>
               <div class="upload-input-group">
                 <input type="text" id="audio_bgmUrl" class="admin-input">
-                <button class="btn-upload" onclick="triggerDirectUpload('audio_bgmUrl', 'audio/*')">📤 上传音频</button>
+                <button class="btn-upload" onclick="triggerDirectUpload('audio_bgmUrl', 'audio/*')">📤 上传MP3</button>
               </div>
             </div>
             <div class="form-group" style="grid-column: 1 / -1;">
-              <label>黑胶唱片中心封面图片链接</label>
+              <label>黑胶唱片中心封面图片链接 (留空则默认显示 ❤️)</label>
               <div class="upload-input-group">
                 <input type="text" id="audio_vinylCover" class="admin-input">
                 <button class="btn-upload" onclick="triggerDirectUpload('audio_vinylCover', 'image/*')">🖼️ 上传图片</button>
@@ -166,6 +185,7 @@
           </div>
         </section>
 
+        <!-- 8. 隐藏彩蛋 -->
         <section id="tab-eggs" class="tab-pane">
           <div class="pane-header">
             <h3>🐣 隐藏角落彩蛋悄悄话</h3>
