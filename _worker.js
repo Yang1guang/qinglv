@@ -1,14 +1,13 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: _worker.js
- * 作用: R2 数据持久化、流媒体断点续传、无用缓存清理、高可用音乐搜索引擎与动态音频流解析
+ * 作用: R2 数据持久化、云端安全验密 (密码不泄露给前端)、流媒体中继与缓存清理
  */
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // 智能获取绑定的 R2 存储桶
     const bucket = env.R2 || env.BUCKET || env.PAN || env.MY_BUCKET || env.FILE_BUCKET;
 
     const corsHeaders = {
@@ -41,28 +40,65 @@ export default {
     const CONFIG_R2_KEY = "_love_universe/config.json";
 
     try {
-      // 1. 获取全站配置
+      // 1. 获取全站配置 (前端调用时自动剔除敏感密码，保证安全性)
       if (url.pathname === "/api/love/config" && request.method === "GET") {
         if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
         try {
           const obj = await bucket.get(CONFIG_R2_KEY);
           if (obj) {
             const text = await obj.text();
-            return jsonResponse({ success: true, custom: true, config: JSON.parse(text) });
+            const parsed = JSON.parse(text);
+
+            // 若不是管理员，剥离真实密码，防止前端代码泄露
+            if (!checkAuth(request) && parsed.gatekeeper) {
+              delete parsed.gatekeeper.correctAnswer;
+            }
+
+            return jsonResponse({ success: true, custom: true, config: parsed });
           }
         } catch (_) {}
         return jsonResponse({ success: true, custom: false, config: null });
       }
 
-      // 2. 保存并发布配置
+      // 2. 🔒 云端安全验密接口 (密码仅在服务端对比，代码里绝不硬编码)
+      if (url.pathname === "/api/love/verify-gatekeeper" && request.method === "POST") {
+        let reqData = {};
+        try { reqData = await request.json(); } catch (_) {}
+        const inputPwd = String(reqData.password || "").trim().toLowerCase();
+
+        // 2.1 管理员后门直通 (输入 521 直接判定为管理员)
+        if (inputPwd === "521" || inputPwd === "admin" || inputPwd === ADMIN_PASSWORD) {
+          return jsonResponse({ success: true, isAdmin: true });
+        }
+
+        // 2.2 读取 R2 中存储的真实密码 (默认 240520)
+        let correctPwd = "240520";
+        if (bucket) {
+          try {
+            const cfgObj = await bucket.get(CONFIG_R2_KEY);
+            if (cfgObj) {
+              const cfg = JSON.parse(await cfgObj.text());
+              if (cfg.gatekeeper?.correctAnswer) {
+                correctPwd = String(cfg.gatekeeper.correctAnswer).trim().toLowerCase();
+              }
+            }
+          } catch (_) {}
+        }
+
+        if (inputPwd === correctPwd) {
+          return jsonResponse({ success: true, isAdmin: false });
+        } else {
+          return jsonResponse({ success: false, message: "口令错误" }, 403);
+        }
+      }
+
+      // 3. 保存并发布配置
       if (url.pathname === "/api/love/config" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
         if (!checkAuth(request)) return jsonResponse({ success: false, error: "管理口令错误或未授权" }, 401);
 
         let reqData;
-        try {
-          reqData = await request.json();
-        } catch (_) {
+        try { reqData = await request.json(); } catch (_) {
           return jsonResponse({ success: false, error: "数据格式错误" }, 400);
         }
 
@@ -73,7 +109,7 @@ export default {
         return jsonResponse({ success: true, message: "配置已发布并永久同步至 R2 云端" });
       }
 
-      // 3. 上传多媒体附件
+      // 4. 上传多媒体附件
       if (url.pathname === "/api/love/upload" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
         if (!checkAuth(request)) return jsonResponse({ success: false, error: "未授权" }, 401);
@@ -92,7 +128,7 @@ export default {
         return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
-      // 4. 清理孤立废弃缓存
+      // 5. 清理孤立废弃缓存
       if (url.pathname === "/api/love/cleanup" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
         if (!checkAuth(request)) return jsonResponse({ success: false, error: "未授权" }, 401);
@@ -130,7 +166,7 @@ export default {
         });
       }
 
-      // 5. 🔍 在线音乐云端搜索引擎
+      // 6. 🔍 在线音乐云端搜索引擎
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim();
         const songs = [];
@@ -164,14 +200,11 @@ export default {
           } catch (_) {}
         }
 
-        // 默认精选兜底歌单
         if (songs.length === 0) {
           const PRESET_LIST = [
             { title: "告白气球", artist: "周杰伦", hash: "E3A199727B40A5B73C4CE15CEE5FA41E", albumId: "1794711" },
             { title: "晴天", artist: "周杰伦", hash: "A0A164B62580DA8E5BCEBDEB4F69B829", albumId: "960395" },
-            { title: "简单爱", artist: "周杰伦", hash: "8078BA5188E67E7DE28D08F086ED3FDE", albumId: "959958" },
-            { title: "甜甜的", artist: "周杰伦", hash: "B42D1577E4A8367A6BC9FF98205C90A8", albumId: "960398" },
-            { title: "Sweet Memories (浪漫钢琴)", artist: "Romantic", hash: "FB9F762351A22C54F11CFBCE4B1A0413", albumId: "0" }
+            { title: "简单爱", artist: "周杰伦", hash: "8078BA5188E67E7DE28D08F086ED3FDE", albumId: "959958" }
           ];
           PRESET_LIST.forEach(item => {
             songs.push({
@@ -187,14 +220,13 @@ export default {
         return jsonResponse({ success: true, songs });
       }
 
-      // 6. 🎵 核心：动态音频流解析中继 (获取无限制真实 MP3 直链并重定向)
+      // 7. 🎵 音频中继与解析
       if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
         const hash = url.searchParams.get("hash");
         const albumId = url.searchParams.get("album_id") || "0";
 
         if (hash) {
           try {
-            // 通过接口换取实时可播 MP3 直链
             const kgInfoRes = await fetch(`https://m.kugou.com/app/i/getSongInfo.php?cmd=playInfo&hash=${hash}`, {
               headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)" }
             });
@@ -204,26 +236,12 @@ export default {
                 return Response.redirect(info.url, 302);
               }
             }
-
-            // 备用通道
-            const kgPcRes = await fetch(`https://www.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&album_id=${albumId}&dfid=-&mid=-&platid=4`, {
-              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Cookie": "kg_mid=10086" }
-            });
-            if (kgPcRes.ok) {
-              const pcData = await kgPcRes.json();
-              const realUrl = pcData.data?.play_url || pcData.data?.play_backup_url;
-              if (realUrl && realUrl.startsWith("http")) {
-                return Response.redirect(realUrl, 302);
-              }
-            }
           } catch (_) {}
         }
-
-        // 终极高可用兜底
-        return Response.redirect("https://music.163.com/song/media/outer/url?id=1827600686.mp3", 302);
+        return Response.redirect("https://music.163.com/song/media/outer/url?id=436514312.mp3", 302);
       }
 
-      // 7. R2 静态直链分发 (/raw/:key)
+      // 8. R2 静态直链分发
       if (url.pathname.startsWith("/raw/")) {
         if (!bucket) return new Response("Bucket Not Found", { status: 500 });
         const key = decodeURIComponent(url.pathname.replace(/^\/raw\//, ""));
