@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  
+  <!-- 微信与各大浏览器分享卡片适配 -->
+  <meta property="og:title" content="💌 我们的漫游宇宙 · 纪念档案">
+  <meta property="og:description" content="记录同行轨迹与专属特权">
+  <meta property="og:image" content="assets/images/share-cover.jpg">
+
+  <title>我们的漫游宇宙 · 恋爱时光轴</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23f43f5e'/><text x='50' y='64' font-size='38' text-anchor='middle' fill='%23ffffff' font-family='sans-serif' font-weight='bold'>❤️</text></svg>">
+
+  <!-- 样式体系规范引入 (Base -> Components -> Animations) -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+</head>
+<body class="universe-body">
+
+  <!-- 🌟 全局动态背景画布 -->
+  <canvas id="starry-canvas" class="universe-canvas"></canvas>
+  <canvas id="fireworks-canvas" class="fireworks-canvas"></canvas>
+
+  <!-- ================= 1. 密码解锁门禁层 (#gatekeeper-screen) ================= -->
+  <section id="gatekeeper-screen" class="gatekeeper">
+    <div class="gatekeeper__dialog">
+      <div class="gatekeeper__header">
+        <div class="gatekeeper__badge">SECURE ARCHIVE</div>
+        <h2 class="gatekeeper__title" id="gatekeeper-title">🔒 验证默契档案</h2>
+      </div>
+
+      <div class="gatekeeper__content">
+        <p class="gatekeeper__question" id="gatekeeper-question">请输入纪念日专属口令：</p>
+        <div class="gatekeeper__input-wrap">
+          <input 
+            type="password" 
+            id="gatekeeper-input" 
+            class="gatekeeper__input" 
+            placeholder="输入口令..." 
+            maxlength="20" 
+            autocomplete="off"
+            autofocus
+          >
+        </div>
+        <p class="gatekeeper__hint" id="gatekeeper-hint">提示信息正在加载...</p>
+      </div>
+
+      <div class="gatekeeper__footer">
+        <button id="gatekeeper-btn" class="btn-universe btn-universe--primary gatekeeper__btn">
+          <span>解密进入</span>
+          <span class="gatekeeper__btn-icon">➔</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 2. 主内容视窗 (#main-container) ================= -->
+  <main id="main-container" class="main-container main-container--hidden">
+    
+    <!-- 头部视差区: 标题与实时计时器 -->
+    <header class="hero-section">
+      <div class="hero-section__badge">PRIVATE MEMORIAL HUB</div>
+      <h1 class="hero-section__names" id="hero-names">张小阳 & 李小光</h1>
+      <p class="hero-section__subtitle" id="hero-subtitle">山水一程，三生有幸 · 属于我们的数字博物馆</p>
+
+      <!-- 核心同行计时器 -->
+      <div class="love-timer">
+        <div class="love-timer__title">我们已经一起走过了</div>
+        <div class="love-timer__grid" id="timer-grid">
+          <div class="love-timer__unit">
+            <span class="love-timer__num" id="timer-years">0</span>
+            <span class="love-timer__label">年</span>
+          </div>
+          <div class="love-timer__unit">
+            <span class="love-timer__num" id="timer-days">000</span>
+            <span class="love-timer__label">天</span>
+          </div>
+          <div class="love-timer__unit">
+            <span class="love-timer__num" id="timer-hours">00</span>
+            <span class="love-timer__label">时</span>
+          </div>
+          <div class="love-timer__unit">
+            <span class="love-timer__num" id="timer-minutes">00</span>
+            <span class="love-timer__label">分</span>
+          </div>
+          <div class="love-timer__unit">
+            <span class="love-timer__num" id="timer-seconds">00</span>
+            <span class="love-timer__label">秒</span>
+          </div>
+        </div>
+        <!-- 纪念日预告 -->
+        <div class="love-timer__milestone" id="timer-milestone">
+          距离下一次纪念日还有 <span class="love-timer__milestone-days" id="milestone-days">--</span> 天
+        </div>
+      </div>
+    </header>
+
+    <!-- 打字机真情告白舱 -->
+    <section class="confession-section">
+      <div class="confession-card">
+        <h3 class="confession-card__title" id="letter-title">致最珍贵的你</h3>
+        <div class="confession-card__body">
+          <p id="typewriter-text" class="confession-card__text"></p>
+          <span class="typewriter-cursor">|</span>
+        </div>
+        <div class="confession-card__footer">
+          <span class="confession-card__date" id="letter-date">2026.05.20</span>
+          <span class="confession-card__sign" id="letter-sign">爱你的 小阳</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 时光轴 & 3D 拍立得翻转相册 -->
+    <section class="timeline-section">
+      <div class="section-title">
+        <span class="section-title__icon">🪐</span>
+        <h2 class="section-title__text">时光轨迹 · 拍立得相册</h2>
+        <span class="section-title__desc">点击卡片可 3D 翻转查看独家留言与语音</span>
+      </div>
+      <div class="timeline-flow" id="timeline-flow">
+        <!-- 由 timeline.js 动态渲染时光轴拍立得卡片 -->
+      </div>
+    </section>
+
+    <!-- 恋爱 100 件小事清单 -->
+    <section class="checklist-section">
+      <div class="section-title">
+        <span class="section-title__icon">📝</span>
+        <h2 class="section-title__text">恋爱 100 件小事清单</h2>
+        <span class="section-title__desc">点滴兑现，每勾选一项触发心愿彩带</span>
+      </div>
+      <div class="checklist-card">
+        <div class="checklist-card__progress-bar">
+          <div class="checklist-card__progress-fill" id="checklist-progress-fill"></div>
+        </div>
+        <div class="checklist-card__stats" id="checklist-stats">
+          已完成 0 / 0 项
+        </div>
+        <div class="checklist-grid" id="checklist-container">
+          <!-- 由 timeline.js 动态注入小事列表 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 恋爱特权刮刮乐兑换券 -->
+    <section class="scratch-section">
+      <div class="section-title">
+        <span class="section-title__icon">🎟️</span>
+        <h2 class="section-title__text">恋爱特权刮刮乐</h2>
+        <span class="section-title__desc">手指/鼠标真实刮开涂层 · 点击核销印章锁定</span>
+      </div>
+      <div class="scratch-grid" id="scratch-container">
+        <!-- 由 scratch.js 动态渲染刮刮乐 Canvas 卡券 -->
+      </div>
+    </section>
+
+    <!-- 一键生成 300DPI 拍立得纪念海报区 -->
+    <section class="poster-section">
+      <div class="poster-card">
+        <div class="poster-card__info">
+          <h3 class="poster-card__title">📸 导出专属拍立得壁纸</h3>
+          <p class="poster-card__desc">基于当前恋爱天数与合照，一键渲染超高清纪念图，方便发圈分享</p>
+        </div>
+        <button id="generate-poster-btn" class="btn-universe btn-universe--accent">
+          <span>✨ 一键生成海报</span>
+        </button>
+      </div>
+    </section>
+
+    <footer class="universe-footer">
+      <p class="universe-footer__text">✨ 宇宙辽阔，唯你是归途 · 太阳 ios-IP 情感交互实验室 ✨</p>
+    </footer>
+  </main>
+
+  <!-- ================= 3. 全局悬浮与彩蛋组件 ================= -->
+  
+  <!-- 拟真黑胶唱片机悬浮器 -->
+  <aside class="vinyl-player" id="vinyl-player">
+    <div class="vinyl-player__needle" id="vinyl-needle"></div>
+    <div class="vinyl-player__disc" id="vinyl-disc">
+      <img id="vinyl-cover" class="vinyl-player__cover" src="assets/images/vinyl-cover.jpg" alt="Cover">
+    </div>
+    <div class="vinyl-player__control">
+      <button class="vinyl-player__btn" id="audio-toggle-btn" title="播放/暂停">🎵</button>
+    </div>
+  </aside>
+
+  <!-- 隐藏角落彩蛋触发器 -->
+  <div class="easter-egg-trigger easter-egg-trigger--star" id="egg-star" title="神秘星星">⭐</div>
+  <div class="easter-egg-trigger easter-egg-trigger--paw" id="egg-paw" title="猫爪印记">🐾</div>
+
+  <!-- 彩蛋悄悄话气泡模态窗 -->
+  <div class="egg-modal" id="egg-modal">
+    <div class="egg-modal__dialog">
+      <div class="egg-modal__body" id="egg-modal-text"></div>
+      <button class="egg-modal__close-btn" id="egg-modal-close">收下心意 💖</button>
+    </div>
+  </div>
+
+  <!-- 海报导出预览模态窗 -->
+  <div class="poster-modal" id="poster-modal">
+    <div class="poster-modal__dialog">
+      <div class="poster-modal__preview-box" id="poster-preview-box">
+        <!-- 渲染出的 Canvas 图像将插入此处 -->
+      </div>
+      <div class="poster-modal__actions">
+        <p class="poster-modal__tip">长按上方图片或点击下方按钮保存</p>
+        <button class="btn-universe btn-universe--primary" id="download-poster-btn">📥 保存海报至相册</button>
+        <button class="btn-universe btn-universe--secondary" id="close-poster-btn">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 4. 依赖脚本严格顺序加载 ================= -->
+  <!-- 1. 全局配置数据中枢 -->
+  <script src="js/config.js"></script>
+  <!-- 2. 特效引擎 (星空/烟花/音效系统) -->
+  <script src="js/effects.js"></script>
+  <!-- 3. 时光轴、倒计时与 100 件事业务逻辑 -->
+  <script src="js/timeline.js"></script>
+  <!-- 4. Canvas 物理刮刮乐与核销印章逻辑 -->
+  <script src="js/scratch.js"></script>
+  <!-- 5. 核心路由与门禁总控逻辑 -->
+  <script src="js/core.js"></script>
+</body>
+</html>
