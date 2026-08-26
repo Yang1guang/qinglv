@@ -9,7 +9,7 @@
 window.LOVE_CONFIG = {
   // ================= 0. 主题视觉配置 =================
   theme: {
-    currentTheme: "sunset-twilight", // 默认：暮色星河
+    currentTheme: "sunset-twilight", // 默认：暮色星河 (可选 sakura-romance / cyber-space / firefly-forest / warm-ember / sweet-dream)
     customBgUrl: "" // 可选：自定义高清背景大图直链
   },
 
@@ -100,14 +100,14 @@ window.LOVE_CONFIG = {
     }
   ],
 
-  // ================= 6. 恋爱 100 件小事清单 (精选生活化与浪漫小事) =================
+  // ================= 6. 恋爱 100 件小事清单 (精选 50 项真实生活与浪漫清单) =================
   checklist100: [
     { id: 1, title: "一起在海边看一次日出破晓", completed: true },
     { id: 2, title: "坐一次摩天轮并在最高点接吻", completed: true },
     { id: 3, title: "穿情侣装去游乐园痛快玩一天", completed: true },
     { id: 4, title: "亲手为对方做一顿四菜一汤的烛光晚餐", completed: false },
     { id: 5, title: "在夏天下暴雨时共撑一把伞漫步回家", completed: true },
-    { id: 6, title: "一起去现场听一场最喜欢的歌手演唱会", completed: false },
+    { id: 6, title: "一起去现场听一场最喜欢歌手的演唱会", completed: false },
     { id: 7, title: "在远离城市的山顶露营，数着流星入睡", completed: false },
     { id: 8, title: "来一场说走就走的公路自驾旅行", completed: false },
     { id: 9, title: "冬天躲在同一床被窝里通宵看老电影", completed: true },
@@ -125,41 +125,41 @@ window.LOVE_CONFIG = {
     { id: 21, title: "在夕阳西下的天台上喝着啤酒聊未来", completed: false },
     { id: 22, title: "一起养一盆绿植并把它养到开花", completed: false },
     { id: 23, title: "早晨醒来在阳光里给对方一个长长的早安吻", completed: true },
-    { id: 24, title: "去对方从小长大的小学和街巷走一走", completed: false },
-    { id: 25, title: "一起去寺庙或教堂真诚地为彼此祈福", completed: false },
+    { id: 24, title: "去对方从小长大的小学和老街巷走一走", completed: false },
+    { id: 25, title: "一起去古镇或寺庙真诚地为彼此祈福挂红丝带", completed: false },
     { id: 26, title: "在厨房里一个人做饭，另一个人从背后环抱", completed: true },
     { id: 27, title: "去宜家像布置未来小家一样试躺每一张沙发", completed: true },
-    { id: 28, title: "穿上正装和礼服去吃一次高档法餐", completed: false },
-    { id: 29, title: "一起坐长途绿皮火车看窗外风景慢慢倒退", completed: false },
-    { id: 30, title: "在喝醉后吐露平时不好意思说的肉麻情话", completed: false },
-    { id: 31, title: "把对方随口说过的愿望悄悄记在手机备忘录里", completed: true },
-    { id: 32, title: "一起去动物收容所当一次义工撸猫喂狗", completed: false },
+    { id: 28, title: "穿上正装和礼服去吃一次正式的浪漫西餐", completed: false },
+    { id: 29, title: "一起坐慢速绿皮火车看窗外风景慢慢倒退", completed: false },
+    { id: 30, title: "在喝微醺后吐露平时不好意思说的肉麻情话", completed: false },
+    { id: 31, title: "把对方随口说过的愿望悄悄记在备忘录里并逐一实现", completed: true },
+    { id: 32, title: "一起去动物收容所当一次义工喂猫撸狗", completed: false },
     { id: 33, title: "手牵手逛完一整座博物馆并认真读每段介绍", completed: false },
     { id: 34, title: "在夜市里从街头吃到街尾，互相投喂小吃", completed: true },
     { id: 35, title: "一起去采摘园摘草莓或樱桃，吃到饱为止", completed: false },
     { id: 36, title: "在对方睡着时偷偷看着睡颜笑出声", completed: true },
     { id: 37, title: "一起去海边捡贝壳并把它们做成纪念标本", completed: false },
-    { id: 38, title: "两个人戴着同一副有线耳机听同一首歌散步", completed: true },
+    { id: 38, title: "两个人戴着同一副耳机听同一首歌散步", completed: true },
     { id: 39, title: "在纪念日当天手写一封长长的纸质情书寄给对方", completed: false },
     { id: 40, title: "一起看一次秋天的满山红叶或银杏大道", completed: false },
     { id: 41, title: "在失落难过时给对方一个最踏实温暖的怀抱", completed: true },
     { id: 42, title: "一起去电玩城抓娃娃直到把币全部投光", completed: true },
     { id: 43, title: "给彼此起一个只有两个人知道的专属幼稚绰号", completed: true },
-    { id: 44, title: "在深夜街头喝一碗热气腾腾的馄饨", completed: true },
-    { id: 45, title: "一起规划一次属于两个人的出国长途旅行", completed: false },
+    { id: 44, title: "在深夜街头吃一碗热气腾腾的小馄饨", completed: true },
+    { id: 45, title: "一起规划一次属于两个人的长途度假旅行", completed: false },
     { id: 46, title: "在无人的草坪上并排躺着看云朵变换形状", completed: false },
-    { id: 47, title: "给对方剪一次指甲，动作小心翼翼", completed: false },
+    { id: 47, title: "给对方小心翼翼地修剪一次指甲", completed: false },
     { id: 48, title: "一起去烘焙店亲手烤一个并不完美但很甜的蛋糕", completed: false },
-    { id: 49, title: "吵架后不管多生气，不过夜并在睡觉前和好", completed: true },
+    { id: 49, title: "吵架后不管多生气，绝不过夜并在睡前和好", completed: true },
     { id: 50, title: "一起跨越漫长岁月，一直坚定地走到白头", completed: false }
   ],
 
-  // ================= 7. 恋爱特权刮刮乐 (实用生活化特权，拒绝耍赖) =================
+  // ================= 7. 恋爱特权刮刮乐 (实用生活化特权卡，真实有爱) =================
   scratchCards: [
     {
       id: "card_1",
       title: "无条件和好券",
-      content: "吵架拌嘴时亮出此券，双方必须立刻停止争论，男生主动认错并附带一个温暖长抱！",
+      content: "吵架拌嘴时亮出此券，双方必须立刻停止争论，男方主动认错并附带一个温暖长抱！",
       icon: "🕊️",
       scratched: false,
       used: false,
@@ -168,7 +168,7 @@ window.LOVE_CONFIG = {
     {
       id: "card_2",
       title: "深夜外卖买单卡",
-      content: "无论多晚，指定想喝的奶茶、烧烤或甜点，由对方全额买单并贴心送至手上！",
+      content: "无论多晚，指定想喝的奶茶、炸鸡或夜宵，由对方全额买单并贴心送至手上！",
       icon: "🍟",
       scratched: false,
       used: false,
@@ -195,7 +195,7 @@ window.LOVE_CONFIG = {
     {
       id: "card_5",
       title: "爱心定制晚餐点单券",
-      content: "可任意指定 3 道想吃的拿手家常菜，对方负责买菜、下厨与摆盘！",
+      content: "可任意指定 3 道想吃的拿手家常菜，对方负责买菜、下厨、摆盘与收拾！",
       icon: "🍳",
       scratched: false,
       used: false,
@@ -239,9 +239,27 @@ window.LOVE_CONFIG = {
     },
     {
       id: "card_10",
-      title: "清空一件心愿小礼物",
-      content: "购物车里收藏已久的一件心仪小物件，今天由对方毫不犹豫为你买单清空！",
-      icon: "🎁",
+      title: "专属水果剥皮去核券",
+      content: "想吃西瓜切块、葡萄剥皮或芒果切丁，对方负责洗净切好喂到嘴边！",
+      icon: "🍉",
+      scratched: false,
+      used: false,
+      usedTime: ""
+    },
+    {
+      id: "card_11",
+      title: "突然想吃甜品兑现券",
+      content: "只要想吃冰淇淋或小蛋糕，对方无论刮风下雨都会买来送到身边！",
+      icon: "🍦",
+      scratched: false,
+      used: false,
+      usedTime: ""
+    },
+    {
+      id: "card_12",
+      title: "随叫随到接送卡",
+      content: "下班或聚会结束时，只要一个电话，对方负责准时出现在门口接你回家！",
+      icon: "🚗",
       scratched: false,
       used: false,
       usedTime: ""
@@ -258,7 +276,7 @@ window.LOVE_CONFIG = {
     {
       id: "egg_2",
       selector: "#egg-paw",
-      message: "🐾 踩到猫爪印啦：奖励今晚获得为你洗一次头发！"
+      message: "🐾 踩到猫爪印啦：奖励今晚为你洗一次头发！"
     }
   ]
 };
