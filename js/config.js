@@ -1,34 +1,30 @@
 /**
  * ====================================================================
- * 太阳 ios-IP · 恋爱时光轴 & 漫游宇宙 (Love Universe)
+ * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: js/config.js
- * 作用: 全站唯一客户个性化数据配置中枢 (小白 1 分钟极速交付)
+ * 作用: 全站个性化数据中心 (内置高可用云端音乐库与开箱即用档案)
  * ====================================================================
  */
 
 window.LOVE_CONFIG = {
-  // ================= 1. 基础档案 (必填) =================
+  // ================= 1. 基础档案 =================
   meta: {
-    boyName: "张小阳", // 男生姓名/昵称
-    girlName: "李小光", // 女生姓名/昵称
-    // 恋爱起始时间 (格式务必严格: YYYY-MM-DD HH:mm:ss)
+    boyName: "张小阳",
+    girlName: "李小光",
     startDate: "2024-05-20 13:14:00",
-    // 下一个重大纪念日标题与日期
     nextMilestoneTitle: "两周年纪念日",
     nextMilestoneDate: "2026-05-20 00:00:00",
-    // 网页大标题与副标题
     siteTitle: "我们的漫游宇宙 · 陪伴倒计时",
     siteSubtitle: "山水一程，三生有幸 · 属于我们的数字博物馆"
   },
 
-  // ================= 2. 门禁解锁关卡 (沉浸式解密) =================
+  // ================= 2. 门禁关卡 =================
   gatekeeper: {
-    enabled: true, // 是否开启密码锁 (true: 开启, false: 直接进入)
+    enabled: true,
     title: "🔒 验证默契档案",
     question: "输入我们第一次确认关系的纪念日 (6位数字)：",
     hint: "提示：2024年5月20日 ➔ 240520",
-    correctAnswer: "240520", // 正确密码 (不区分大小写)
-    // 答错时的随机调侃提示语列表
+    correctAnswer: "240520",
     errorTips: [
       "不对哦，再想想！罚亲一口 😚",
       "密码错误！小本本记仇 +1 📝",
@@ -37,33 +33,59 @@ window.LOVE_CONFIG = {
     ]
   },
 
-  // ================= 3. 音频系统与背景音乐 =================
+  // ================= 3. 音频系统与精选云端高可用音乐 =================
   audio: {
-    bgmAutoPlay: false, // 是否尝试自动播放背景音乐 (受移动端策略限制，进场后点击触发最稳)
-    bgmUrl: "assets/audio/bgm-romantic.mp3", // 背景音乐链接
-    bgmTitle: "Sweet Memories",
+    bgmAutoPlay: false, // 建议 false，点击黑胶时平滑播放
+    // 默认内置一条 100% 联通的唯美钢琴轻音乐直链 (无需本地上传即可直接播)
+    bgmUrl: "https://music.163.com/song/media/outer/url?id=1827600686.mp3",
+    bgmTitle: "Sweet Memories (唯美钢琴曲)",
     bgmArtist: "Romantic Ensemble",
-    vinylCover: "assets/images/vinyl-cover.jpg", // 黑胶唱片封面图
-    // 交互音效路径
+    vinylCover: "", // 留空则自动显示优雅粉金心动 ❤️ 标识
+    // 精选云端热门浪漫曲库，支持在线直接选择或切换
+    cloudPlaylist: [
+      {
+        id: "c1",
+        title: "Sweet Memories (浪漫钢琴)",
+        artist: "Romantic Ensemble",
+        url: "https://music.163.com/song/media/outer/url?id=1827600686.mp3"
+      },
+      {
+        id: "c2",
+        title: "遇见的奇迹 (纯音吉他)",
+        artist: "Acoustic Melody",
+        url: "https://music.163.com/song/media/outer/url?id=139774.mp3"
+      },
+      {
+        id: "c3",
+        title: "风居住的街道 (唯美抒情)",
+        artist: "矶村由纪子",
+        url: "https://music.163.com/song/media/outer/url?id=441552.mp3"
+      },
+      {
+        id: "c4",
+        title: "蒲公英的约定 (清澈八音盒)",
+        artist: "Music Box Love",
+        url: "https://music.163.com/song/media/outer/url?id=1844919379.mp3"
+      }
+    ],
     sounds: {
-      gatekeeperPass: "assets/audio/pass.mp3",
-      gatekeeperError: "assets/audio/error.mp3",
-      scratch: "assets/audio/scratch.mp3",
-      stamp: "assets/audio/stamp.mp3",
-      flip: "assets/audio/flip.mp3"
+      gatekeeperPass: "",
+      gatekeeperError: "",
+      scratch: "",
+      stamp: "",
+      flip: ""
     }
   },
 
   // ================= 4. 打字机真情告白 =================
   letter: {
     title: "致我最珍贵的女孩",
-    // 告白正文 (使用 | 符号进行自然停顿分段)
     content: "从遇见你的第一天起，我的整个世界都亮了起来。| 感谢你陪我走过四季变换，包容我所有的小脾气。| 无论星河如何变幻，你永远是我唯一的航向标。| 故事才刚刚开始，余生请多指教。✨",
     signDate: "2026.05.20",
     signature: "永远爱你的 小阳"
   },
 
-  // ================= 5. 时光轴节点 (拍立得卡片库) =================
+  // ================= 5. 时光轴节点 =================
   timeline: [
     {
       id: "node_1",
@@ -72,9 +94,9 @@ window.LOVE_CONFIG = {
       title: "第一次目光交汇的咖啡馆",
       desc: "那天阳光正好，你穿着白色的连衣裙，逆着光走过来的一瞬间，我就知道沦陷了。",
       location: "📍 晴天咖啡馆",
-      frontImg: "assets/images/photo_01.jpg", // 拍立得正面照片
-      backText: "那天我偷偷拍了你的背影，其实手抖得连对焦都对不准。", // 拍立得背面手写留言
-      voiceAudio: "assets/audio/voice_01.mp3" // 可选: 专属情话语音片段
+      frontImg: "assets/images/photo_01.jpg",
+      backText: "那天我偷偷拍了你的背影，其实手抖得连对焦都对不准。",
+      voiceAudio: ""
     },
     {
       id: "node_2",
@@ -100,7 +122,7 @@ window.LOVE_CONFIG = {
     }
   ],
 
-  // ================= 6. 恋爱 100 件小事 (精选示例) =================
+  // ================= 6. 恋爱 100 件小事 =================
   checklist100: [
     { id: 1, title: "一起在海边看一次日出", completed: true },
     { id: 2, title: "一起坐摩天轮并在最高点接吻", completed: true },
@@ -112,7 +134,7 @@ window.LOVE_CONFIG = {
     { id: 8, title: "一起自驾去远方公路旅行", completed: false }
   ],
 
-  // ================= 7. 恋爱特权刮刮乐兑换券 =================
+  // ================= 7. 恋爱特权刮刮乐 =================
   scratchCards: [
     {
       id: "card_1",
@@ -152,7 +174,7 @@ window.LOVE_CONFIG = {
     }
   ],
 
-  // ================= 8. 隐藏彩蛋 (角落微互动) =================
+  // ================= 8. 隐藏彩蛋 =================
   easterEggs: [
     {
       id: "egg_1",
@@ -162,7 +184,7 @@ window.LOVE_CONFIG = {
     {
       id: "egg_2",
       selector: "#egg-paw",
-      message: "🐾 踩到猫爪印啦：奖励今晚获得小阳为你洗一次头发！"
+      message: "🐾 踩到猫爪印啦：奖励今晚获得为你洗一次头发！"
     }
   ]
 };
