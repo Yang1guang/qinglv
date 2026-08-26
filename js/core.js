@@ -13,6 +13,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (data.success && data.custom && data.config) {
       config = data.config;
       window.LOVE_CONFIG = config;
+      if (window.Effects) {
+        window.Effects.updateConfig(config);
+      }
     }
   } catch (_) {}
 
@@ -44,7 +47,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     closePosterBtn: document.getElementById("close-poster-btn")
   };
 
-  // 3. 填充基础数据
+  // 3. 填充基础静态数据
   if (config.meta) {
     if (dom.heroNames) dom.heroNames.textContent = `${config.meta.boyName || "男孩"} & ${config.meta.girlName || "女孩"}`;
     if (dom.heroSubtitle) dom.heroSubtitle.textContent = config.meta.siteSubtitle || "";
@@ -74,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const inputVal = dom.gatekeeperInput.value.trim().toLowerCase();
     const correctVal = String(gateCfg.correctAnswer || "240520").trim().toLowerCase();
 
-    // 🕵️ 超级暗号直通：输入 521 或 admin#521 静默进入后台管理
+    // 🕵️ 超级暗号直通后台
     if (inputVal === "521" || inputVal === "admin#521" || inputVal === "admin") {
       location.href = "admin.html";
       return;
@@ -169,7 +172,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     dom.eggStar.addEventListener("click", () => showEggModal(eggs[0]?.message || "🌟 发现第一颗暗号星：想你每一天！"));
   }
   if (dom.eggPaw) {
-    dom.eggPaw.addEventListener("click", () => showEggModal(eggs[1]?.message || "🐾 踩到猫爪印啦：今天多抱你一分钟！"));
+    dom.eggPaw.addEventListener("click", () => showEggModal(eggs[1]?.message || "🐾 踩到猫爪印啦：奖励今晚获得为你洗一次头发！"));
   }
   if (dom.eggModalClose && dom.eggModal) {
     dom.eggModalClose.addEventListener("click", () => { dom.eggModal.style.display = "none"; });
@@ -187,7 +190,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // 7. 海报生成
+  // 7. 300DPI 超清海报生成 (纯净浪漫水印)
   let exportedPosterDataUrl = "";
   if (dom.generatePosterBtn) {
     dom.generatePosterBtn.addEventListener("click", () => {
@@ -274,7 +277,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
     ctx.font = "26px sans-serif";
-    ctx.fillText("✨ 太阳 ios-IP · 我们的漫游宇宙 ✨", 540, 1800);
+    ctx.fillText("✨ 宇宙辽阔，唯你是归途 · 属于我们的漫游宇宙 ✨", 540, 1800);
 
     return canvas.toDataURL("image/jpeg", 0.92);
   }
