@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   
-  <!-- 微信与各大浏览器分享卡片适配 -->
   <meta property="og:title" content="💌 我们的漫游宇宙 · 纪念档案">
   <meta property="og:description" content="记录同行轨迹与专属特权">
   <meta property="og:image" content="assets/images/share-cover.jpg">
@@ -13,14 +12,13 @@
   <title>我们的漫游宇宙 · 恋爱时光轴</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23f43f5e'/><text x='50' y='64' font-size='38' text-anchor='middle' fill='%23ffffff' font-family='sans-serif' font-weight='bold'>❤️</text></svg>">
 
-  <!-- 样式体系规范引入 (Base -> Components -> Animations) -->
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/animations.css">
 </head>
 <body class="universe-body">
 
-  <!-- 🌟 全局动态背景画布 -->
+  <!-- 全局动态背景画布 -->
   <canvas id="starry-canvas" class="universe-canvas"></canvas>
   <canvas id="fireworks-canvas" class="fireworks-canvas"></canvas>
 
@@ -91,7 +89,6 @@
             <span class="love-timer__label">秒</span>
           </div>
         </div>
-        <!-- 纪念日预告 -->
         <div class="love-timer__milestone" id="timer-milestone">
           距离下一次纪念日还有 <span class="love-timer__milestone-days" id="milestone-days">--</span> 天
         </div>
@@ -120,9 +117,7 @@
         <h2 class="section-title__text">时光轨迹 · 拍立得相册</h2>
         <span class="section-title__desc">点击卡片可 3D 翻转查看独家留言与语音</span>
       </div>
-      <div class="timeline-flow" id="timeline-flow">
-        <!-- 由 timeline.js 动态渲染时光轴拍立得卡片 -->
-      </div>
+      <div class="timeline-flow" id="timeline-flow"></div>
     </section>
 
     <!-- 恋爱 100 件小事清单 -->
@@ -139,9 +134,7 @@
         <div class="checklist-card__stats" id="checklist-stats">
           已完成 0 / 0 项
         </div>
-        <div class="checklist-grid" id="checklist-container">
-          <!-- 由 timeline.js 动态注入小事列表 -->
-        </div>
+        <div class="checklist-grid" id="checklist-container"></div>
       </div>
     </section>
 
@@ -152,9 +145,7 @@
         <h2 class="section-title__text">恋爱特权刮刮乐</h2>
         <span class="section-title__desc">手指/鼠标真实刮开涂层 · 点击核销印章锁定</span>
       </div>
-      <div class="scratch-grid" id="scratch-container">
-        <!-- 由 scratch.js 动态渲染刮刮乐 Canvas 卡券 -->
-      </div>
+      <div class="scratch-grid" id="scratch-container"></div>
     </section>
 
     <!-- 一键生成 300DPI 拍立得纪念海报区 -->
@@ -171,13 +162,11 @@
     </section>
 
     <footer class="universe-footer">
-      <p class="universe-footer__text">✨ 宇宙辽阔，唯你是归途 · 太阳 ios-IP 情感交互实验室 ✨</p>
+      <p class="universe-footer__text">✨ 宇宙辽阔，唯你是归途 · 属于我们的漫游宇宙 ✨</p>
     </footer>
   </main>
 
   <!-- ================= 3. 全局悬浮与彩蛋组件 ================= -->
-  
-  <!-- 拟真黑胶唱片机悬浮器 (支持点击唱片/按钮双触发，无图自动展示爱心) -->
   <aside class="vinyl-player" id="vinyl-player">
     <div class="vinyl-player__needle" id="vinyl-needle"></div>
     <div class="vinyl-player__disc" id="vinyl-disc" title="点击播放/暂停音乐">
@@ -191,11 +180,9 @@
     </div>
   </aside>
 
-  <!-- 隐藏角落彩蛋触发器 -->
   <div class="easter-egg-trigger easter-egg-trigger--star" id="egg-star" title="神秘星星">⭐</div>
   <div class="easter-egg-trigger easter-egg-trigger--paw" id="egg-paw" title="猫爪印记">🐾</div>
 
-  <!-- 彩蛋悄悄话气泡模态窗 -->
   <div class="egg-modal" id="egg-modal">
     <div class="egg-modal__dialog">
       <div class="egg-modal__body" id="egg-modal-text"></div>
@@ -203,12 +190,9 @@
     </div>
   </div>
 
-  <!-- 海报导出预览模态窗 -->
   <div class="poster-modal" id="poster-modal">
     <div class="poster-modal__dialog">
-      <div class="poster-modal__preview-box" id="poster-preview-box">
-        <!-- 渲染出的 Canvas 图像将插入此处 -->
-      </div>
+      <div class="poster-modal__preview-box" id="poster-preview-box"></div>
       <div class="poster-modal__actions">
         <p class="poster-modal__tip">长按上方图片或点击下方按钮保存</p>
         <button class="btn-universe btn-universe--primary" id="download-poster-btn">📥 保存海报至相册</button>
@@ -217,16 +201,11 @@
     </div>
   </div>
 
-  <!-- ================= 4. 依赖脚本严格顺序加载 ================= -->
-  <!-- 1. 全局配置数据中枢 -->
+  <!-- 依赖脚本顺序加载 -->
   <script src="js/config.js"></script>
-  <!-- 2. 特效引擎 (星空/烟花/音效系统) -->
   <script src="js/effects.js"></script>
-  <!-- 3. 时光轴、倒计时与 100 件事业务逻辑 -->
   <script src="js/timeline.js"></script>
-  <!-- 4. Canvas 物理刮刮乐与核销印章逻辑 -->
   <script src="js/scratch.js"></script>
-  <!-- 5. 核心路由与门禁总控逻辑 -->
   <script src="js/core.js"></script>
 </body>
 </html>
