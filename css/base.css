@@ -1,0 +1,170 @@
+/**
+ * ====================================================================
+ * 太阳 ios-IP · 恋爱时光轴 & 漫游宇宙 (Love Universe)
+ * 文件名: css/base.css
+ * 作用: 全局主题变量、高阶排版、移动端全视口重置与滚动条美化
+ * ====================================================================
+ */
+
+/* ================= 1. 全局设计系统变量 ================= */
+:root {
+  /* 浪漫核心色盘 */
+  --primary-pink: #f43f5e;
+  --primary-pink-hover: #e11d48;
+  --rose-gold: #fb7185;
+  --rose-gold-glow: rgba(251, 113, 133, 0.35);
+  
+  /* 璀璨金与暖光 */
+  --sun-gold: #f59e0b;
+  --sun-gold-glow: rgba(245, 158, 11, 0.35);
+  --warm-amber: #fef3c7;
+
+  /* 深邃星空暗色系 */
+  --space-dark: #070a14;
+  --space-navy: #0b1120;
+  --space-card: rgba(15, 23, 42, 0.75);
+  
+  /* 拟真毛玻璃与高光边缘 */
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-shine: rgba(255, 255, 255, 0.22);
+  --glass-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6);
+  
+  /* 拍立得与纸张质感 */
+  --polaroid-paper: #ffffff;
+  --polaroid-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 4px 10px rgba(0, 0, 0, 0.2);
+  
+  /* 字体与文字色 */
+  --text-pure: #ffffff;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dark: #1f2937;
+  
+  /* 状态与印章色 */
+  --stamp-red: #dc2626;
+  --stamp-red-glow: rgba(220, 38, 38, 0.4);
+  --success-green: #10b981;
+  
+  /* 动画曲线 */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ================= 2. 跨平台基础重置与视口保护 ================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent; /* 消除移动端点击高亮蓝框 */
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+  background-color: var(--space-dark);
+  color: var(--text-main);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  position: relative;
+  line-height: 1.6;
+  padding-bottom: env(safe-area-inset-bottom); /* iOS 底部小黑条适配 */
+}
+
+/* 消除图片拖拽与移动端默认长按菜单干扰 */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+  outline: none;
+  border: none;
+  background: none;
+}
+
+/* ================= 3. 页面全局容器与布局 ================= */
+.universe-body {
+  background: radial-gradient(circle at 50% 10%, #171b30 0%, #070a14 70%);
+}
+
+.main-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 18px 80px;
+  position: relative;
+  z-index: 10;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.8s var(--ease-spring), transform 0.8s var(--ease-spring);
+}
+
+.main-container--hidden {
+  opacity: 0;
+  transform: translateY(30px);
+  pointer-events: none;
+  display: none;
+}
+
+/* 通用板块标题规范 */
+.section-title {
+  text-align: center;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-title__icon {
+  font-size: 28px;
+  filter: drop-shadow(0 0 10px var(--rose-gold-glow));
+}
+
+.section-title__text {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #ffffff 0%, #fde68a 50%, #fb7185 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(251, 113, 133, 0.3);
+}
+
+.section-title__desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ================= 4. 个性化极细发光滚动条 ================= */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(7, 10, 20, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--rose-gold), var(--primary-pink));
+  border-radius: 6px;
+  box-shadow: 0 0 8px var(--rose-gold-glow);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-pink-hover);
+}
