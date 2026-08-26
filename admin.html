@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>👑 太阳 ios-IP · 漫游宇宙控制中心</title>
+  <title>👑 漫游宇宙控制中心</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23f59e0b'/><text x='50' y='64' font-size='38' text-anchor='middle' fill='%23ffffff' font-family='sans-serif' font-weight='bold'>👑</text></svg>">
   <link rel="stylesheet" href="css/admin.css">
 </head>
@@ -15,14 +15,12 @@
       <div class="admin-auth-icon">👑</div>
       <h2 class="admin-auth-title">管理身份验证</h2>
       <p class="admin-auth-desc">请输入管理员口令以开启全模块控制权限：</p>
-      <input type="password" id="adminPwdInput" class="admin-input" placeholder="输入管理口令 (默认 5214)..." onkeydown="if(event.key==='Enter') verifyAdminLogin();">
+      <input type="password" id="adminPwdInput" class="admin-input" placeholder="输入管理口令 (默认 521)..." onkeydown="if(event.key==='Enter') verifyAdminLogin();">
       <button class="btn-admin-action" onclick="verifyAdminLogin()">🚀 登入工作台</button>
     </div>
   </div>
 
   <div class="admin-layout" id="adminLayout" style="display:none;">
-    
-    <!-- 顶部状态栏 -->
     <header class="admin-header">
       <div class="admin-brand">
         <span class="admin-brand-icon">🌟</span>
@@ -40,10 +38,7 @@
       </div>
     </header>
 
-    <!-- 主体：左侧导航 + 右侧编辑区 -->
     <div class="admin-main">
-      
-      <!-- 模块导航栏 -->
       <nav class="admin-sidebar">
         <button class="tab-btn active" data-tab="tab-meta">👫 1. 基础档案与倒计时</button>
         <button class="tab-btn" data-tab="tab-gatekeeper">🔒 2. 门禁关卡与防偷窥</button>
@@ -55,48 +50,23 @@
         <button class="tab-btn" data-tab="tab-eggs">🐣 8. 隐藏彩蛋悄悄话</button>
       </nav>
 
-      <!-- 编辑内容区 -->
       <div class="admin-content">
-
-        <!-- 1. 基础档案 -->
         <section id="tab-meta" class="tab-pane active">
           <div class="pane-header">
             <h3>👫 基础档案与重大纪念日设置</h3>
             <p>控制首页大标题、恋爱同行起始时间与下一个纪念日倒计时。</p>
           </div>
           <div class="form-grid">
-            <div class="form-group">
-              <label>男孩姓名/昵称</label>
-              <input type="text" id="meta_boyName" class="admin-input">
-            </div>
-            <div class="form-group">
-              <label>女孩姓名/昵称</label>
-              <input type="text" id="meta_girlName" class="admin-input">
-            </div>
-            <div class="form-group">
-              <label>恋爱起始精确时间 (YYYY-MM-DD HH:mm:ss)</label>
-              <input type="text" id="meta_startDate" class="admin-input">
-            </div>
-            <div class="form-group">
-              <label>下一个重大纪念日名称</label>
-              <input type="text" id="meta_nextMilestoneTitle" class="admin-input">
-            </div>
-            <div class="form-group">
-              <label>下一个纪念日目标日期 (YYYY-MM-DD HH:mm:ss)</label>
-              <input type="text" id="meta_nextMilestoneDate" class="admin-input">
-            </div>
-            <div class="form-group">
-              <label>网页大标题 (Title)</label>
-              <input type="text" id="meta_siteTitle" class="admin-input">
-            </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label>网页副标题 (Subtitle)</label>
-              <input type="text" id="meta_siteSubtitle" class="admin-input">
-            </div>
+            <div class="form-group"><label>男孩姓名/昵称</label><input type="text" id="meta_boyName" class="admin-input"></div>
+            <div class="form-group"><label>女孩姓名/昵称</label><input type="text" id="meta_girlName" class="admin-input"></div>
+            <div class="form-group"><label>恋爱起始精确时间 (YYYY-MM-DD HH:mm:ss)</label><input type="text" id="meta_startDate" class="admin-input"></div>
+            <div class="form-group"><label>下一个重大纪念日名称</label><input type="text" id="meta_nextMilestoneTitle" class="admin-input"></div>
+            <div class="form-group"><label>下一个纪念日目标日期 (YYYY-MM-DD HH:mm:ss)</label><input type="text" id="meta_nextMilestoneDate" class="admin-input"></div>
+            <div class="form-group"><label>网页大标题 (Title)</label><input type="text" id="meta_siteTitle" class="admin-input"></div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>网页副标题 (Subtitle)</label><input type="text" id="meta_siteSubtitle" class="admin-input"></div>
           </div>
         </section>
 
-        <!-- 2. 门禁关卡 -->
         <section id="tab-gatekeeper" class="tab-pane">
           <div class="pane-header">
             <h3>🔒 门禁关卡与密码设置</h3>
@@ -110,56 +80,27 @@
                 <option value="false">关闭密码锁 (直接进入主页)</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>门禁卡片标题</label>
-              <input type="text" id="gatekeeper_title" class="admin-input">
-            </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label>提问文案</label>
-              <input type="text" id="gatekeeper_question" class="admin-input">
-            </div>
-            <div class="form-group">
-              <label>提示文案 (Hint)</label>
-              <input type="text" id="gatekeeper_hint" class="admin-input">
-            </div>
-            <div class="form-group">
-              <label>正确解锁密码 (不区分大小写)</label>
-              <input type="text" id="gatekeeper_correctAnswer" class="admin-input">
-            </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label>答错时的随机调侃提示语 (每行一条)</label>
-              <textarea id="gatekeeper_errorTips" class="admin-textarea" rows="4"></textarea>
-            </div>
+            <div class="form-group"><label>门禁卡片标题</label><input type="text" id="gatekeeper_title" class="admin-input"></div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>提问文案</label><input type="text" id="gatekeeper_question" class="admin-input"></div>
+            <div class="form-group"><label>提示文案 (Hint)</label><input type="text" id="gatekeeper_hint" class="admin-input"></div>
+            <div class="form-group"><label>正确解锁密码 (不区分大小写)</label><input type="text" id="gatekeeper_correctAnswer" class="admin-input"></div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>答错时的随机调侃提示语 (每行一条)</label><textarea id="gatekeeper_errorTips" class="admin-textarea" rows="4"></textarea></div>
           </div>
         </section>
 
-        <!-- 3. 打字机真情告白 -->
         <section id="tab-letter" class="tab-pane">
           <div class="pane-header">
             <h3>💌 打字机真情告白信</h3>
             <p>文字将在首页如同现场敲击般逐字显现，使用英文竖线 "|" 代表换行停顿。</p>
           </div>
           <div class="form-grid">
-            <div class="form-group">
-              <label>情书标题</label>
-              <input type="text" id="letter_title" class="admin-input">
-            </div>
-            <div class="form-group">
-              <label>落款日期</label>
-              <input type="text" id="letter_signDate" class="admin-input">
-            </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label>落款签名</label>
-              <input type="text" id="letter_signature" class="admin-input">
-            </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label>情书正文内容 (用 "|" 符号分段停顿)</label>
-              <textarea id="letter_content" class="admin-textarea" rows="6"></textarea>
-            </div>
+            <div class="form-group"><label>情书标题</label><input type="text" id="letter_title" class="admin-input"></div>
+            <div class="form-group"><label>落款日期</label><input type="text" id="letter_signDate" class="admin-input"></div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>落款签名</label><input type="text" id="letter_signature" class="admin-input"></div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>情书正文内容 (用 "|" 符号分段停顿)</label><textarea id="letter_content" class="admin-textarea" rows="6"></textarea></div>
           </div>
         </section>
 
-        <!-- 4. 时光轴与拍立得相册 -->
         <section id="tab-timeline" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -171,7 +112,6 @@
           <div id="timelineListContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 5. 恋爱 100 件小事 -->
         <section id="tab-checklist" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -183,7 +123,6 @@
           <div id="checklistItemsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 6. 恋爱特权刮刮乐 -->
         <section id="tab-scratch" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -195,7 +134,6 @@
           <div id="scratchCardsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 7. 音乐与多媒体中枢 -->
         <section id="tab-audio" class="tab-pane">
           <div class="pane-header">
             <h3>🎵 背景音乐与拟真黑胶唱片设置</h3>
@@ -209,14 +147,8 @@
                 <option value="true">开启自动播放</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>BGM 曲名</label>
-              <input type="text" id="audio_bgmTitle" class="admin-input">
-            </div>
-            <div class="form-group">
-              <label>BGM 艺术家</label>
-              <input type="text" id="audio_bgmArtist" class="admin-input">
-            </div>
+            <div class="form-group"><label>BGM 曲名</label><input type="text" id="audio_bgmTitle" class="admin-input"></div>
+            <div class="form-group"><label>BGM 艺术家</label><input type="text" id="audio_bgmArtist" class="admin-input"></div>
             <div class="form-group">
               <label>背景音乐音频链接 (支持上传 MP3)</label>
               <div class="upload-input-group">
@@ -234,24 +166,16 @@
           </div>
         </section>
 
-        <!-- 8. 隐藏彩蛋悄悄话 -->
         <section id="tab-eggs" class="tab-pane">
           <div class="pane-header">
             <h3>🐣 隐藏角落彩蛋悄悄话</h3>
             <p>设置隐藏在页面右上角星星与右下角猫爪的独家暗号悄悄话。</p>
           </div>
           <div class="form-grid">
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label>🌟 星星彩蛋弹窗文案 (Egg 1)</label>
-              <textarea id="egg_1_message" class="admin-textarea" rows="3"></textarea>
-            </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label>🐾 猫爪彩蛋弹窗文案 (Egg 2)</label>
-              <textarea id="egg_2_message" class="admin-textarea" rows="3"></textarea>
-            </div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>🌟 星星彩蛋弹窗文案 (Egg 1)</label><textarea id="egg_1_message" class="admin-textarea" rows="3"></textarea></div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>🐾 猫爪彩蛋弹窗文案 (Egg 2)</label><textarea id="egg_2_message" class="admin-textarea" rows="3"></textarea></div>
           </div>
         </section>
-
       </div>
     </div>
   </div>
@@ -259,7 +183,6 @@
   <input type="file" id="globalUploader" style="display:none;">
   <div id="toast" class="admin-toast">✓ 操作成功</div>
 
-  <!-- 引入出厂默认配置兜底与后台驱动脚本 -->
   <script src="js/config.js"></script>
   <script src="js/admin.js"></script>
 </body>
