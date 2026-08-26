@@ -1,5 +1,5 @@
 /**
- * 太阳 ios-IP · 恋爱时光轴 & 漫游宇宙 (Love Universe) 云端核心引擎
+ * 恋爱时光轴 & 漫游宇宙 (Love Universe) 云端核心引擎
  * 文件名: _worker.js
  */
 
@@ -29,8 +29,8 @@ export default {
       });
     }
 
-    // 获取当前管理员密码 (优先环境变量，默认 5214)
-    const ADMIN_PASSWORD = String(env.ADMIN_PASSWORD || env.SECRET_PWD || env.ADMIN_PWD || "5214");
+    // 后台管理密码 (默认设为 521)
+    const ADMIN_PASSWORD = String(env.ADMIN_PASSWORD || env.SECRET_PWD || env.ADMIN_PWD || "521");
 
     function checkAuth(req) {
       const headerAuth = req.headers.get("x-admin-auth") || req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
@@ -42,7 +42,7 @@ export default {
     const CONFIG_R2_KEY = "_love_universe/config.json";
 
     try {
-      // ================= 1. 获取全站动态配置 (前台与后台共用) =================
+      // 1. 获取配置
       if (url.pathname === "/api/love/config" && request.method === "GET") {
         if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
 
@@ -54,11 +54,10 @@ export default {
           }
         } catch (_) {}
 
-        // 若 R2 中暂无配置，提示前台使用本地 js/config.js 兜底
         return jsonResponse({ success: true, custom: false, config: null });
       }
 
-      // ================= 2. 保存并发布最新配置 (后台专属) =================
+      // 2. 保存配置
       if (url.pathname === "/api/love/config" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
         if (!checkAuth(request)) return jsonResponse({ success: false, error: "管理口令错误或未授权" }, 401);
@@ -74,10 +73,10 @@ export default {
           httpMetadata: { contentType: "application/json; charset=utf-8" }
         });
 
-        return jsonResponse({ success: true, message: "配置已发布并永久同步至 R2 云端" });
+        return jsonResponse({ success: true, message: "配置已发布并同步至 R2 云端" });
       }
 
-      // ================= 3. 后台图片/录音文件上传接口 =================
+      // 3. 上传多媒体资源 (图片/音频)
       if (url.pathname === "/api/love/upload" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
         if (!checkAuth(request)) return jsonResponse({ success: false, error: "管理口令错误或未授权" }, 401);
@@ -96,7 +95,7 @@ export default {
         return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
-      // ================= 4. 全局静态直链与流媒体加速 (/raw/:key) =================
+      // 4. 直链访问与断点续传
       if (url.pathname.startsWith("/raw/")) {
         if (!bucket) return new Response("Bucket Not Found", { status: 500 });
         const key = decodeURIComponent(url.pathname.replace(/^\/raw\//, ""));
@@ -132,7 +131,6 @@ export default {
       return jsonResponse({ success: false, error: err.message }, 500);
     }
 
-    // 静态页面托管回退 (index.html, admin.html, etc.)
     if (env.ASSETS) {
       try {
         return await env.ASSETS.fetch(request);
