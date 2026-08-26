@@ -103,6 +103,19 @@ function renderAllForms() {
   renderThemeShowroom();
 }
 
+// ================= 🔄 一键载入本地 config.js 最新预设 (覆盖旧云端数据) =================
+function resetToCodePresets() {
+  if (!confirm("⚠️ 确定要载入代码里的最新预设吗？\n这将载入最新的 50 项小事清单、12 张实用特权刮刮乐并清除旧卡片，随后点击右上角【💾 立即发布生效】即可同步写入云端！")) return;
+
+  if (window.LOVE_CONFIG) {
+    currentConfig = JSON.parse(JSON.stringify(window.LOVE_CONFIG));
+    renderAllForms();
+    showToast("✓ 已载入最新 50 项小事与 12 张特权卡，请点击右上角【立即发布生效】！");
+  } else {
+    alert("❌ 未读取到本地 config.js 预设数据");
+  }
+}
+
 // ================= 🎨 9. 主题陈列室渲染与交互 =================
 function renderThemeShowroom() {
   const container = document.getElementById("themeShowroomContainer");
@@ -416,7 +429,7 @@ function addScratchCard() {
   currentConfig.scratchCards.push({
     id: "card_" + Date.now(),
     title: "专属心愿特权卡",
-    content: "持此卡可无条件兑换一次专属愿望！",
+    content: "持此卡可无条件兑现一次专属温柔举动！",
     icon: "✨",
     scratched: false,
     used: false,
@@ -475,7 +488,7 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
-// ================= 保存全量配置 =================
+// ================= 保存全量配置至云端 R2 =================
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
 
