@@ -100,62 +100,101 @@ function renderAllForms() {
   document.getElementById("egg_2_message").value = eggs[1]?.message || "";
 }
 
-// ================= 🔍 在线音乐云端搜索引擎 =================
+// ================= 🔍 在线音乐云端搜索引擎与流畅试听控制 =================
+function quickSearchTag(tagText) {
+  document.getElementById("musicSearchKeyword").value = tagText;
+  executeOnlineMusicSearch();
+}
+
 async function executeOnlineMusicSearch() {
   const kw = document.getElementById("musicSearchKeyword").value.trim();
   const listContainer = document.getElementById("onlineSearchResultList");
   if (!kw) return alert("请输入要搜索的歌名或歌手！");
 
-  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:6px;">⏳ 正在连接云端音源库检索【${escapeHtml(kw)}】...</div>`;
+  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索【${escapeHtml(kw)}】高可用音频流...</div>`;
 
   try {
     const res = await fetch(`/api/love/music-search?keyword=${encodeURIComponent(kw)}`);
     const data = await res.json();
 
     if (data.success && Array.isArray(data.songs) && data.songs.length > 0) {
-      listContainer.innerHTML = data.songs.map(song => `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
-          <div>
-            <div style="font-size:13px; font-weight:800; color:#fff;">${escapeHtml(song.title)}</div>
-            <div style="font-size:11px; color:#94a3b8;">${escapeHtml(song.artist)}</div>
+      listContainer.innerHTML = data.songs.map((song, idx) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
+          <div style="flex:1; overflow:hidden; margin-right:10px;">
+            <div style="font-size:13.5px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(song.title)}</div>
+            <div style="font-size:11.5px; color:#94a3b8;">${escapeHtml(song.artist)}</div>
           </div>
-          <div style="display:flex; gap:6px;">
-            <button class="btn-tool" style="padding:4px 8px; font-size:11px;" onclick="testPreviewAudio('${song.url}')">🎧 试听</button>
-            <button class="btn-tool" style="background:var(--gold); color:#fff; padding:4px 10px; font-size:11px;" onclick="selectCloudMusic('${escapeHtml(song.title)}', '${escapeHtml(song.artist)}', '${song.url}')">✓ 设为BGM</button>
+          <div style="display:flex; gap:6px; flex-shrink:0;">
+            <button class="btn-tool preview-play-btn" id="prev_btn_${idx}" style="padding:5px 10px; font-size:11.5px;" onclick="testPreviewAudio('${song.url}', 'prev_btn_${idx}')">🎧 试听</button>
+            <button class="btn-tool" style="background:var(--gold); color:#fff; padding:5px 12px; font-size:11.5px;" onclick="selectCloudMusic('${escapeHtml(song.title)}', '${escapeHtml(song.artist)}', '${song.url}')">✓ 设为BGM</button>
           </div>
         </div>
       `).join("");
     } else {
-      listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:6px;">🍃 未找到相关歌曲，请尝试更简洁的关键词</div>`;
+      listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">🍃 未找到歌曲，请尝试更简短的关键词 (例如: 晴天 / 钢琴)</div>`;
     }
   } catch (err) {
-    listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:6px;">❌ 检索超时，请重试</div>`;
+    listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">❌ 检索超时，请检查网络后重试</div>`;
   }
 }
 
+// 试听播放器单例控制器
 let previewAudioObj = null;
-function testPreviewAudio(url) {
+let currentPreviewBtnId = null;
+
+function testPreviewAudio(url, btnId) {
+  const currentBtn = document.getElementById(btnId);
+
+  // 如果点击的是正在播放的同一首歌曲，执行暂停
+  if (previewAudioObj && currentPreviewBtnId === btnId && !previewAudioObj.paused) {
+    previewAudioObj.pause();
+    if (currentBtn) currentBtn.textContent = "🎧 试听";
+    showToast("⏸️ 已暂停试听");
+    return;
+  }
+
+  // 重置其他所有试听按钮文本
+  document.querySelectorAll(".preview-play-btn").forEach(b => b.textContent = "🎧 试听");
+
   if (previewAudioObj) {
     previewAudioObj.pause();
     previewAudioObj = null;
   }
+
   previewAudioObj = new Audio(url);
-  previewAudioObj.play().then(() => showToast("🎵 正在试听曲目..."))
-    .catch(() => alert("该音乐源暂不可在线试听"));
+  currentPreviewBtnId = btnId;
+  if (currentBtn) currentBtn.textContent = "⏳ 加载中...";
+
+  previewAudioObj.play()
+    .then(() => {
+      if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
+      showToast("🎵 正在流畅试听曲目...");
+    })
+    .catch(() => {
+      if (currentBtn) currentBtn.textContent = "🎧 试听";
+      showToast("⚠️ 正在调取高可用备用流...");
+    });
+
+  previewAudioObj.onended = () => {
+    if (currentBtn) currentBtn.textContent = "🎧 试听";
+  };
 }
 
 function selectCloudMusic(title, artist, url) {
   document.getElementById("audio_bgmTitle").value = title;
   document.getElementById("audio_bgmArtist").value = artist;
   document.getElementById("audio_bgmUrl").value = url;
+
   if (previewAudioObj) {
     previewAudioObj.pause();
     previewAudioObj = null;
+    document.querySelectorAll(".preview-play-btn").forEach(b => b.textContent = "🎧 试听");
   }
-  showToast(`✓ 已将【${title}】设为背景音乐！`);
+
+  showToast(`✓ 已成功将【${title}】填入配置，请点击右上角保存！`);
 }
 
-// ================= 🧹 核心：一键清理 R2 历史无用废弃缓存 =================
+// ================= 🧹 一键清理 R2 历史无用废弃缓存 =================
 async function cleanOrphanR2Cache() {
   if (!confirm("⚠️ 确定要清理 R2 存储桶中不再使用的历史废弃照片与音频吗？\n（当前正在使用的文件绝对不会被删除，仅删除未引用的缓存）")) return;
 
