@@ -1,0 +1,924 @@
+/**
+ * ====================================================================
+ * 太阳 ios-IP · 恋爱时光轴 & 漫游宇宙 (Love Universe)
+ * 文件名: css/components.css
+ * 作用: 密码门禁、同行计时器、3D翻转拍立得相册、黑胶机、刮刮乐与印章
+ * ====================================================================
+ */
+
+/* ================= 1. 全局画布背景 ================= */
+.universe-canvas,
+.fireworks-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.universe-canvas {
+  z-index: 1;
+}
+
+.fireworks-canvas {
+  z-index: 99999;
+}
+
+/* ================= 2. 通用 3D 拟态发光按钮 ================= */
+.btn-universe {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.22s var(--ease-spring);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-universe--primary {
+  background: linear-gradient(135deg, var(--primary-pink) 0%, #be123c 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.btn-universe--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(244, 63, 94, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+.btn-universe--primary:active {
+  transform: translateY(1px);
+}
+
+.btn-universe--accent {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 6px 20px var(--sun-gold-glow), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.btn-universe--secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(8px);
+}
+
+/* ================= 3. 密码门禁解锁层 (#gatekeeper-screen) ================= */
+.gatekeeper {
+  position: fixed;
+  inset: 0;
+  z-index: 50000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: radial-gradient(circle at center, #1e1b4b 0%, #070a14 80%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: opacity 0.6s var(--ease-spring), visibility 0.6s;
+}
+
+.gatekeeper__dialog {
+  width: 100%;
+  max-width: 400px;
+  background: var(--space-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 26px;
+  padding: 30px 24px;
+  box-shadow: var(--glass-shadow), 0 0 35px rgba(244, 63, 94, 0.2);
+  text-align: center;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.gatekeeper__badge {
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 1.8px;
+  color: var(--rose-gold);
+  background: rgba(251, 113, 133, 0.12);
+  border: 1px solid rgba(251, 113, 133, 0.3);
+  padding: 3px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.gatekeeper__title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffffff;
+  margin-bottom: 14px;
+}
+
+.gatekeeper__question {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.gatekeeper__input-wrap {
+  margin-bottom: 12px;
+}
+
+.gatekeeper__input {
+  width: 100%;
+  background: rgba(3, 7, 18, 0.75);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  letter-spacing: 4px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
+}
+
+.gatekeeper__input:focus {
+  border-color: var(--primary-pink);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6), 0 0 16px var(--rose-gold-glow);
+}
+
+.gatekeeper__hint {
+  font-size: 11.5px;
+  color: #fbbf24;
+  margin-bottom: 20px;
+  min-height: 18px;
+}
+
+.gatekeeper__btn {
+  width: 100%;
+  padding: 13px 20px;
+  font-size: 15px;
+}
+
+/* ================= 4. 头部视差区与同行计时器 ================= */
+.hero-section {
+  text-align: center;
+  margin-bottom: 36px;
+  padding-top: 10px;
+}
+
+.hero-section__badge {
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--sun-gold);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 3px 12px;
+  border-radius: 30px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+.hero-section__names {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #ffffff 0%, #fecdd3 50%, #fb7185 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+  text-shadow: 0 0 30px var(--rose-gold-glow);
+}
+
+.hero-section__subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+
+/* 核心同行秒级计时卡 */
+.love-timer {
+  background: var(--space-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 22px 18px;
+  box-shadow: var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+.love-timer__title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.love-timer__grid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.love-timer__unit {
+  background: rgba(3, 7, 18, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 8px;
+  min-width: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.love-timer__num {
+  font-size: 24px;
+  font-weight: 900;
+  color: #fde68a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  line-height: 1.1;
+  text-shadow: 0 0 12px var(--sun-gold-glow);
+}
+
+.love-timer__label {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.love-timer__milestone {
+  margin-top: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--rose-gold);
+  background: rgba(251, 113, 133, 0.1);
+  border: 1px dashed rgba(251, 113, 133, 0.35);
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.love-timer__milestone-days {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+  padding: 0 2px;
+}
+
+/* ================= 5. 打字机真情告白舱 ================= */
+.confession-section {
+  margin-bottom: 40px;
+}
+
+.confession-card {
+  background: rgba(255, 253, 245, 0.95);
+  border-radius: 24px;
+  padding: 26px 22px;
+  color: var(--text-dark);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), inset 0 2px 2px rgba(255, 255, 255, 0.9);
+  max-width: 680px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.confession-card::before {
+  content: "“";
+  position: absolute;
+  top: 10px;
+  left: 18px;
+  font-size: 60px;
+  line-height: 1;
+  color: rgba(244, 63, 94, 0.15);
+  font-family: serif;
+}
+
+.confession-card__title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #9f1239;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.confession-card__body {
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: #374151;
+  min-height: 80px;
+  word-break: break-word;
+  position: relative;
+  display: inline;
+}
+
+.typewriter-cursor {
+  display: inline-block;
+  font-weight: 900;
+  color: var(--primary-pink);
+  margin-left: 2px;
+  animation: cursorBlink 0.8s infinite;
+}
+
+.confession-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(244, 63, 94, 0.2);
+  font-size: 12px;
+  font-weight: 700;
+  color: #881337;
+}
+
+/* ================= 6. 时光轴 & 3D 拍立得相册 ================= */
+.timeline-section {
+  margin-bottom: 45px;
+}
+
+.timeline-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 640px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.timeline-node {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.timeline-node__time {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--sun-gold);
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline-node__time::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sun-gold);
+  box-shadow: 0 0 10px var(--sun-gold-glow);
+}
+
+/* 3D 拟真拍立得相框卡片 */
+.polaroid-card {
+  perspective: 1200px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.polaroid-card__inner {
+  position: relative;
+  width: 100%;
+  border-radius: 20px;
+  transition: transform 0.7s var(--ease-spring);
+  transform-style: preserve-3d;
+}
+
+.polaroid-card__inner--flipped {
+  transform: rotateY(180deg);
+}
+
+.polaroid-card__front,
+.polaroid-card__back {
+  width: 100%;
+  border-radius: 20px;
+  background: var(--polaroid-paper);
+  box-shadow: var(--polaroid-shadow);
+  padding: 16px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.polaroid-card__front {
+  display: flex;
+  flex-direction: column;
+}
+
+.polaroid-card__photo-box {
+  width: 100%;
+  height: 260px;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background: #0f172a;
+}
+
+.polaroid-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.polaroid-card:hover .polaroid-card__img {
+  transform: scale(1.03);
+}
+
+.polaroid-card__tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 12px;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.polaroid-card__caption {
+  padding-top: 14px;
+  color: var(--text-dark);
+}
+
+.polaroid-card__title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.polaroid-card__desc {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.polaroid-card__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 8px;
+}
+
+.polaroid-card__hint {
+  color: var(--primary-pink);
+}
+
+/* 拍立得背面 */
+.polaroid-card__back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #fffdfa;
+  border: 2px dashed #fecdd3;
+}
+
+.polaroid-card__stamp {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border: 1.5px solid #f43f5e;
+  color: #f43f5e;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transform: rotate(8deg);
+}
+
+.polaroid-card__back-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #9f1239;
+  margin-bottom: 12px;
+}
+
+.polaroid-card__back-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #374151;
+  font-style: italic;
+}
+
+.polaroid-card__voice-box {
+  margin-top: 16px;
+}
+
+.polaroid-card__voice-btn {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #e11d48;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.polaroid-card__voice-btn:hover {
+  background: #ffe4e6;
+  transform: scale(1.02);
+}
+
+.polaroid-card__back-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+/* ================= 7. 恋爱 100 件小事清单 ================= */
+.checklist-section {
+  margin-bottom: 45px;
+}
+
+.checklist-card {
+  background: var(--space-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 24px 20px;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.checklist-card__progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(3, 7, 18, 0.7);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.checklist-card__progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--sun-gold), var(--primary-pink));
+  box-shadow: 0 0 10px var(--rose-gold-glow);
+  transition: width 0.4s var(--ease-spring);
+}
+
+.checklist-card__stats {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #fde68a;
+  text-align: right;
+  margin-bottom: 16px;
+}
+
+.checklist-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.checklist-item {
+  background: rgba(3, 7, 18, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px 14px;
+  transition: all 0.2s ease;
+}
+
+.checklist-item:hover {
+  background: rgba(3, 7, 18, 0.75);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.checklist-item__label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checklist-item__checkbox {
+  display: none;
+}
+
+.checklist-item__custom-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1.5px solid var(--rose-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.checklist-item__checkbox:checked + .checklist-item__custom-box {
+  background: var(--primary-pink);
+  border-color: var(--primary-pink);
+}
+
+.checklist-item__checkbox:checked + .checklist-item__custom-box::after {
+  content: "✓";
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.checklist-item__text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+.checklist-item--checked .checklist-item__text {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* ================= 8. 恋爱特权刮刮乐与印章 ================= */
+.scratch-section {
+  margin-bottom: 45px;
+}
+
+.scratch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.scratch-card {
+  position: relative;
+  min-height: 180px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255, 253, 245, 0.95) 0%, rgba(254, 243, 199, 0.95) 100%);
+  border: 1.5px solid rgba(253, 230, 138, 0.6);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+.scratch-card__content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  color: var(--text-dark);
+  position: relative;
+}
+
+.scratch-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scratch-card__icon {
+  font-size: 24px;
+}
+
+.scratch-card__title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #92400e;
+}
+
+.scratch-card__text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #451a03;
+  line-height: 1.5;
+  margin: 10px 0;
+}
+
+.scratch-card__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  touch-action: none;
+  cursor: grab;
+}
+
+/* 拟真复古红色已核销印章 */
+.scratch-stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg) scale(2);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  transition: all 0.25s var(--ease-spring);
+}
+
+.scratch-stamp--visible {
+  opacity: 0.9;
+  transform: translate(-50%, -50%) rotate(-15deg) scale(1);
+}
+
+.scratch-stamp__circle {
+  width: 96px;
+  height: 96px;
+  border: 3px dashed var(--stamp-red);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px var(--stamp-red-glow), inset 0 0 8px var(--stamp-red-glow);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.scratch-stamp__status {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--stamp-red);
+  letter-spacing: 2px;
+}
+
+.scratch-stamp__time {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--stamp-red);
+  font-family: ui-monospace, monospace;
+}
+
+/* ================= 9. 拟真黑胶唱片机悬浮器 ================= */
+.vinyl-player {
+  position: fixed;
+  bottom: 24px;
+  left: 20px;
+  z-index: 40000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vinyl-player__disc {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #0f172a 30%, #020617 70%);
+  border: 3px solid #1e293b;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 12px var(--rose-gold-glow);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vinyl-player__cover {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.vinyl-player__needle {
+  position: absolute;
+  top: -10px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fb7185'><path d='M12 2L2 22h20L12 2z'/></svg>") no-repeat center;
+  background-size: contain;
+  transform-origin: top right;
+  transform: rotate(-30deg);
+  transition: transform 0.4s var(--ease-spring);
+}
+
+.vinyl-player__needle--play {
+  transform: rotate(0deg);
+}
+
+.vinyl-player__btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--space-card);
+  border: 1px solid var(--glass-border);
+  color: #ffffff;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--glass-shadow);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: transform 0.2s ease;
+}
+
+.vinyl-player__btn:hover {
+  transform: scale(1.1);
+}
+
+/* ================= 10. 彩蛋触发器与弹窗 ================= */
+.easter-egg-trigger {
+  position: fixed;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 40000;
+  user-select: none;
+  opacity: 0.7;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.easter-egg-trigger:hover {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.easter-egg-trigger--star {
+  top: 30px;
+  right: 25px;
+}
+
+.easter-egg-trigger--paw {
+  bottom: 30px;
+  right: 25px;
+}
+
+.egg-modal,
+.poster-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 10, 20, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 60000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.egg-modal__dialog,
+.poster-modal__dialog {
+  background: var(--space-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: var(--glass-shadow);
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+}
+
+.egg-modal__body {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #fef3c7;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.poster-modal__tip {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 10px;
+}
+
+.poster-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
