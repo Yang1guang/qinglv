@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: _worker.js
- * 作用: R2 数据持久化、流媒体断点续传、无用缓存清理、多源聚合在线音乐搜索引擎
+ * 作用: R2 数据持久化、流媒体断点续传、无用缓存清理、高可用音乐搜索引擎与动态音频流解析
  */
 
 export default {
@@ -130,61 +130,13 @@ export default {
         });
       }
 
-      // 5. 🔍 在线音乐云端搜索引擎 (热门情歌索引库 + 多源实时穿透)
+      // 5. 🔍 在线音乐云端搜索引擎
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim();
         const songs = [];
         const seen = new Set();
 
-        // 核心高频情歌常驻索引库 (秒出结果)
-        const PRESET_MUSIC_LIBRARY = [
-          { id: "436514312", title: "告白气球", artist: "周杰伦" },
-          { id: "186016", title: "晴天", artist: "周杰伦" },
-          { id: "186004", title: "简单爱", artist: "周杰伦" },
-          { id: "185925", title: "稻香", artist: "周杰伦" },
-          { id: "185965", title: "七里香", artist: "周杰伦" },
-          { id: "185882", title: "甜甜的", artist: "周杰伦" },
-          { id: "185896", title: "蒲公英的约定", artist: "周杰伦" },
-          { id: "185929", title: "花海", artist: "周杰伦" },
-          { id: "185975", title: "园游会", artist: "周杰伦" },
-          { id: "185906", title: "浪漫手机", artist: "周杰伦" },
-          { id: "186001", title: "开不了口", artist: "周杰伦" },
-          { id: "185809", title: "安静", artist: "周杰伦" },
-          { id: "2005476140", title: "乌梅子酱", artist: "李荣浩" },
-          { id: "541498454", title: "慢慢喜欢你", artist: "莫文蔚" },
-          { id: "287035", title: "遇见", artist: "孙燕姿" },
-          { id: "326738", title: "一直很安静", artist: "阿桑" },
-          { id: "1827600686", title: "Sweet Memories (唯美钢琴曲)", artist: "Romantic Ensemble" },
-          { id: "139774", title: "遇见的奇迹 (纯音吉他)", artist: "Acoustic Melody" },
-          { id: "441552", title: "风居住的街道", artist: "矶村由纪子" },
-          { id: "1844919379", title: "蒲公英的约定 (八音盒版)", artist: "Music Box Love" }
-        ];
-
-        // 1. 优先本地库极速匹配
         if (keyword) {
-          const kwLower = keyword.toLowerCase();
-          PRESET_MUSIC_LIBRARY.forEach(item => {
-            if (
-              item.title.toLowerCase().includes(kwLower) ||
-              item.artist.toLowerCase().includes(kwLower) ||
-              kwLower.includes(item.title.toLowerCase()) ||
-              kwLower.includes(item.artist.toLowerCase())
-            ) {
-              if (!seen.has(item.id)) {
-                seen.add(item.id);
-                songs.push({
-                  id: item.id,
-                  title: item.title,
-                  artist: item.artist,
-                  url: `https://music.163.com/song/media/outer/url?id=${item.id}.mp3`
-                });
-              }
-            }
-          });
-        }
-
-        // 2. 线上开放源检索穿透
-        if (songs.length < 8 && keyword) {
           try {
             const kgRes = await fetch(
               `https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=1&pagesize=10&filter=2&bitrate=0&isfp=0`,
@@ -196,13 +148,15 @@ export default {
               kgList.forEach(item => {
                 const sName = (item.SongName || "").replace(/<[^>]+>/g, "");
                 const sArtist = (item.SingerName || "").replace(/<[^>]+>/g, "");
-                if (sName && !seen.has(sName)) {
-                  seen.add(sName);
+                const fHash = item.FileHash || item.HQFileHash || item.SQFileHash;
+                if (sName && fHash && !seen.has(fHash)) {
+                  seen.add(fHash);
                   songs.push({
-                    id: String(item.Audioid || item.FileHash || Date.now()),
+                    id: fHash,
                     title: sName,
                     artist: sArtist,
-                    url: `https://music.163.com/song/media/outer/url?id=${item.Audioid || 436514312}.mp3`
+                    albumId: item.AlbumID || "0",
+                    url: `/api/love/music-stream?hash=${fHash}&album_id=${item.AlbumID || 0}`
                   });
                 }
               });
@@ -210,14 +164,22 @@ export default {
           } catch (_) {}
         }
 
-        // 3. 空结果兜底展示热门推荐
+        // 默认精选兜底歌单
         if (songs.length === 0) {
-          PRESET_MUSIC_LIBRARY.slice(0, 10).forEach(item => {
+          const PRESET_LIST = [
+            { title: "告白气球", artist: "周杰伦", hash: "E3A199727B40A5B73C4CE15CEE5FA41E", albumId: "1794711" },
+            { title: "晴天", artist: "周杰伦", hash: "A0A164B62580DA8E5BCEBDEB4F69B829", albumId: "960395" },
+            { title: "简单爱", artist: "周杰伦", hash: "8078BA5188E67E7DE28D08F086ED3FDE", albumId: "959958" },
+            { title: "甜甜的", artist: "周杰伦", hash: "B42D1577E4A8367A6BC9FF98205C90A8", albumId: "960398" },
+            { title: "Sweet Memories (浪漫钢琴)", artist: "Romantic", hash: "FB9F762351A22C54F11CFBCE4B1A0413", albumId: "0" }
+          ];
+          PRESET_LIST.forEach(item => {
             songs.push({
-              id: item.id,
+              id: item.hash,
               title: item.title,
               artist: item.artist,
-              url: `https://music.163.com/song/media/outer/url?id=${item.id}.mp3`
+              albumId: item.albumId,
+              url: `/api/love/music-stream?hash=${item.hash}&album_id=${item.albumId}`
             });
           });
         }
@@ -225,10 +187,40 @@ export default {
         return jsonResponse({ success: true, songs });
       }
 
-      // 6. 🎵 音频流媒体直接重定向 (保障播放无阻)
+      // 6. 🎵 核心：动态音频流解析中继 (获取无限制真实 MP3 直链并重定向)
       if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
-        const songId = url.searchParams.get("id") || "436514312";
-        return Response.redirect(`https://music.163.com/song/media/outer/url?id=${songId}.mp3`, 302);
+        const hash = url.searchParams.get("hash");
+        const albumId = url.searchParams.get("album_id") || "0";
+
+        if (hash) {
+          try {
+            // 通过接口换取实时可播 MP3 直链
+            const kgInfoRes = await fetch(`https://m.kugou.com/app/i/getSongInfo.php?cmd=playInfo&hash=${hash}`, {
+              headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)" }
+            });
+            if (kgInfoRes.ok) {
+              const info = await kgInfoRes.json();
+              if (info.url && info.url.startsWith("http")) {
+                return Response.redirect(info.url, 302);
+              }
+            }
+
+            // 备用通道
+            const kgPcRes = await fetch(`https://www.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&album_id=${albumId}&dfid=-&mid=-&platid=4`, {
+              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Cookie": "kg_mid=10086" }
+            });
+            if (kgPcRes.ok) {
+              const pcData = await kgPcRes.json();
+              const realUrl = pcData.data?.play_url || pcData.data?.play_backup_url;
+              if (realUrl && realUrl.startsWith("http")) {
+                return Response.redirect(realUrl, 302);
+              }
+            }
+          } catch (_) {}
+        }
+
+        // 终极高可用兜底
+        return Response.redirect("https://music.163.com/song/media/outer/url?id=1827600686.mp3", 302);
       }
 
       // 7. R2 静态直链分发 (/raw/:key)
