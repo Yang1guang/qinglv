@@ -13,11 +13,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (data.success && data.custom && data.config) {
       config = data.config;
       window.LOVE_CONFIG = config;
+
+      // 1.1 同步更新音频与音效配置
       if (window.Effects) {
         window.Effects.updateConfig(config);
       }
     }
   } catch (_) {}
+
+  // 1.2 激活主题渲染引擎与背景物理粒子
+  if (window.ThemeEngine) {
+    const themeCfg = config.theme || {};
+    window.ThemeEngine.applyTheme(
+      themeCfg.currentTheme || "sunset-twilight",
+      themeCfg.customBgUrl || ""
+    );
+  }
 
   // 2. DOM 节点引用
   const dom = {
@@ -143,7 +154,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // 5. 打字机告白
+  // 5. 打字机真情告白
   function startTypewriter() {
     const letterCfg = config.letter || {};
     if (dom.letterTitle && letterCfg.title) dom.letterTitle.textContent = letterCfg.title;
@@ -172,7 +183,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     dom.eggStar.addEventListener("click", () => showEggModal(eggs[0]?.message || "🌟 发现第一颗暗号星：想你每一天！"));
   }
   if (dom.eggPaw) {
-    dom.eggPaw.addEventListener("click", () => showEggModal(eggs[1]?.message || "🐾 踩到猫爪印啦：奖励今晚获得为你洗一次头发！"));
+    dom.eggPaw.addEventListener("click", () => showEggModal(eggs[1]?.message || "🐾 踩到猫爪印啦：奖励今晚为你洗一次头发！"));
   }
   if (dom.eggModalClose && dom.eggModal) {
     dom.eggModalClose.addEventListener("click", () => { dom.eggModal.style.display = "none"; });
@@ -282,3 +293,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     return canvas.toDataURL("image/jpeg", 0.92);
   }
 });
+```eof
+
+已生成完整更新的 `js/core.js` 文件，代码中包含了最新主题切换引擎的自动唤醒逻辑，并保持了门禁暗号直通、打字机告白与 300DPI 海报渲染的完整性。直接覆盖项目文件即可。
