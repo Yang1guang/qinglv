@@ -1,15 +1,22 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: js/effects.js
- * 作用: 全屏星空流星、烟花彩带粒子、音乐播放与黑胶唱片总控
+ * 作用: 全屏动态星空、烟花彩带物理引擎、WebAudio自研音效合成器、云端流媒体点播总控
  */
 
 class EffectsManager {
   constructor(config) {
     this.config = config || window.LOVE_CONFIG || {};
-    this.audioPool = {};
+    this.audioCtx = null;
     this.bgm = null;
     this.isPlayingBgm = false;
+    // 高可用全网兜底音乐库
+    this.fallbackStreams = [
+      "https://music.163.com/song/media/outer/url?id=1827600686.mp3",
+      "https://music.163.com/song/media/outer/url?id=139774.mp3",
+      "https://music.163.com/song/media/outer/url?id=441552.mp3"
+    ];
+    this.fallbackIndex = 0;
   }
 
   init() {
@@ -18,20 +25,217 @@ class EffectsManager {
     this.initAudioSystem();
   }
 
-  // 动态更新配置 (当 core.js 从 R2 拉取最新数据后同步更新)
+  // 接收来自云端 R2 的动态热更新
   updateConfig(newConfig) {
     this.config = newConfig;
-    if (newConfig.audio) {
-      if (this.bgm) {
-        this.bgm.pause();
-        this.isPlayingBgm = false;
-        this.updateVinylUI(false);
+    if (this.bgm) {
+      this.bgm.pause();
+      this.isPlayingBgm = false;
+      this.updateVinylUI(false);
+    }
+    this.initBgmInstance();
+  }
+
+  /* ================= 1. Web Audio API 物理拟真音效合成器 (免文件开箱即响) ================= */
+  ensureAudioContext() {
+    if (!this.audioCtx) {
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtxClass) {
+        this.audioCtx = new AudioCtxClass();
       }
-      this.initBgmInstance();
+    }
+    if (this.audioCtx && this.audioCtx.state === "suspended") {
+      this.audioCtx.resume();
     }
   }
 
-  /* ================= 1. 全局星空流星 Canvas ================= */
+  playAudio(soundType) {
+    // 优先尝试播放用户在后台或 config 里上传的自定义音频
+    const sounds = this.config.audio?.sounds || {};
+    if (sounds[soundType] && typeof sounds[soundType] === "string" && sounds[soundType].trim().length > 5 && !sounds[soundType].startsWith("assets/")) {
+      const customAudio = new Audio(sounds[soundType]);
+      customAudio.play().catch(() => this.synthesizeSound(soundType));
+      return;
+    }
+    // 默认启用自研高质感电子/声学合成音效
+    this.synthesizeSound(soundType);
+  }
+
+  synthesizeSound(type) {
+    try {
+      this.ensureAudioContext();
+      if (!this.audioCtx) return;
+      const ctx = this.audioCtx;
+      const now = ctx.currentTime;
+
+      if (type === "gatekeeperPass") {
+        // 胜利大和弦 (C Maj9: C5, E5, G5, B5, D6)
+        [523.25, 659.25, 783.99, 987.77, 1174.66].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, now + i * 0.06);
+          gain.gain.setValueAtTime(0, now + i * 0.06);
+          gain.gain.linearRampToValueAtTime(0.12, now + i * 0.06 + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.8);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.06);
+          osc.stop(now + i * 0.06 + 0.85);
+        });
+      } else if (type === "gatekeeperError") {
+        // 错误双低音提示
+        [220, 180].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(freq, now + i * 0.12);
+          gain.gain.setValueAtTime(0.1, now + i * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.18);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.12);
+          osc.stop(now + i * 0.12 + 0.2);
+        });
+      } else if (type === "stamp") {
+        // 印章重重盖下的低频砰击声
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.16);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.22);
+      } else if (type === "scratch" || type === "flip") {
+        // 清脆撕纸/翻转微声
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(800 + Math.random() * 400, now);
+        gain.gain.setValueAtTime(0.03, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      }
+    } catch (_) {}
+  }
+
+  /* ================= 2. 云端流媒体音乐播放与黑胶总控 ================= */
+  initAudioSystem() {
+    this.initBgmInstance();
+
+    const toggleBtn = document.getElementById("audio-toggle-btn");
+    const vinylDisc = document.getElementById("vinyl-disc");
+
+    if (toggleBtn) {
+      toggleBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.ensureAudioContext();
+        this.toggleBgm();
+      };
+    }
+
+    if (vinylDisc) {
+      vinylDisc.onclick = (e) => {
+        e.stopPropagation();
+        this.ensureAudioContext();
+        this.toggleBgm();
+      };
+    }
+
+    // 突破移动端浏览器对 AudioContext 和多媒体自动播放的策略限制
+    const unlockHandler = () => {
+      this.ensureAudioContext();
+      if (this.bgm && this.config.audio?.bgmAutoPlay && !this.isPlayingBgm) {
+        this.playBgm();
+      }
+      window.removeEventListener("click", unlockHandler);
+      window.removeEventListener("touchstart", unlockHandler);
+    };
+    window.addEventListener("click", unlockHandler);
+    window.addEventListener("touchstart", unlockHandler);
+  }
+
+  initBgmInstance() {
+    const audioCfg = this.config.audio || {};
+    const coverEl = document.getElementById("vinyl-cover");
+
+    if (coverEl) {
+      if (audioCfg.vinylCover && audioCfg.vinylCover.trim()) {
+        coverEl.src = audioCfg.vinylCover;
+        coverEl.style.display = "block";
+      } else {
+        coverEl.style.display = "none";
+      }
+    }
+
+    let targetUrl = (audioCfg.bgmUrl || "").trim();
+    // 过滤失效的相对本地路径，自动启用稳定云端音频源
+    if (!targetUrl || targetUrl.startsWith("assets/")) {
+      targetUrl = this.fallbackStreams[0];
+    }
+
+    this.bgm = new Audio(targetUrl);
+    this.bgm.loop = true;
+    this.bgm.preload = "auto";
+  }
+
+  toggleBgm() {
+    if (this.isPlayingBgm) {
+      this.pauseBgm();
+    } else {
+      this.playBgm();
+    }
+  }
+
+  playBgm() {
+    if (!this.bgm) this.initBgmInstance();
+
+    const attemptPlay = (audioObj) => {
+      return audioObj.play().then(() => {
+        this.isPlayingBgm = true;
+        this.updateVinylUI(true);
+      });
+    };
+
+    attemptPlay(this.bgm).catch(() => {
+      // 容错灾备：如果主源受阻，自动顺序切换高可用备选节点
+      this.fallbackIndex = (this.fallbackIndex + 1) % this.fallbackStreams.length;
+      const nextStream = this.fallbackStreams[this.fallbackIndex];
+      this.bgm = new Audio(nextStream);
+      this.bgm.loop = true;
+
+      attemptPlay(this.bgm).catch(() => {
+        this.isPlayingBgm = false;
+        this.updateVinylUI(false);
+      });
+    });
+  }
+
+  pauseBgm() {
+    if (!this.bgm) return;
+    this.bgm.pause();
+    this.isPlayingBgm = false;
+    this.updateVinylUI(false);
+  }
+
+  updateVinylUI(isPlaying) {
+    const disc = document.getElementById("vinyl-disc");
+    const needle = document.getElementById("vinyl-needle");
+    const btn = document.getElementById("audio-toggle-btn");
+
+    if (disc) disc.classList.toggle("vinyl-player__disc--spinning", isPlaying);
+    if (needle) needle.classList.toggle("vinyl-player__needle--play", isPlaying);
+    if (btn) btn.textContent = isPlaying ? "⏸️" : "🎵";
+  }
+
+  /* ================= 3. 全屏动态星空与流星雨 Canvas ================= */
   initStarrySky() {
     const canvas = document.getElementById("starry-canvas");
     if (!canvas) return;
@@ -47,7 +251,7 @@ class EffectsManager {
     });
 
     const stars = [];
-    const starCount = Math.floor((width * height) / 7000);
+    const starCount = Math.floor((width * height) / 6500);
 
     const createStars = () => {
       stars.length = 0;
@@ -55,7 +259,7 @@ class EffectsManager {
         stars.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          radius: Math.random() * 1.4 + 0.3,
+          radius: Math.random() * 1.5 + 0.3,
           alpha: Math.random(),
           speed: Math.random() * 0.02 + 0.005,
           increasing: Math.random() > 0.5,
@@ -66,11 +270,11 @@ class EffectsManager {
 
     const meteors = [];
     const spawnMeteor = () => {
-      if (meteors.length < 2 && Math.random() < 0.03) {
+      if (meteors.length < 2 && Math.random() < 0.035) {
         meteors.push({
           x: Math.random() * width + width * 0.2,
           y: Math.random() * (height * 0.4),
-          len: Math.random() * 80 + 100,
+          len: Math.random() * 80 + 110,
           speed: Math.random() * 8 + 6,
           angle: (Math.PI / 4) * (1 + (Math.random() * 0.2 - 0.1)),
           alpha: 1,
@@ -89,7 +293,8 @@ class EffectsManager {
           star.alpha -= star.speed;
           if (star.alpha <= 0.1) star.increasing = true;
         }
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+
+        ctx.fillStyle = `rgba(255, 240, 245, ${star.alpha})`;
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -103,10 +308,10 @@ class EffectsManager {
 
         const grad = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
         grad.addColorStop(0, `rgba(255, 255, 255, ${m.alpha})`);
-        grad.addColorStop(1, `rgba(255, 255, 255, 0)`);
+        grad.addColorStop(1, `rgba(251, 113, 133, 0)`);
 
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1.6;
         ctx.beginPath();
         ctx.moveTo(m.x, m.y);
         ctx.lineTo(tailX, tailY);
@@ -114,7 +319,7 @@ class EffectsManager {
 
         m.x += Math.cos(m.angle) * m.speed;
         m.y += Math.sin(m.angle) * m.speed;
-        m.alpha -= 0.01;
+        m.alpha -= 0.012;
 
         if (m.alpha <= 0 || m.x < 0 || m.y > height) {
           meteors.splice(i, 1);
@@ -127,7 +332,7 @@ class EffectsManager {
     render();
   }
 
-  /* ================= 2. 烟花与彩带粒子 ================= */
+  /* ================= 4. 全屏烟花与彩带粒子物理引擎 ================= */
   initFireworksCanvas() {
     this.fwCanvas = document.getElementById("fireworks-canvas");
     if (!this.fwCanvas) return;
@@ -149,16 +354,16 @@ class EffectsManager {
   fireConfetti() {
     if (!this.fwCanvas) return;
     const colors = ["#f43f5e", "#fb7185", "#f59e0b", "#38bdf8", "#a855f7", "#34d399"];
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 110; i++) {
       this.particles.push({
         x: window.innerWidth / 2,
         y: window.innerHeight * 0.6,
-        vx: (Math.random() - 0.5) * 16,
-        vy: (Math.random() - 0.8) * 18,
+        vx: (Math.random() - 0.5) * 18,
+        vy: (Math.random() - 0.8) * 20,
         size: Math.random() * 8 + 6,
         color: colors[Math.floor(Math.random() * colors.length)],
         rotation: Math.random() * 360,
-        rotSpeed: (Math.random() - 0.5) * 10,
+        rotSpeed: (Math.random() - 0.5) * 12,
         alpha: 1,
         gravity: 0.35,
         type: "rect",
@@ -169,19 +374,19 @@ class EffectsManager {
 
   fireFireworks() {
     if (!this.fwCanvas) return;
-    const colors = ["#ffedd5", "#fde047", "#f43f5e", "#67e8f9", "#c084fc"];
+    const colors = ["#ffedd5", "#fde047", "#f43f5e", "#67e8f9", "#c084fc", "#ffffff"];
     const originX = Math.random() * (window.innerWidth * 0.6) + window.innerWidth * 0.2;
     const originY = Math.random() * (window.innerHeight * 0.4) + window.innerHeight * 0.2;
 
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 130; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 8 + 2;
+      const speed = Math.random() * 9 + 2;
       this.particles.push({
         x: originX,
         y: originY,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        size: Math.random() * 3 + 2,
+        size: Math.random() * 3.5 + 2,
         color: colors[Math.floor(Math.random() * colors.length)],
         rotation: 0,
         rotSpeed: 0,
@@ -240,119 +445,9 @@ class EffectsManager {
 
     loop();
   }
-
-  /* ================= 3. 音乐播放与黑胶联动系统 ================= */
-  initAudioSystem() {
-    this.initBgmInstance();
-
-    const toggleBtn = document.getElementById("audio-toggle-btn");
-    const vinylDisc = document.getElementById("vinyl-disc");
-
-    // 绑定黑胶唱片与右侧音乐按钮（双重可点）
-    if (toggleBtn) {
-      toggleBtn.onclick = (e) => {
-        e.stopPropagation();
-        this.toggleBgm();
-      };
-    }
-
-    if (vinylDisc) {
-      vinylDisc.onclick = (e) => {
-        e.stopPropagation();
-        this.toggleBgm();
-      };
-    }
-
-    // 页面首次任意触摸自动尝试解锁音频上下文
-    const unlockAudio = () => {
-      if (this.bgm && this.config.audio?.bgmAutoPlay && !this.isPlayingBgm) {
-        this.playBgm();
-      }
-      window.removeEventListener("click", unlockAudio);
-      window.removeEventListener("touchstart", unlockAudio);
-    };
-    window.addEventListener("click", unlockAudio);
-    window.addEventListener("touchstart", unlockAudio);
-  }
-
-  initBgmInstance() {
-    const audioCfg = this.config.audio || {};
-    const coverEl = document.getElementById("vinyl-cover");
-
-    // 渲染封面
-    if (coverEl) {
-      if (audioCfg.vinylCover && audioCfg.vinylCover.trim()) {
-        coverEl.src = audioCfg.vinylCover;
-      } else {
-        coverEl.style.display = "none";
-      }
-    }
-
-    // 实例化音频对象
-    if (audioCfg.bgmUrl && audioCfg.bgmUrl.trim()) {
-      this.bgm = new Audio(audioCfg.bgmUrl);
-      this.bgm.loop = true;
-      this.bgm.preload = "auto";
-    } else {
-      this.bgm = null;
-    }
-  }
-
-  playAudio(soundName) {
-    const audioCfg = this.config.audio || {};
-    const sounds = audioCfg.sounds || {};
-    if (sounds[soundName]) {
-      const audio = new Audio(sounds[soundName]);
-      audio.play().catch(() => {});
-    }
-  }
-
-  toggleBgm() {
-    if (this.isPlayingBgm) {
-      this.pauseBgm();
-    } else {
-      this.playBgm();
-    }
-  }
-
-  playBgm() {
-    if (!this.bgm) {
-      alert("🎵 暂未配置背景音乐，请进入后台【7. 音乐与多媒体中枢】上传 MP3 歌曲！");
-      return;
-    }
-
-    this.bgm
-      .play()
-      .then(() => {
-        this.isPlayingBgm = true;
-        this.updateVinylUI(true);
-      })
-      .catch((err) => {
-        alert("🎵 无法播放当前音乐链接，请检查文件链接是否有效或重新在后台上传 MP3！");
-        this.isPlayingBgm = false;
-        this.updateVinylUI(false);
-      });
-  }
-
-  pauseBgm() {
-    if (!this.bgm) return;
-    this.bgm.pause();
-    this.isPlayingBgm = false;
-    this.updateVinylUI(false);
-  }
-
-  updateVinylUI(isPlaying) {
-    const disc = document.getElementById("vinyl-disc");
-    const needle = document.getElementById("vinyl-needle");
-    const btn = document.getElementById("audio-toggle-btn");
-
-    if (disc) disc.classList.toggle("vinyl-player__disc--spinning", isPlaying);
-    if (needle) needle.classList.toggle("vinyl-player__needle--play", isPlaying);
-    if (btn) btn.textContent = isPlaying ? "⏸️" : "🎵";
-  }
 }
 
-// 挂载至全局
+// 全局挂载与自启
 window.Effects = new EffectsManager(window.LOVE_CONFIG);
 document.addEventListener("DOMContentLoaded", () => {
   window.Effects.init();
