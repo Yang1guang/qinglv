@@ -1,12 +1,8 @@
 /**
- * ====================================================================
- * 太阳 ios-IP · 恋爱时光轴 & 漫游宇宙 (Love Universe)
+ * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/components.css
- * 作用: 密码门禁、同行计时器、3D翻转拍立得相册、黑胶机、刮刮乐与印章
- * ====================================================================
  */
 
-/* ================= 1. 全局画布背景 ================= */
 .universe-canvas,
 .fireworks-canvas {
   position: fixed;
@@ -15,16 +11,9 @@
   height: 100%;
   pointer-events: none;
 }
+.universe-canvas { z-index: 1; }
+.fireworks-canvas { z-index: 99999; }
 
-.universe-canvas {
-  z-index: 1;
-}
-
-.fireworks-canvas {
-  z-index: 99999;
-}
-
-/* ================= 2. 通用 3D 拟态发光按钮 ================= */
 .btn-universe {
   display: inline-flex;
   align-items: center;
@@ -47,15 +36,11 @@
   border: 1px solid rgba(255, 255, 255, 0.35);
   box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
 }
-
 .btn-universe--primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 26px rgba(244, 63, 94, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.6);
 }
-
-.btn-universe--primary:active {
-  transform: translateY(1px);
-}
+.btn-universe--primary:active { transform: translateY(1px); }
 
 .btn-universe--accent {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
@@ -71,7 +56,7 @@
   backdrop-filter: blur(8px);
 }
 
-/* ================= 3. 密码门禁解锁层 (#gatekeeper-screen) ================= */
+/* 门禁 */
 .gatekeeper {
   position: fixed;
   inset: 0;
@@ -80,7 +65,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: radial-gradient(circle at center, #1e1b4b 0%, #070a14 80%);
+  background: radial-gradient(circle at center, #231d45 0%, #070a14 80%);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   transition: opacity 0.6s var(--ease-spring), visibility 0.6s;
@@ -126,9 +111,7 @@
   margin-bottom: 16px;
 }
 
-.gatekeeper__input-wrap {
-  margin-bottom: 12px;
-}
+.gatekeeper__input-wrap { margin-bottom: 12px; }
 
 .gatekeeper__input {
   width: 100%;
@@ -157,13 +140,9 @@
   min-height: 18px;
 }
 
-.gatekeeper__btn {
-  width: 100%;
-  padding: 13px 20px;
-  font-size: 15px;
-}
+.gatekeeper__btn { width: 100%; padding: 13px 20px; font-size: 15px; }
 
-/* ================= 4. 头部视差区与同行计时器 ================= */
+/* 头部同行计时器 */
 .hero-section {
   text-align: center;
   margin-bottom: 36px;
@@ -201,7 +180,6 @@
   margin-bottom: 24px;
 }
 
-/* 核心同行秒级计时卡 */
 .love-timer {
   background: var(--space-card);
   border: 1.5px solid var(--glass-border);
@@ -278,10 +256,8 @@
   padding: 0 2px;
 }
 
-/* ================= 5. 打字机真情告白舱 ================= */
-.confession-section {
-  margin-bottom: 40px;
-}
+/* 告白信 */
+.confession-section { margin-bottom: 40px; }
 
 .confession-card {
   background: rgba(255, 253, 245, 0.95);
@@ -343,10 +319,8 @@
   color: #881337;
 }
 
-/* ================= 6. 时光轴 & 3D 拍立得相册 ================= */
-.timeline-section {
-  margin-bottom: 45px;
-}
+/* 拍立得时光轴 */
+.timeline-section { margin-bottom: 45px; }
 
 .timeline-flow {
   display: flex;
@@ -383,7 +357,6 @@
   box-shadow: 0 0 10px var(--sun-gold-glow);
 }
 
-/* 3D 拟真拍立得相框卡片 */
 .polaroid-card {
   perspective: 1200px;
   cursor: pointer;
@@ -398,9 +371,7 @@
   transform-style: preserve-3d;
 }
 
-.polaroid-card__inner--flipped {
-  transform: rotateY(180deg);
-}
+.polaroid-card__inner--flipped { transform: rotateY(180deg); }
 
 .polaroid-card__front,
 .polaroid-card__back {
@@ -413,10 +384,7 @@
   -webkit-backface-visibility: hidden;
 }
 
-.polaroid-card__front {
-  display: flex;
-  flex-direction: column;
-}
+.polaroid-card__front { display: flex; flex-direction: column; }
 
 .polaroid-card__photo-box {
   width: 100%;
@@ -434,9 +402,7 @@
   transition: transform 0.4s ease;
 }
 
-.polaroid-card:hover .polaroid-card__img {
-  transform: scale(1.03);
-}
+.polaroid-card:hover .polaroid-card__img { transform: scale(1.03); }
 
 .polaroid-card__tag {
   position: absolute;
@@ -452,25 +418,9 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.polaroid-card__caption {
-  padding-top: 14px;
-  color: var(--text-dark);
-}
-
-.polaroid-card__title {
-  font-size: 17px;
-  font-weight: 800;
-  color: #111827;
-  margin-bottom: 4px;
-}
-
-.polaroid-card__desc {
-  font-size: 13px;
-  color: #4b5563;
-  line-height: 1.5;
-  margin-bottom: 10px;
-}
-
+.polaroid-card__caption { padding-top: 14px; color: var(--text-dark); }
+.polaroid-card__title { font-size: 17px; font-weight: 800; color: #111827; margin-bottom: 4px; }
+.polaroid-card__desc { font-size: 13px; color: #4b5563; line-height: 1.5; margin-bottom: 10px; }
 .polaroid-card__meta {
   display: flex;
   justify-content: space-between;
@@ -481,12 +431,8 @@
   border-top: 1px solid #f3f4f6;
   padding-top: 8px;
 }
+.polaroid-card__hint { color: var(--primary-pink); }
 
-.polaroid-card__hint {
-  color: var(--primary-pink);
-}
-
-/* 拍立得背面 */
 .polaroid-card__back {
   position: absolute;
   inset: 0;
@@ -511,23 +457,9 @@
   transform: rotate(8deg);
 }
 
-.polaroid-card__back-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: #9f1239;
-  margin-bottom: 12px;
-}
-
-.polaroid-card__back-text {
-  font-size: 14px;
-  line-height: 1.8;
-  color: #374151;
-  font-style: italic;
-}
-
-.polaroid-card__voice-box {
-  margin-top: 16px;
-}
+.polaroid-card__back-title { font-size: 16px; font-weight: 800; color: #9f1239; margin-bottom: 12px; }
+.polaroid-card__back-text { font-size: 14px; line-height: 1.8; color: #374151; font-style: italic; }
+.polaroid-card__voice-box { margin-top: 16px; }
 
 .polaroid-card__voice-btn {
   background: #fff1f2;
@@ -543,11 +475,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
-
-.polaroid-card__voice-btn:hover {
-  background: #ffe4e6;
-  transform: scale(1.02);
-}
+.polaroid-card__voice-btn:hover { background: #ffe4e6; transform: scale(1.02); }
 
 .polaroid-card__back-footer {
   display: flex;
@@ -557,10 +485,8 @@
   font-weight: 700;
 }
 
-/* ================= 7. 恋爱 100 件小事清单 ================= */
-.checklist-section {
-  margin-bottom: 45px;
-}
+/* 100 件事 */
+.checklist-section { margin-bottom: 45px; }
 
 .checklist-card {
   background: var(--space-card);
@@ -629,9 +555,7 @@
   user-select: none;
 }
 
-.checklist-item__checkbox {
-  display: none;
-}
+.checklist-item__checkbox { display: none; }
 
 .checklist-item__custom-box {
   width: 18px;
@@ -670,10 +594,8 @@
   opacity: 0.6;
 }
 
-/* ================= 8. 恋爱特权刮刮乐与印章 ================= */
-.scratch-section {
-  margin-bottom: 45px;
-}
+/* 刮刮乐 */
+.scratch-section { margin-bottom: 45px; }
 
 .scratch-grid {
   display: grid;
@@ -703,41 +625,12 @@
   position: relative;
 }
 
-.scratch-card__header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.scratch-card__header { display: flex; align-items: center; gap: 8px; }
+.scratch-card__icon { font-size: 24px; }
+.scratch-card__title { font-size: 16px; font-weight: 900; color: #92400e; }
+.scratch-card__text { font-size: 13.5px; font-weight: 600; color: #451a03; line-height: 1.5; margin: 10px 0; }
+.scratch-card__canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; touch-action: none; cursor: grab; }
 
-.scratch-card__icon {
-  font-size: 24px;
-}
-
-.scratch-card__title {
-  font-size: 16px;
-  font-weight: 900;
-  color: #92400e;
-}
-
-.scratch-card__text {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #451a03;
-  line-height: 1.5;
-  margin: 10px 0;
-}
-
-.scratch-card__canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 5;
-  touch-action: none;
-  cursor: grab;
-}
-
-/* 拟真复古红色已核销印章 */
 .scratch-stamp {
   position: absolute;
   top: 50%;
@@ -767,21 +660,10 @@
   background: rgba(220, 38, 38, 0.08);
 }
 
-.scratch-stamp__status {
-  font-size: 18px;
-  font-weight: 900;
-  color: var(--stamp-red);
-  letter-spacing: 2px;
-}
+.scratch-stamp__status { font-size: 18px; font-weight: 900; color: var(--stamp-red); letter-spacing: 2px; }
+.scratch-stamp__time { font-size: 9.5px; font-weight: 800; color: var(--stamp-red); font-family: ui-monospace, monospace; }
 
-.scratch-stamp__time {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: var(--stamp-red);
-  font-family: ui-monospace, monospace;
-}
-
-/* ================= 9. 拟真黑胶唱片机悬浮器 ================= */
+/* 🌟 拟真质感黑胶唱片机 (同心圆反光纹理 + 防破损优雅设计) */
 .vinyl-player {
   position: fixed;
   bottom: 24px;
@@ -789,27 +671,38 @@
   z-index: 40000;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .vinyl-player__disc {
-  width: 58px;
-  height: 58px;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
-  background: radial-gradient(circle at center, #0f172a 30%, #020617 70%);
-  border: 3px solid #1e293b;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 12px var(--rose-gold-glow);
+  background: 
+    radial-gradient(circle at center, transparent 28%, rgba(255,255,255,0.06) 29%, transparent 30%),
+    radial-gradient(circle at center, transparent 48%, rgba(255,255,255,0.04) 49%, transparent 50%),
+    radial-gradient(circle at center, #111827 0%, #030712 100%);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(251, 113, 133, 0.3);
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
+/* 唱片中心封面：未传图时优雅显示粉金心动渐变，绝不破损 */
 .vinyl-player__cover {
   width: 26px;
   height: 26px;
   border-radius: 50%;
   object-fit: cover;
+  background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.6);
 }
 
 .vinyl-player__needle {
@@ -825,9 +718,7 @@
   transition: transform 0.4s var(--ease-spring);
 }
 
-.vinyl-player__needle--play {
-  transform: rotate(0deg);
-}
+.vinyl-player__needle--play { transform: rotate(0deg); }
 
 .vinyl-player__btn {
   width: 38px;
@@ -845,12 +736,9 @@
   backdrop-filter: blur(12px);
   transition: transform 0.2s ease;
 }
+.vinyl-player__btn:hover { transform: scale(1.1); }
 
-.vinyl-player__btn:hover {
-  transform: scale(1.1);
-}
-
-/* ================= 10. 彩蛋触发器与弹窗 ================= */
+/* 彩蛋与海报 */
 .easter-egg-trigger {
   position: fixed;
   font-size: 20px;
@@ -860,21 +748,9 @@
   opacity: 0.7;
   transition: opacity 0.2s, transform 0.2s;
 }
-
-.easter-egg-trigger:hover {
-  opacity: 1;
-  transform: scale(1.2);
-}
-
-.easter-egg-trigger--star {
-  top: 30px;
-  right: 25px;
-}
-
-.easter-egg-trigger--paw {
-  bottom: 30px;
-  right: 25px;
-}
+.easter-egg-trigger:hover { opacity: 1; transform: scale(1.2); }
+.easter-egg-trigger--star { top: 30px; right: 25px; }
+.easter-egg-trigger--paw { bottom: 30px; right: 25px; }
 
 .egg-modal,
 .poster-modal {
@@ -902,23 +778,6 @@
   text-align: center;
 }
 
-.egg-modal__body {
-  font-size: 14.5px;
-  line-height: 1.6;
-  color: #fef3c7;
-  font-weight: 700;
-  margin-bottom: 20px;
-}
-
-.poster-modal__tip {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 10px;
-}
-
-.poster-modal__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 16px;
-}
+.egg-modal__body { font-size: 14.5px; line-height: 1.6; color: #fef3c7; font-weight: 700; margin-bottom: 20px; }
+.poster-modal__tip { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+.poster-modal__actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
