@@ -2,7 +2,7 @@
  * ====================================================================
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: js/config.js
- * 作用: 全站个性化数据中心 (内置高可用云端音乐库与开箱即用档案)
+ * 作用: 全站个性化数据配置中枢 (生活化 100 件事清单 + 趣味特权刮刮乐)
  * ====================================================================
  */
 
@@ -35,11 +35,11 @@ window.LOVE_CONFIG = {
 
   // ================= 3. 音频系统与背景音乐 =================
   audio: {
-    bgmAutoPlay: true, // 默认开启自动播放
+    bgmAutoPlay: true,
     bgmUrl: "https://music.163.com/song/media/outer/url?id=436514312.mp3", // 周杰伦 - 告白气球
     bgmTitle: "告白气球",
     bgmArtist: "周杰伦",
-    vinylCover: "", // 留空自动显示粉金心动标识 ❤️
+    vinylCover: "",
     sounds: {
       gatekeeperPass: "",
       gatekeeperError: "",
@@ -94,24 +94,66 @@ window.LOVE_CONFIG = {
     }
   ],
 
-  // ================= 6. 恋爱 100 件小事 =================
+  // ================= 6. 恋爱 100 件小事清单 (精选生活化与浪漫小事) =================
   checklist100: [
-    { id: 1, title: "一起在海边看一次日出", completed: true },
-    { id: 2, title: "一起坐摩天轮并在最高点接吻", completed: true },
-    { id: 3, title: "穿情侣装去游乐园打卡", completed: true },
-    { id: 4, title: "为对方亲手做一顿烛光晚餐", completed: false },
-    { id: 5, title: "在雨天共撑一把伞漫步", completed: true },
-    { id: 6, title: "一起去听一场偶像的演唱会", completed: false },
-    { id: 7, title: "去没有光污染的山顶数流星", completed: false },
-    { id: 8, title: "一起自驾去远方公路旅行", completed: false }
+    { id: 1, title: "一起在海边看一次日出破晓", completed: true },
+    { id: 2, title: "坐一次摩天轮并在最高点接吻", completed: true },
+    { id: 3, title: "穿情侣装去游乐园痛快玩一天", completed: true },
+    { id: 4, title: "亲手为对方做一顿四菜一汤的烛光晚餐", completed: false },
+    { id: 5, title: "在夏天下暴雨时共撑一把伞漫步回家", completed: true },
+    { id: 6, title: "一起去现场听一场最喜欢的歌手演唱会", completed: false },
+    { id: 7, title: "在远离城市的山顶露营，数着流星入睡", completed: false },
+    { id: 8, title: "来一场说走就走的公路自驾旅行", completed: false },
+    { id: 9, title: "冬天躲在同一床被窝里通宵看老电影", completed: true },
+    { id: 10, title: "一起去拍一组搞怪又甜蜜的九宫格大头贴", completed: true },
+    { id: 11, title: "在对方生病时寸步不离地煮粥照顾一整天", completed: false },
+    { id: 12, title: "一起去陶艺馆亲手捏一对刻着名字的对杯", completed: false },
+    { id: 13, title: "换上睡衣在客厅里不开灯踩着音乐慢摇", completed: false },
+    { id: 14, title: "一起逛周末清晨的菜市场，挑选新鲜食材", completed: true },
+    { id: 15, title: "给对方吹干头发并轻轻梳顺", completed: true },
+    { id: 16, title: "一起拼完一幅 1000 块的高难度拼图并装框", completed: false },
+    { id: 17, title: "在雪地里打雪仗、堆一个两人的专属雪人", completed: false },
+    { id: 18, title: "去水族馆隔着玻璃看巨大的鲸鲨游过", completed: false },
+    { id: 19, title: "偷偷给对方准备一份藏在口袋里的惊喜小礼物", completed: true },
+    { id: 20, title: "教对方学会一项自己最擅长的技能或游戏", completed: false },
+    { id: 21, title: "在夕阳西下的天台上喝着啤酒聊未来", completed: false },
+    { id: 22, title: "一起养一盆绿植并把它养到开花", completed: false },
+    { id: 23, title: "早晨醒来在阳光里给对方一个长长的早安吻", completed: true },
+    { id: 24, title: "去对方从小长大的小学和街巷走一走", completed: false },
+    { id: 25, title: "一起去寺庙或教堂真诚地为彼此祈福", completed: false },
+    { id: 26, title: "在厨房里一个人做饭，另一个人从背后环抱", completed: true },
+    { id: 27, title: "去宜家像布置未来小家一样试躺每一张沙发", completed: true },
+    { id: 28, title: "穿上正装和礼服去吃一次高档法餐", completed: false },
+    { id: 29, title: "一起坐长途绿皮火车看窗外风景慢慢倒退", completed: false },
+    { id: 30, title: "在喝醉后吐露平时不好意思说的肉麻情话", completed: false },
+    { id: 31, title: "把对方随口说过的愿望悄悄记在手机备忘录里", completed: true },
+    { id: 32, title: "一起去动物收容所当一次义工撸猫喂狗", completed: false },
+    { id: 33, title: "手牵手逛完一整座博物馆并认真读每段介绍", completed: false },
+    { id: 34, title: "在夜市里从街头吃到街尾，互相投喂小吃", completed: true },
+    { id: 35, title: "一起去采摘园摘草莓或樱桃，吃到饱为止", completed: false },
+    { id: 36, title: "在对方睡着时偷偷看着睡颜笑出声", completed: true },
+    { id: 37, title: "一起去海边捡贝壳并把它们做成纪念标本", completed: false },
+    { id: 38, title: "两个人戴着同一副有线耳机听同一首歌散步", completed: true },
+    { id: 39, title: "在纪念日当天手写一封长长的纸质情书寄给对方", completed: false },
+    { id: 40, title: "一起看一次秋天的满山红叶或银杏大道", completed: false },
+    { id: 41, title: "在失落难过时给对方一个最踏实温暖的怀抱", completed: true },
+    { id: 42, title: "一起去电玩城抓娃娃直到把币全部投光", completed: true },
+    { id: 43, title: "给彼此起一个只有两个人知道的专属幼稚绰号", completed: true },
+    { id: 44, title: "在深夜街头喝一碗热气腾腾的馄饨", completed: true },
+    { id: 45, title: "一起规划一次属于两个人的出国长途旅行", completed: false },
+    { id: 46, title: "在无人的草坪上并排躺着看云朵变换形状", completed: false },
+    { id: 47, title: "给对方剪一次指甲，动作小心翼翼", completed: false },
+    { id: 48, title: "一起去烘焙店亲手烤一个并不完美但很甜的蛋糕", completed: false },
+    { id: 49, title: "吵架后不管多生气，不过夜并在睡觉前和好", completed: true },
+    { id: 50, title: "一起跨越漫长岁月，一直坚定地走到白头", completed: false }
   ],
 
-  // ================= 7. 恋爱特权刮刮乐 =================
+  // ================= 7. 恋爱特权刮刮乐 (实用生活化特权，拒绝耍赖) =================
   scratchCards: [
     {
       id: "card_1",
-      title: "无条件原谅券",
-      content: "凭此券可无条件平息一次争吵，男方必须立刻认错并附带抱抱！",
+      title: "无条件和好券",
+      content: "吵架拌嘴时亮出此券，双方必须立刻停止争论，男生主动认错并附带一个温暖长抱！",
       icon: "🕊️",
       scratched: false,
       used: false,
@@ -119,8 +161,8 @@ window.LOVE_CONFIG = {
     },
     {
       id: "card_2",
-      title: "深夜外卖买单券",
-      content: "无论多晚，指定想吃的外卖由男方全额买单并送至手上！",
+      title: "深夜外卖买单卡",
+      content: "无论多晚，指定想喝的奶茶、烧烤或甜点，由对方全额买单并贴心送至手上！",
       icon: "🍟",
       scratched: false,
       used: false,
@@ -128,18 +170,72 @@ window.LOVE_CONFIG = {
     },
     {
       id: "card_3",
-      title: "揉肩捏腿 30 分钟",
-      content: "享受 VIP 级上门按摩服务，力度任选，随时可兑现！",
-      icon: "💆",
+      title: "温柔洗头吹发 VIP",
+      content: "享受专属洗头与吹风机造型护理一次，包含轻柔头部按摩，包君满意！",
+      icon: "💆‍♀️",
       scratched: false,
       used: false,
       usedTime: ""
     },
     {
       id: "card_4",
-      title: "任意心愿神仙卡",
-      content: "空白特权券！由持券人自由指定任意心愿，不得拒绝！",
-      icon: "👑",
+      title: "家务全包免死金牌",
+      content: "使用当天，所有的洗碗、扫地、倒垃圾等杂务全部由对方一人承包，安心当树懒！",
+      icon: "🧹",
+      scratched: false,
+      used: false,
+      usedTime: ""
+    },
+    {
+      id: "card_5",
+      title: "爱心定制晚餐点单券",
+      content: "可任意指定 3 道想吃的拿手家常菜，对方负责买菜、下厨与摆盘！",
+      icon: "🍳",
+      scratched: false,
+      used: false,
+      usedTime: ""
+    },
+    {
+      id: "card_6",
+      title: "周末赖床早安抱抱卡",
+      content: "周末早晨拥有无限期赖床特权，不催起床，并享受 30 分钟专属早安温存抱抱！",
+      icon: "🛌",
+      scratched: false,
+      used: false,
+      usedTime: ""
+    },
+    {
+      id: "card_7",
+      title: "电影题材绝对选择权",
+      content: "下次看电影时，不论爱情片、恐怖片还是文艺片，完全由持券人 100% 决定！",
+      icon: "🍿",
+      scratched: false,
+      used: false,
+      usedTime: ""
+    },
+    {
+      id: "card_8",
+      title: "30 分钟全身解乏按摩",
+      content: "享受捏肩、按背、揉腿全套服务，力度随叫随调，随时随地可兑现！",
+      icon: "💆‍♂️",
+      scratched: false,
+      used: false,
+      usedTime: ""
+    },
+    {
+      id: "card_9",
+      title: "耐心陪逛陪玩卡",
+      content: "陪逛街试衣服或陪打游戏半天，全程负责提包/支援，保持全程微笑与耐心！",
+      icon: "🛍️",
+      scratched: false,
+      used: false,
+      usedTime: ""
+    },
+    {
+      id: "card_10",
+      title: "清空一件心愿小礼物",
+      content: "购物车里收藏已久的一件心仪小物件，今天由对方毫不犹豫为你买单清空！",
+      icon: "🎁",
       scratched: false,
       used: false,
       usedTime: ""
