@@ -6,6 +6,7 @@
   <title>👑 漫游宇宙控制中心</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23f59e0b'/><text x='50' y='64' font-size='38' text-anchor='middle' fill='%23ffffff' font-family='sans-serif' font-weight='bold'>👑</text></svg>">
   <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/themes.css">
 </head>
 <body>
 
@@ -49,6 +50,7 @@
         <button class="tab-btn" data-tab="tab-scratch">🎟️ 6. 恋爱特权刮刮乐</button>
         <button class="tab-btn" data-tab="tab-audio">🎵 7. 音乐与多媒体中枢</button>
         <button class="tab-btn" data-tab="tab-eggs">🐣 8. 隐藏彩蛋悄悄话</button>
+        <button class="tab-btn" data-tab="tab-theme">🎨 9. 主题陈列室 (风格换肤)</button>
       </nav>
 
       <div class="admin-content">
@@ -133,7 +135,7 @@
         <section id="tab-scratch" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
-              <h3>🎟️ 恋爱特权兑换券</h3>
+              <h3>🎟️ 恋爱特权刮刮乐</h3>
               <p>管理特权券标题、内容与图标，支持一键重置已使用印章。</p>
             </div>
             <button class="btn-add" onclick="addScratchCard()">➕ 新增特权卡券</button>
@@ -145,25 +147,40 @@
         <section id="tab-audio" class="tab-pane">
           <div class="pane-header">
             <h3>🎵 背景音乐与拟真黑胶唱片设置</h3>
-            <p>支持在线搜索云端音乐直连添加、选用推荐曲目，或直接上传本地 MP3。</p>
+            <p>输入关键词在线搜索、点击快捷热门标签，或直接上传本地 MP3 文件。</p>
           </div>
 
-          <!-- 🔍 在线音乐云端搜索器 -->
-          <div style="background: rgba(3, 7, 18, 0.6); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 16px; margin-bottom: 20px;">
-            <label style="font-size:12.5px; font-weight:800; color:#fde68a; margin-bottom:8px; display:block;">🔍 在线搜索云端音乐 (免上传，一键加入播放)</label>
+          <!-- 🔍 在线音乐云端搜索面板 -->
+          <div style="background: rgba(3, 7, 18, 0.65); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: 18px; padding: 18px; margin-bottom: 22px;">
+            <label style="font-size:13px; font-weight:800; color:#fde68a; margin-bottom:10px; display:block;">🔍 在线搜索云端音乐 (输入歌手/歌名即搜即用)</label>
+            
             <div style="display:flex; gap:8px; margin-bottom:12px;">
-              <input type="text" id="musicSearchKeyword" class="admin-input" placeholder="输入歌名/歌手 (例如: 晴天 / 告白气球 / 唯美钢琴)..." onkeydown="if(event.key==='Enter') executeOnlineMusicSearch();">
-              <button class="btn-tool" style="background:var(--gold); color:#fff; flex-shrink:0;" onclick="executeOnlineMusicSearch()">🔎 搜索歌曲</button>
+              <input type="text" id="musicSearchKeyword" class="admin-input" placeholder="输入歌名/歌手 (例如: 周杰伦 / 告白气球 / 晴天 / 浪漫钢琴)..." onkeydown="if(event.key==='Enter') executeOnlineMusicSearch();">
+              <button class="btn-tool" style="background:var(--gold); color:#fff; flex-shrink:0; padding:8px 18px;" onclick="executeOnlineMusicSearch()">🔎 搜索歌曲</button>
             </div>
-            <div id="onlineSearchResultList" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto;"></div>
+
+            <!-- 快捷热门情歌标签 -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+              <span style="font-size:11px; color:#94a3b8; font-weight:700; align-self:center;">热门推荐：</span>
+              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('周杰伦 告白气球')">🎵 告白气球</button>
+              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('周杰伦 晴天')">🎵 晴天</button>
+              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('周杰伦 简单爱')">🎵 简单爱</button>
+              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('周杰伦 七里香')">🎵 七里香</button>
+              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('Sweet Memories 浪漫钢琴')">🎹 唯美浪漫钢琴</button>
+            </div>
+
+            <!-- 搜索结果列表 -->
+            <div id="onlineSearchResultList" style="display:flex; flex-direction:column; gap:8px; max-height:240px; overflow-y:auto;">
+              <div style="color:#94a3b8; font-size:12px; text-align:center; padding:12px;">输入歌名搜索，或点击上方推荐标签</div>
+            </div>
           </div>
 
           <div class="form-grid">
             <div class="form-group">
               <label>是否尝试自动播放 BGM</label>
               <select id="audio_bgmAutoPlay" class="admin-select">
-                <option value="false">关闭自动播放 (点击黑胶播放，最稳定)</option>
-                <option value="true">开启自动播放</option>
+                <option value="true">开启自动播放 (推荐)</option>
+                <option value="false">关闭自动播放 (手动点击黑胶)</option>
               </select>
             </div>
             <div class="form-group"><label>当前 BGM 曲名</label><input type="text" id="audio_bgmTitle" class="admin-input"></div>
@@ -196,6 +213,26 @@
             <div class="form-group" style="grid-column: 1 / -1;"><label>🐾 猫爪彩蛋弹窗文案 (Egg 2)</label><textarea id="egg_2_message" class="admin-textarea" rows="3"></textarea></div>
           </div>
         </section>
+
+        <!-- 9. 主题陈列室 -->
+        <section id="tab-theme" class="tab-pane">
+          <div class="pane-header">
+            <h3>🎨 主题陈列室 · 多维情感视觉风格</h3>
+            <p>点击选择不同风格，系统将自动切换粒子物理引擎与色彩光效；亦可上传专属高清大图打底。</p>
+          </div>
+
+          <!-- 主题卡片陈列网格 -->
+          <div class="theme-showroom-grid" id="themeShowroomContainer" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;"></div>
+
+          <!-- 自定义高清背景图上传 -->
+          <div style="background: rgba(3, 7, 18, 0.65); border: 1.5px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px;">
+            <label style="font-size:13px; font-weight:800; color:#fde68a; margin-bottom:8px; display:block;">🖼️ 自定义高清背景大图 (可选 · 叠加在主题粒子下方)</label>
+            <div class="upload-input-group">
+              <input type="text" id="theme_customBgUrl" class="admin-input" placeholder="留空则使用主题默认质感背景，支持输入直链或上传...">
+              <button class="btn-upload" onclick="triggerDirectUpload('theme_customBgUrl', 'image/*')">📤 上传高清背景</button>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -204,6 +241,7 @@
   <div id="toast" class="admin-toast">✓ 操作成功</div>
 
   <script src="js/config.js"></script>
+  <script src="js/theme-engine.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>
