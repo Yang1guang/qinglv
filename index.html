@@ -177,11 +177,14 @@
 
   <!-- ================= 3. 全局悬浮与彩蛋组件 ================= -->
   
-  <!-- 拟真黑胶唱片机悬浮器 -->
+  <!-- 拟真黑胶唱片机悬浮器 (支持点击唱片/按钮双触发，无图自动展示爱心) -->
   <aside class="vinyl-player" id="vinyl-player">
     <div class="vinyl-player__needle" id="vinyl-needle"></div>
-    <div class="vinyl-player__disc" id="vinyl-disc">
-      <img id="vinyl-cover" class="vinyl-player__cover" src="assets/images/vinyl-cover.jpg" alt="Cover">
+    <div class="vinyl-player__disc" id="vinyl-disc" title="点击播放/暂停音乐">
+      <div class="vinyl-player__center-core">
+        <span class="vinyl-player__default-heart">❤️</span>
+        <img id="vinyl-cover" class="vinyl-player__cover" src="" alt="" onerror="this.style.display='none'" onload="this.style.display='block'">
+      </div>
     </div>
     <div class="vinyl-player__control">
       <button class="vinyl-player__btn" id="audio-toggle-btn" title="播放/暂停">🎵</button>
