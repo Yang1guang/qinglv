@@ -56,7 +56,7 @@
   backdrop-filter: blur(8px);
 }
 
-/* 门禁 */
+/* 门禁层 */
 .gatekeeper {
   position: fixed;
   inset: 0;
@@ -142,7 +142,7 @@
 
 .gatekeeper__btn { width: 100%; padding: 13px 20px; font-size: 15px; }
 
-/* 头部同行计时器 */
+/* 头部视差区与同行计时器 */
 .hero-section {
   text-align: center;
   margin-bottom: 36px;
@@ -663,15 +663,16 @@
 .scratch-stamp__status { font-size: 18px; font-weight: 900; color: var(--stamp-red); letter-spacing: 2px; }
 .scratch-stamp__time { font-size: 9.5px; font-weight: 800; color: var(--stamp-red); font-family: ui-monospace, monospace; }
 
-/* 🌟 拟真质感黑胶唱片机 (同心圆反光纹理 + 防破损优雅设计) */
+/* 🌟 全局悬浮黑胶唱片机 (层级提升至 55000 保证随时可点击) */
 .vinyl-player {
   position: fixed;
   bottom: 24px;
   left: 20px;
-  z-index: 40000;
+  z-index: 55000;
   display: flex;
   align-items: center;
   gap: 12px;
+  pointer-events: auto;
 }
 
 .vinyl-player__disc {
@@ -689,20 +690,39 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  user-select: none;
+  pointer-events: auto;
 }
 
-/* 唱片中心封面：未传图时优雅显示粉金心动渐变，绝不破损 */
-.vinyl-player__cover {
-  width: 26px;
-  height: 26px;
+.vinyl-player__center-core {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  object-fit: cover;
   background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 1px 2px rgba(255,255,255,0.6);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.4);
+  pointer-events: none;
+}
+
+.vinyl-player__default-heart {
+  font-size: 13px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.vinyl-player__cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  pointer-events: none;
 }
 
 .vinyl-player__needle {
@@ -715,28 +735,35 @@
   background-size: contain;
   transform-origin: top right;
   transform: rotate(-30deg);
-  transition: transform 0.4s var(--ease-spring);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 
-.vinyl-player__needle--play { transform: rotate(0deg); }
+.vinyl-player__needle--play {
+  transform: rotate(0deg);
+}
 
 .vinyl-player__btn {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: var(--space-card);
-  border: 1px solid var(--glass-border);
+  background: rgba(20, 20, 38, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   color: #ffffff;
   font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--glass-shadow);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   backdrop-filter: blur(12px);
   transition: transform 0.2s ease;
+  pointer-events: auto;
 }
-.vinyl-player__btn:hover { transform: scale(1.1); }
+
+.vinyl-player__btn:hover {
+  transform: scale(1.1);
+}
 
 /* 彩蛋与海报 */
 .easter-egg-trigger {
