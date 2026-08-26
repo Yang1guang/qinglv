@@ -1,6 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: js/effects.js
+ * 作用: 全屏星空流星、烟花彩带粒子、音乐播放与黑胶唱片总控
  */
 
 class EffectsManager {
@@ -9,8 +10,7 @@ class EffectsManager {
     this.audioCtx = null;
     this.bgm = null;
     this.isPlayingBgm = false;
-    // 默认兜底：周杰伦 - 告白气球
-    this.fallbackMusic = "https://music.163.com/song/media/outer/url?id=436514312.mp3";
+    this.fallbackMusic = "https://music.163.com/song/media/outer/url?id=1827600686.mp3";
   }
 
   init() {
@@ -27,7 +27,6 @@ class EffectsManager {
       this.updateVinylUI(false);
     }
     this.initBgmInstance();
-    // 如果后台设置为自动播放，则热更新后直接起播
     if (newConfig.audio?.bgmAutoPlay) {
       this.playBgm();
     }
@@ -43,16 +42,16 @@ class EffectsManager {
     }
   }
 
-  /* ================= 音频播放与自动播放调度 ================= */
+  /* ================= 音乐播放与黑胶唱片联动 ================= */
   initAudioSystem() {
     this.initBgmInstance();
 
     const toggleBtn = document.getElementById("audio-toggle-btn");
     const vinylDisc = document.getElementById("vinyl-disc");
 
-    // 手动点击统一为切换（播放中点击则关闭，关闭中点击则开启）
     if (toggleBtn) {
       toggleBtn.onclick = (e) => {
+        e.preventDefault();
         e.stopPropagation();
         this.ensureAudioContext();
         this.toggleBgm();
@@ -61,32 +60,31 @@ class EffectsManager {
 
     if (vinylDisc) {
       vinylDisc.onclick = (e) => {
+        e.preventDefault();
         e.stopPropagation();
         this.ensureAudioContext();
         this.toggleBgm();
       };
     }
 
-    // 突破移动端浏览器安全策略：首次点击/触摸屏幕时若未起播则立即自动播放
-    const autoPlayTrigger = () => {
+    // 监听任意手势与按键，唤醒并自动起播
+    const gestureAutoPlay = () => {
       this.ensureAudioContext();
       if (this.config.audio?.bgmAutoPlay !== false && !this.isPlayingBgm) {
         this.playBgm();
       }
-      window.removeEventListener("click", autoPlayTrigger);
-      window.removeEventListener("touchstart", autoPlayTrigger);
-      window.removeEventListener("keydown", autoPlayTrigger);
+      window.removeEventListener("click", gestureAutoPlay);
+      window.removeEventListener("touchstart", gestureAutoPlay);
+      window.removeEventListener("keydown", gestureAutoPlay);
     };
 
-    window.addEventListener("click", autoPlayTrigger);
-    window.addEventListener("touchstart", autoPlayTrigger);
-    window.addEventListener("keydown", autoPlayTrigger);
+    window.addEventListener("click", gestureAutoPlay, { passive: true });
+    window.addEventListener("touchstart", gestureAutoPlay, { passive: true });
+    window.addEventListener("keydown", gestureAutoPlay, { passive: true });
 
-    // 页面加载完毕后尝试立即起播
+    // 初始化时直接尝试自动播放
     if (this.config.audio?.bgmAutoPlay !== false) {
-      setTimeout(() => {
-        this.playBgm();
-      }, 300);
+      setTimeout(() => { this.playBgm(); }, 500);
     }
   }
 
@@ -108,9 +106,12 @@ class EffectsManager {
       targetUrl = this.fallbackMusic;
     }
 
-    this.bgm = new Audio(targetUrl);
-    this.bgm.loop = true;
-    this.bgm.preload = "auto";
+    if (!this.bgm) {
+      this.bgm = new Audio();
+      this.bgm.loop = true;
+      this.bgm.preload = "auto";
+    }
+    this.bgm.src = targetUrl;
   }
 
   toggleBgm() {
@@ -132,16 +133,17 @@ class EffectsManager {
     };
 
     doPlay().catch(() => {
-      // 灾备切换
-      this.bgm = new Audio(this.fallbackMusic);
-      this.bgm.loop = true;
-      this.bgm.play().then(() => {
-        this.isPlayingBgm = true;
-        this.updateVinylUI(true);
-      }).catch(() => {
+      // 切换至备用流重试
+      if (this.bgm.src !== this.fallbackMusic) {
+        this.bgm.src = this.fallbackMusic;
+        doPlay().catch(() => {
+          this.isPlayingBgm = false;
+          this.updateVinylUI(false);
+        });
+      } else {
         this.isPlayingBgm = false;
         this.updateVinylUI(false);
-      });
+      }
     });
   }
 
@@ -433,7 +435,6 @@ class EffectsManager {
   }
 }
 
-// 挂载实例
 window.Effects = new EffectsManager(window.LOVE_CONFIG);
 document.addEventListener("DOMContentLoaded", () => {
   window.Effects.init();
