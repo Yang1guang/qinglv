@@ -8,11 +8,13 @@ let currentAdminToken = "";
 
 function showToast(msg) {
   const toast = document.getElementById("toast");
+  if (!toast) return;
   toast.textContent = msg;
   toast.classList.add("show");
   setTimeout(() => toast.classList.remove("show"), 2500);
 }
 
+// 1. 验证管理员口令
 async function verifyAdminLogin() {
   const pwdInput = document.getElementById("adminPwdInput");
   const pwd = pwdInput.value.trim();
@@ -31,6 +33,7 @@ async function verifyAdminLogin() {
   }
 }
 
+// 2. 从 R2 拉取配置
 async function fetchConfigFromCloud() {
   try {
     const res = await fetch("/api/love/config", {
@@ -55,6 +58,7 @@ async function fetchConfigFromCloud() {
   }
 }
 
+// 3. 渲染所有表单
 function renderAllForms() {
   if (!currentConfig) return;
 
@@ -86,7 +90,7 @@ function renderAllForms() {
   renderScratchCards();
 
   const audio = currentConfig.audio || {};
-  document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay === true);
+  document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay !== false);
   document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "";
   document.getElementById("audio_bgmArtist").value = audio.bgmArtist || "";
   document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "";
@@ -95,8 +99,67 @@ function renderAllForms() {
   const eggs = currentConfig.easterEggs || [];
   document.getElementById("egg_1_message").value = eggs[0]?.message || "";
   document.getElementById("egg_2_message").value = eggs[1]?.message || "";
+
+  renderThemeShowroom();
 }
 
+// ================= 🎨 9. 主题陈列室渲染与交互 =================
+function renderThemeShowroom() {
+  const container = document.getElementById("themeShowroomContainer");
+  if (!container) return;
+
+  const currentSelected = currentConfig.theme?.currentTheme || "sunset-twilight";
+  const defaultThemes = {
+    "sunset-twilight": { id: "sunset-twilight", name: "🌌 暮色星河", tag: "浪漫 / 温暖", desc: "落日余晖与闪烁星空交织，带尾迹的流星雨穿梭" },
+    "sakura-romance": { id: "sakura-romance", name: "🌸 初雪樱花", tag: "温柔 / 唯美", desc: "3D 翻转花瓣受微风吹拂徐徐飘落，触碰指尖随风舞动" },
+    "cyber-space": { id: "cyber-space", name: "⚡ 赛博漫游", tag: "科技 / 帅气", desc: "霓虹光束与全息矩阵粒子穿梭，极具未来科幻质感" },
+    "firefly-forest": { id: "firefly-forest", name: "🌲 萤火森林", tag: "治愈 / 深邃", desc: "幽绿森林夜空中的发光萤火虫，忽明忽暗灵动飞舞" },
+    "warm-ember": { id: "warm-ember", name: "🔥 炽热余烬", tag: "热情 / 爱意", desc: "如壁炉般缓缓升腾的火星余烬，温暖深沉而热烈" },
+    "sweet-dream": { id: "sweet-dream", name: "🍬 奶油甜梦", tag: "可爱 / 治愈", desc: "梦幻半透明糖果气泡缓缓升起，伴随微光折射动效" }
+  };
+
+  const themes = (window.ThemeEngine && window.ThemeEngine.registry) ? window.ThemeEngine.registry : defaultThemes;
+
+  container.innerHTML = Object.keys(themes).map(key => {
+    const item = themes[key];
+    const isSelected = item.id === currentSelected;
+    return `
+      <div 
+        class="theme-card ${isSelected ? 'theme-card--selected' : ''}" 
+        onclick="selectThemeCard('${item.id}')"
+        style="
+          background: ${isSelected ? 'rgba(244, 63, 94, 0.18)' : 'rgba(3, 7, 18, 0.6)'};
+          border: 1.5px solid ${isSelected ? '#f43f5e' : 'rgba(255,255,255,0.1)'};
+          box-shadow: ${isSelected ? '0 0 20px rgba(244, 63, 94, 0.3)' : 'none'};
+          border-radius: 16px; padding: 16px; cursor: pointer; transition: all 0.2s;
+          display: flex; flex-direction: column; justify-content: space-between;
+        "
+      >
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:15px; font-weight:900; color:#fff;">${item.name}</span>
+            <span style="font-size:10.5px; font-weight:800; background:rgba(255,255,255,0.1); color:#fde68a; padding:2px 8px; border-radius:12px;">${item.tag}</span>
+          </div>
+          <p style="font-size:12px; color:#94a3b8; line-height:1.5; margin-bottom:12px;">${item.desc}</p>
+        </div>
+        <div style="font-size:12px; font-weight:800; color:${isSelected ? '#f43f5e' : '#64748b'}; text-align:right;">
+          ${isSelected ? '✓ 当前应用中' : '点击切换'}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  document.getElementById("theme_customBgUrl").value = currentConfig.theme?.customBgUrl || "";
+}
+
+function selectThemeCard(themeId) {
+  if (!currentConfig.theme) currentConfig.theme = {};
+  currentConfig.theme.currentTheme = themeId;
+  renderThemeShowroom();
+  showToast(`✓ 已选择主题【${themeId}】，请点击右上角保存发布！`);
+}
+
+// ================= 🔍 在线音乐云端搜索引擎与流畅试听控制 =================
 function quickSearchTag(tagText) {
   document.getElementById("musicSearchKeyword").value = tagText;
   executeOnlineMusicSearch();
@@ -187,6 +250,7 @@ function selectCloudMusic(title, artist, url) {
   showToast(`✓ 已成功将【${title}】填入配置，请点击右上角保存！`);
 }
 
+// ================= 🧹 一键清理 R2 历史无用废弃缓存 =================
 async function cleanOrphanR2Cache() {
   if (!confirm("⚠️ 确定要清理 R2 存储桶中不再使用的历史废弃照片与音频吗？\n（当前正在使用的文件绝对不会被删除，仅删除未引用的缓存）")) return;
 
@@ -208,6 +272,7 @@ async function cleanOrphanR2Cache() {
   }
 }
 
+// ================= 动态列表渲染 =================
 function renderTimelineList() {
   const container = document.getElementById("timelineListContainer");
   container.innerHTML = "";
@@ -410,6 +475,7 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
+// ================= 保存全量配置 =================
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
 
@@ -453,6 +519,11 @@ async function saveAllConfigToCloud() {
     { id: "egg_1", selector: "#egg-star", message: document.getElementById("egg_1_message").value.trim() },
     { id: "egg_2", selector: "#egg-paw", message: document.getElementById("egg_2_message").value.trim() }
   ];
+
+  currentConfig.theme = {
+    currentTheme: currentConfig.theme?.currentTheme || "sunset-twilight",
+    customBgUrl: document.getElementById("theme_customBgUrl") ? document.getElementById("theme_customBgUrl").value.trim() : ""
+  };
 
   showToast("⏳ 正在发布到 R2 云端...");
 
