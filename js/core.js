@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     closePosterBtn: document.getElementById("close-poster-btn")
   };
 
-  // 3. 填充基础静态数据
+  // 3. 填充基础数据
   if (config.meta) {
     if (dom.heroNames) dom.heroNames.textContent = `${config.meta.boyName || "男孩"} & ${config.meta.girlName || "女孩"}`;
     if (dom.heroSubtitle) dom.heroSubtitle.textContent = config.meta.siteSubtitle || "";
@@ -74,8 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const inputVal = dom.gatekeeperInput.value.trim().toLowerCase();
     const correctVal = String(gateCfg.correctAnswer || "240520").trim().toLowerCase();
 
-    // 🕵️ 超级隐蔽暗号：输入 admin#521 直接静默跳转后台
-    if (inputVal === "admin#521" || inputVal === "admin" || inputVal === "521") {
+    // 🕵️ 超级暗号直通：输入 521 或 admin#521 静默进入后台管理
+    if (inputVal === "521" || inputVal === "admin#521" || inputVal === "admin") {
       location.href = "admin.html";
       return;
     }
@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // 5. 打字机情书
+  // 5. 打字机告白
   function startTypewriter() {
     const letterCfg = config.letter || {};
     if (dom.letterTitle && letterCfg.title) dom.letterTitle.textContent = letterCfg.title;
@@ -226,8 +226,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     canvas.height = 1920;
 
     const bgGradient = ctx.createLinearGradient(0, 0, 0, 1920);
-    bgGradient.addColorStop(0, "#171b30");
-    bgGradient.addColorStop(0.5, "#0b1120");
+    bgGradient.addColorStop(0, "#1e1b4b");
+    bgGradient.addColorStop(0.5, "#0f172a");
     bgGradient.addColorStop(1, "#070a14");
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, 1080, 1920);
