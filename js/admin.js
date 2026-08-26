@@ -1,5 +1,5 @@
 /**
- * 太阳 ios-IP · 漫游宇宙控制中心驱动逻辑
+ * 恋爱时光轴 & 漫游宇宙 (Love Universe) 控制中心逻辑
  * 文件名: js/admin.js
  */
 
@@ -10,7 +10,7 @@ function showToast(msg) {
   const toast = document.getElementById("toast");
   toast.textContent = msg;
   toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 2200);
+  setTimeout(() => toast.classList.remove("show"), 2500);
 }
 
 // 1. 验证管理员口令
@@ -22,18 +22,17 @@ async function verifyAdminLogin() {
   currentAdminToken = pwd;
   localStorage.setItem("love_admin_token", pwd);
 
-  // 尝试拉取配置
   const success = await fetchConfigFromCloud();
   if (success) {
     document.getElementById("authModal").style.display = "none";
     document.getElementById("adminLayout").style.display = "block";
-    showToast("✓ 验证成功，已加载配置");
+    showToast("✓ 验证成功，已加载最新配置");
   } else {
     alert("❌ 口令错误或无法连接云端！");
   }
 }
 
-// 2. 从 R2 云端拉取配置 (若无则使用本地默认配置)
+// 2. 从 R2 拉取配置
 async function fetchConfigFromCloud() {
   try {
     const res = await fetch("/api/love/config", {
@@ -45,7 +44,6 @@ async function fetchConfigFromCloud() {
       if (data.custom && data.config) {
         currentConfig = data.config;
       } else {
-        // 使用 window.LOVE_CONFIG 兜底
         currentConfig = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
       }
       renderAllForms();
@@ -59,11 +57,10 @@ async function fetchConfigFromCloud() {
   }
 }
 
-// 3. 渲染所有 8 大模块表单数据
+// 3. 渲染所有表单
 function renderAllForms() {
   if (!currentConfig) return;
 
-  // 1. 基础档案
   const meta = currentConfig.meta || {};
   document.getElementById("meta_boyName").value = meta.boyName || "";
   document.getElementById("meta_girlName").value = meta.girlName || "";
@@ -73,7 +70,6 @@ function renderAllForms() {
   document.getElementById("meta_siteTitle").value = meta.siteTitle || "";
   document.getElementById("meta_siteSubtitle").value = meta.siteSubtitle || "";
 
-  // 2. 门禁
   const gate = currentConfig.gatekeeper || {};
   document.getElementById("gatekeeper_enabled").value = String(gate.enabled !== false);
   document.getElementById("gatekeeper_title").value = gate.title || "";
@@ -82,23 +78,16 @@ function renderAllForms() {
   document.getElementById("gatekeeper_correctAnswer").value = gate.correctAnswer || "";
   document.getElementById("gatekeeper_errorTips").value = (gate.errorTips || []).join("\n");
 
-  // 3. 告白信
   const letter = currentConfig.letter || {};
   document.getElementById("letter_title").value = letter.title || "";
   document.getElementById("letter_signDate").value = letter.signDate || "";
   document.getElementById("letter_signature").value = letter.signature || "";
   document.getElementById("letter_content").value = letter.content || "";
 
-  // 4. 时光轴
   renderTimelineList();
-
-  // 5. 100 件事
   renderChecklist();
-
-  // 6. 刮刮乐
   renderScratchCards();
 
-  // 7. 音乐
   const audio = currentConfig.audio || {};
   document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay === true);
   document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "";
@@ -106,15 +95,89 @@ function renderAllForms() {
   document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "";
   document.getElementById("audio_vinylCover").value = audio.vinylCover || "";
 
-  // 8. 彩蛋
   const eggs = currentConfig.easterEggs || [];
   document.getElementById("egg_1_message").value = eggs[0]?.message || "";
   document.getElementById("egg_2_message").value = eggs[1]?.message || "";
 }
 
-// ================= 动态列表渲染与操作 =================
+// ================= 🔍 在线音乐云端搜索引擎 =================
+async function executeOnlineMusicSearch() {
+  const kw = document.getElementById("musicSearchKeyword").value.trim();
+  const listContainer = document.getElementById("onlineSearchResultList");
+  if (!kw) return alert("请输入要搜索的歌名或歌手！");
 
-// 4. 时光轴渲染
+  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:6px;">⏳ 正在连接云端音源库检索【${escapeHtml(kw)}】...</div>`;
+
+  try {
+    const res = await fetch(`/api/love/music-search?keyword=${encodeURIComponent(kw)}`);
+    const data = await res.json();
+
+    if (data.success && Array.isArray(data.songs) && data.songs.length > 0) {
+      listContainer.innerHTML = data.songs.map(song => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
+          <div>
+            <div style="font-size:13px; font-weight:800; color:#fff;">${escapeHtml(song.title)}</div>
+            <div style="font-size:11px; color:#94a3b8;">${escapeHtml(song.artist)}</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn-tool" style="padding:4px 8px; font-size:11px;" onclick="testPreviewAudio('${song.url}')">🎧 试听</button>
+            <button class="btn-tool" style="background:var(--gold); color:#fff; padding:4px 10px; font-size:11px;" onclick="selectCloudMusic('${escapeHtml(song.title)}', '${escapeHtml(song.artist)}', '${song.url}')">✓ 设为BGM</button>
+          </div>
+        </div>
+      `).join("");
+    } else {
+      listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:6px;">🍃 未找到相关歌曲，请尝试更简洁的关键词</div>`;
+    }
+  } catch (err) {
+    listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:6px;">❌ 检索超时，请重试</div>`;
+  }
+}
+
+let previewAudioObj = null;
+function testPreviewAudio(url) {
+  if (previewAudioObj) {
+    previewAudioObj.pause();
+    previewAudioObj = null;
+  }
+  previewAudioObj = new Audio(url);
+  previewAudioObj.play().then(() => showToast("🎵 正在试听曲目..."))
+    .catch(() => alert("该音乐源暂不可在线试听"));
+}
+
+function selectCloudMusic(title, artist, url) {
+  document.getElementById("audio_bgmTitle").value = title;
+  document.getElementById("audio_bgmArtist").value = artist;
+  document.getElementById("audio_bgmUrl").value = url;
+  if (previewAudioObj) {
+    previewAudioObj.pause();
+    previewAudioObj = null;
+  }
+  showToast(`✓ 已将【${title}】设为背景音乐！`);
+}
+
+// ================= 🧹 核心：一键清理 R2 历史无用废弃缓存 =================
+async function cleanOrphanR2Cache() {
+  if (!confirm("⚠️ 确定要清理 R2 存储桶中不再使用的历史废弃照片与音频吗？\n（当前正在使用的文件绝对不会被删除，仅删除未引用的缓存）")) return;
+
+  showToast("⏳ 正在深度扫描并清理 R2 孤立缓存...");
+
+  try {
+    const res = await fetch("/api/love/cleanup", {
+      method: "POST",
+      headers: { "x-admin-auth": currentAdminToken }
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(`✨ ${data.message}`);
+    } else {
+      alert("❌ 清理失败: " + (data.error || "接口异常"));
+    }
+  } catch (err) {
+    alert("❌ 请求异常: " + err.message);
+  }
+}
+
+// ================= 动态列表渲染 =================
 function renderTimelineList() {
   const container = document.getElementById("timelineListContainer");
   container.innerHTML = "";
@@ -129,12 +192,12 @@ function renderTimelineList() {
         <button class="btn-del" onclick="deleteTimelineNode(${idx})">🗑️ 删除</button>
       </div>
       <div class="form-grid">
-        <div class="form-group"><label>日期 (如: 2024.05.20)</label><input type="text" class="admin-input tl-date" value="${escapeHtml(item.date || "")}" onchange="currentConfig.timeline[${idx}].date=this.value"></div>
-        <div class="form-group"><label>标签 (如: 初遇心动)</label><input type="text" class="admin-input tl-tag" value="${escapeHtml(item.tag || "")}" onchange="currentConfig.timeline[${idx}].tag=this.value"></div>
-        <div class="form-group"><label>故事标题</label><input type="text" class="admin-input tl-title" value="${escapeHtml(item.title || "")}" onchange="currentConfig.timeline[${idx}].title=this.value"></div>
-        <div class="form-group"><label>地点 (如: 📍 晴天咖啡馆)</label><input type="text" class="admin-input tl-loc" value="${escapeHtml(item.location || "")}" onchange="currentConfig.timeline[${idx}].location=this.value"></div>
-        <div class="form-group" style="grid-column: 1 / -1;"><label>正面描述故事</label><textarea class="admin-textarea tl-desc" rows="2" onchange="currentConfig.timeline[${idx}].desc=this.value">${escapeHtml(item.desc || "")}</textarea></div>
-        <div class="form-group" style="grid-column: 1 / -1;"><label>背面手写私语留言</label><textarea class="admin-textarea tl-backText" rows="2" onchange="currentConfig.timeline[${idx}].backText=this.value">${escapeHtml(item.backText || "")}</textarea></div>
+        <div class="form-group"><label>日期 (如: 2024.05.20)</label><input type="text" class="admin-input" value="${escapeHtml(item.date || "")}" onchange="currentConfig.timeline[${idx}].date=this.value"></div>
+        <div class="form-group"><label>标签 (如: 初遇心动)</label><input type="text" class="admin-input" value="${escapeHtml(item.tag || "")}" onchange="currentConfig.timeline[${idx}].tag=this.value"></div>
+        <div class="form-group"><label>故事标题</label><input type="text" class="admin-input" value="${escapeHtml(item.title || "")}" onchange="currentConfig.timeline[${idx}].title=this.value"></div>
+        <div class="form-group"><label>地点 (如: 📍 晴天咖啡馆)</label><input type="text" class="admin-input" value="${escapeHtml(item.location || "")}" onchange="currentConfig.timeline[${idx}].location=this.value"></div>
+        <div class="form-group" style="grid-column: 1 / -1;"><label>正面描述故事</label><textarea class="admin-textarea" rows="2" onchange="currentConfig.timeline[${idx}].desc=this.value">${escapeHtml(item.desc || "")}</textarea></div>
+        <div class="form-group" style="grid-column: 1 / -1;"><label>背面手写私语留言</label><textarea class="admin-textarea" rows="2" onchange="currentConfig.timeline[${idx}].backText=this.value">${escapeHtml(item.backText || "")}</textarea></div>
         <div class="form-group">
           <label>拍立得正面照片链接</label>
           <div class="upload-input-group">
@@ -178,7 +241,6 @@ function deleteTimelineNode(idx) {
   }
 }
 
-// 5. 恋爱 100 件事渲染
 function renderChecklist() {
   const container = document.getElementById("checklistItemsContainer");
   container.innerHTML = "";
@@ -222,7 +284,6 @@ function deleteChecklistItem(idx) {
   renderChecklist();
 }
 
-// 6. 刮刮乐卡券渲染
 function renderScratchCards() {
   const container = document.getElementById("scratchCardsContainer");
   container.innerHTML = "";
@@ -274,7 +335,7 @@ function deleteScratchCard(idx) {
   renderScratchCards();
 }
 
-// ================= 文件直传 R2 引擎 =================
+// ================= 上传驱动 =================
 let activeUploadCallback = null;
 let activeUploadInputId = null;
 
@@ -291,7 +352,6 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   if (!file) return;
 
   showToast("⏳ 正在流式上传到 R2 存储桶...");
-
   const formData = new FormData();
   formData.append("file", file);
 
@@ -321,11 +381,10 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
-// ================= 收集并保存全站配置 =================
+// ================= 保存全量配置 =================
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
 
-  // 1. 收集 Meta
   currentConfig.meta = {
     boyName: document.getElementById("meta_boyName").value.trim(),
     girlName: document.getElementById("meta_girlName").value.trim(),
@@ -336,7 +395,6 @@ async function saveAllConfigToCloud() {
     siteSubtitle: document.getElementById("meta_siteSubtitle").value.trim()
   };
 
-  // 2. 收集 Gatekeeper
   const errorTipsRaw = document.getElementById("gatekeeper_errorTips").value.split("\n").map(s => s.trim()).filter(Boolean);
   currentConfig.gatekeeper = {
     enabled: document.getElementById("gatekeeper_enabled").value === "true",
@@ -347,7 +405,6 @@ async function saveAllConfigToCloud() {
     errorTips: errorTipsRaw.length > 0 ? errorTipsRaw : ["不对哦，再想想！"]
   };
 
-  // 3. 收集 Letter
   currentConfig.letter = {
     title: document.getElementById("letter_title").value.trim(),
     signDate: document.getElementById("letter_signDate").value.trim(),
@@ -355,7 +412,6 @@ async function saveAllConfigToCloud() {
     content: document.getElementById("letter_content").value.trim()
   };
 
-  // 4. 收集 Audio
   currentConfig.audio = {
     ...(currentConfig.audio || {}),
     bgmAutoPlay: document.getElementById("audio_bgmAutoPlay").value === "true",
@@ -365,7 +421,6 @@ async function saveAllConfigToCloud() {
     vinylCover: document.getElementById("audio_vinylCover").value.trim()
   };
 
-  // 5. 收集 Easter Eggs
   currentConfig.easterEggs = [
     { id: "egg_1", selector: "#egg-star", message: document.getElementById("egg_1_message").value.trim() },
     { id: "egg_2", selector: "#egg-paw", message: document.getElementById("egg_2_message").value.trim() }
@@ -385,7 +440,7 @@ async function saveAllConfigToCloud() {
     const data = await res.json();
 
     if (data.success) {
-      showToast("✨ 全部配置已成功发布！前台已即时生效");
+      showToast("✨ 全部配置已成功发布！前台即时生效");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
@@ -394,7 +449,6 @@ async function saveAllConfigToCloud() {
   }
 }
 
-// 备份与导入
 function exportBackupJSON() {
   if (!currentConfig) return;
   const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentConfig, null, 2));
@@ -425,7 +479,6 @@ function escapeHtml(s) {
   return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// 选项卡切换
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -436,7 +489,6 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
   });
 });
 
-// 自动检测本地缓存口令
 document.addEventListener("DOMContentLoaded", () => {
   const cached = localStorage.getItem("love_admin_token");
   if (cached) {
