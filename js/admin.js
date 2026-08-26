@@ -13,7 +13,6 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove("show"), 2500);
 }
 
-// 1. 验证管理员口令
 async function verifyAdminLogin() {
   const pwdInput = document.getElementById("adminPwdInput");
   const pwd = pwdInput.value.trim();
@@ -32,7 +31,6 @@ async function verifyAdminLogin() {
   }
 }
 
-// 2. 从 R2 拉取配置
 async function fetchConfigFromCloud() {
   try {
     const res = await fetch("/api/love/config", {
@@ -57,7 +55,6 @@ async function fetchConfigFromCloud() {
   }
 }
 
-// 3. 渲染所有表单
 function renderAllForms() {
   if (!currentConfig) return;
 
@@ -100,7 +97,6 @@ function renderAllForms() {
   document.getElementById("egg_2_message").value = eggs[1]?.message || "";
 }
 
-// ================= 🔍 在线音乐云端搜索引擎与流畅试听控制 =================
 function quickSearchTag(tagText) {
   document.getElementById("musicSearchKeyword").value = tagText;
   executeOnlineMusicSearch();
@@ -111,7 +107,7 @@ async function executeOnlineMusicSearch() {
   const listContainer = document.getElementById("onlineSearchResultList");
   if (!kw) return alert("请输入要搜索的歌名或歌手！");
 
-  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索【${escapeHtml(kw)}】高可用音频流...</div>`;
+  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索【${escapeHtml(kw)}】直连音频流...</div>`;
 
   try {
     const res = await fetch(`/api/love/music-search?keyword=${encodeURIComponent(kw)}`);
@@ -138,14 +134,12 @@ async function executeOnlineMusicSearch() {
   }
 }
 
-// 试听播放器单例控制器
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
 function testPreviewAudio(url, btnId) {
   const currentBtn = document.getElementById(btnId);
 
-  // 如果点击的是正在播放的同一首歌曲，执行暂停
   if (previewAudioObj && currentPreviewBtnId === btnId && !previewAudioObj.paused) {
     previewAudioObj.pause();
     if (currentBtn) currentBtn.textContent = "🎧 试听";
@@ -153,7 +147,6 @@ function testPreviewAudio(url, btnId) {
     return;
   }
 
-  // 重置其他所有试听按钮文本
   document.querySelectorAll(".preview-play-btn").forEach(b => b.textContent = "🎧 试听");
 
   if (previewAudioObj) {
@@ -163,7 +156,7 @@ function testPreviewAudio(url, btnId) {
 
   previewAudioObj = new Audio(url);
   currentPreviewBtnId = btnId;
-  if (currentBtn) currentBtn.textContent = "⏳ 加载中...";
+  if (currentBtn) currentBtn.textContent = "⏳ 缓冲中...";
 
   previewAudioObj.play()
     .then(() => {
@@ -172,7 +165,7 @@ function testPreviewAudio(url, btnId) {
     })
     .catch(() => {
       if (currentBtn) currentBtn.textContent = "🎧 试听";
-      showToast("⚠️ 正在调取高可用备用流...");
+      showToast("⚠️ 正在调取备用音频流...");
     });
 
   previewAudioObj.onended = () => {
@@ -194,7 +187,6 @@ function selectCloudMusic(title, artist, url) {
   showToast(`✓ 已成功将【${title}】填入配置，请点击右上角保存！`);
 }
 
-// ================= 🧹 一键清理 R2 历史无用废弃缓存 =================
 async function cleanOrphanR2Cache() {
   if (!confirm("⚠️ 确定要清理 R2 存储桶中不再使用的历史废弃照片与音频吗？\n（当前正在使用的文件绝对不会被删除，仅删除未引用的缓存）")) return;
 
@@ -216,7 +208,6 @@ async function cleanOrphanR2Cache() {
   }
 }
 
-// ================= 动态列表渲染 =================
 function renderTimelineList() {
   const container = document.getElementById("timelineListContainer");
   container.innerHTML = "";
@@ -374,7 +365,6 @@ function deleteScratchCard(idx) {
   renderScratchCards();
 }
 
-// ================= 上传驱动 =================
 let activeUploadCallback = null;
 let activeUploadInputId = null;
 
@@ -420,7 +410,6 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
-// ================= 保存全量配置 =================
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
 
