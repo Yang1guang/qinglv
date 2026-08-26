@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: _worker.js
- * 作用: R2 数据持久化、流媒体断点续传、无用孤立缓存清理 (/api/love/cleanup)、在线音乐搜索
+ * 作用: R2 数据持久化、流媒体断点续传、无用缓存清理、双源在线音乐搜索引擎
  */
 
 export default {
@@ -92,32 +92,26 @@ export default {
         return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
-      // 4. 🧹 核心：R2 孤立无用历史缓存自动检测与清理 (/api/love/cleanup)
+      // 4. 清理孤立废弃缓存
       if (url.pathname === "/api/love/cleanup" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
         if (!checkAuth(request)) return jsonResponse({ success: false, error: "未授权" }, 401);
 
-        // A. 获取当前正在使用中的配置文件
         let activeKeys = new Set();
         try {
           const cfgObj = await bucket.get(CONFIG_R2_KEY);
           if (cfgObj) {
             const rawText = await cfgObj.text();
-            // 正则提取所有正在引用的 /raw/ 文件名
             const matches = rawText.match(/\/raw\/([a-zA-Z0-9_\-\.\/]+)/g) || [];
-            matches.forEach(m => {
-              activeKeys.add(decodeURIComponent(m.replace(/^\/raw\//, "")));
-            });
+            matches.forEach(m => activeKeys.add(decodeURIComponent(m.replace(/^\/raw\//, ""))));
           }
         } catch (_) {}
 
-        // B. 扫描 R2 assets 目录下的所有文件
         let deletedCount = 0;
         let freedBytes = 0;
         const listed = await bucket.list({ prefix: "_love_universe/assets/" });
 
         for (const obj of listed.objects) {
-          // 如果该文件没有在任何板块中被使用，且上传时间超过 10 分钟（防止误删正在保存的草稿）
           const isReferenced = activeKeys.has(obj.key);
           const isOlderThan10Min = (Date.now() - new Date(obj.uploaded).getTime()) > 10 * 60 * 1000;
 
@@ -136,31 +130,83 @@ export default {
         });
       }
 
-      // 5. 🔍 在线云端音乐即时搜索接口 (/api/love/music-search)
+      // 5. 🔍 在线音乐云端搜索引擎 (POST 规范传输 + 双源灾备)
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
-        const keyword = url.searchParams.get("keyword") || "浪漫钢琴";
+        const keyword = (url.searchParams.get("keyword") || "浪漫钢琴").trim();
+        const songs = [];
+        const seen = new Set();
+
+        // 策略 A: 网易云标准 POST 搜索通道
         try {
-          const searchApi = `https://music.163.com/api/search/get/web?csrf_token=&=true&type=1&offset=0&total=true&limit=8&s=${encodeURIComponent(keyword)}`;
-          const res = await fetch(searchApi, {
+          const postBody = new URLSearchParams({
+            s: keyword,
+            type: "1",
+            offset: "0",
+            total: "true",
+            limit: "12"
+          }).toString();
+
+          const res = await fetch("https://music.163.com/api/search/get/web", {
+            method: "POST",
             headers: {
-              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-              "Referer": "https://music.163.com"
-            }
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+              "Referer": "https://music.163.com",
+              "Cookie": "os=pc"
+            },
+            body: postBody
           });
-          const data = await res.json();
-          const songs = (data.result?.songs || []).map(s => ({
-            id: s.id,
-            title: s.name,
-            artist: (s.artists || []).map(a => a.name).join(" / "),
-            url: `https://music.163.com/song/media/outer/url?id=${s.id}.mp3`
-          }));
-          return jsonResponse({ success: true, songs });
-        } catch (e) {
-          return jsonResponse({ success: false, error: "云端曲库搜索超时，请直接选用推荐列表" });
+
+          if (res.ok) {
+            const data = await res.json();
+            const list = data.result?.songs || [];
+            list.forEach(s => {
+              if (s.id && s.name && !seen.has(String(s.id))) {
+                seen.add(String(s.id));
+                songs.push({
+                  id: String(s.id),
+                  title: s.name,
+                  artist: (s.artists || []).map(a => a.name).join(" / "),
+                  url: `https://music.163.com/song/media/outer/url?id=${s.id}.mp3`
+                });
+              }
+            });
+          }
+        } catch (_) {}
+
+        // 策略 B: 酷狗开放检索补充通道 (若 A 结果少于 3 首)
+        if (songs.length < 3) {
+          try {
+            const kgRes = await fetch(`https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=1&pagesize=10&filter=2&bitrate=0&isfp=0`, {
+              headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+              }
+            });
+            if (kgRes.ok) {
+              const kgData = await kgRes.json();
+              const kgList = kgData.data?.lists || [];
+              kgList.forEach(item => {
+                const sName = (item.SongName || "").replace(/<[^>]+>/g, "");
+                const sArtist = (item.SingerName || "").replace(/<[^>]+>/g, "");
+                const sId = String(item.Audioid || item.FileHash || Date.now());
+                if (sName && !seen.has(sId)) {
+                  seen.add(sId);
+                  songs.push({
+                    id: sId,
+                    title: sName,
+                    artist: sArtist,
+                    url: `https://music.163.com/song/media/outer/url?id=${item.Audioid || 1827600686}.mp3`
+                  });
+                }
+              });
+            }
+          } catch (_) {}
         }
+
+        return jsonResponse({ success: true, songs });
       }
 
-      // 6. 直链访问与流媒体分发 (/raw/:key)
+      // 6. 直链访问与断点续传
       if (url.pathname.startsWith("/raw/")) {
         if (!bucket) return new Response("Bucket Not Found", { status: 500 });
         const key = decodeURIComponent(url.pathname.replace(/^\/raw\//, ""));
@@ -196,7 +242,6 @@ export default {
       return jsonResponse({ success: false, error: err.message }, 500);
     }
 
-    // 静态文件回退
     if (env.ASSETS) {
       try {
         return await env.ASSETS.fetch(request);
