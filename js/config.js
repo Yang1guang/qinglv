@@ -33,41 +33,13 @@ window.LOVE_CONFIG = {
     ]
   },
 
-  // ================= 3. 音频系统与精选云端高可用音乐 =================
+  // ================= 3. 音频系统与背景音乐 =================
   audio: {
-    bgmAutoPlay: false, // 建议 false，点击黑胶时平滑播放
-    // 默认内置一条 100% 联通的唯美钢琴轻音乐直链 (无需本地上传即可直接播)
-    bgmUrl: "https://music.163.com/song/media/outer/url?id=1827600686.mp3",
-    bgmTitle: "Sweet Memories (唯美钢琴曲)",
-    bgmArtist: "Romantic Ensemble",
-    vinylCover: "", // 留空则自动显示优雅粉金心动 ❤️ 标识
-    // 精选云端热门浪漫曲库，支持在线直接选择或切换
-    cloudPlaylist: [
-      {
-        id: "c1",
-        title: "Sweet Memories (浪漫钢琴)",
-        artist: "Romantic Ensemble",
-        url: "https://music.163.com/song/media/outer/url?id=1827600686.mp3"
-      },
-      {
-        id: "c2",
-        title: "遇见的奇迹 (纯音吉他)",
-        artist: "Acoustic Melody",
-        url: "https://music.163.com/song/media/outer/url?id=139774.mp3"
-      },
-      {
-        id: "c3",
-        title: "风居住的街道 (唯美抒情)",
-        artist: "矶村由纪子",
-        url: "https://music.163.com/song/media/outer/url?id=441552.mp3"
-      },
-      {
-        id: "c4",
-        title: "蒲公英的约定 (清澈八音盒)",
-        artist: "Music Box Love",
-        url: "https://music.163.com/song/media/outer/url?id=1844919379.mp3"
-      }
-    ],
+    bgmAutoPlay: true, // 默认开启自动播放
+    bgmUrl: "https://music.163.com/song/media/outer/url?id=436514312.mp3", // 周杰伦 - 告白气球
+    bgmTitle: "告白气球",
+    bgmArtist: "周杰伦",
+    vinylCover: "", // 留空自动显示粉金心动标识 ❤️
     sounds: {
       gatekeeperPass: "",
       gatekeeperError: "",
