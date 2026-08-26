@@ -1,5 +1,5 @@
 /**
- * 太阳 ios-IP · 恋爱时光轴 & 漫游宇宙 (Love Universe) 前台核心主控
+ * 恋爱时光轴 & 漫游宇宙 (Love Universe) 前台核心主控
  * 文件名: js/core.js
  */
 
@@ -74,8 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const inputVal = dom.gatekeeperInput.value.trim().toLowerCase();
     const correctVal = String(gateCfg.correctAnswer || "240520").trim().toLowerCase();
 
-    // 🕵️ 超级隐蔽暗号：输入 admin#5214 或 admin 直接静默跳转后台
-    if (inputVal === "admin#5214" || inputVal === "admin" || inputVal === "5214") {
+    // 🕵️ 超级隐蔽暗号：输入 admin#521 直接静默跳转后台
+    if (inputVal === "admin#521" || inputVal === "admin" || inputVal === "521") {
       location.href = "admin.html";
       return;
     }
