@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、多曲目黑胶播放列表控制器、歌单删除管理、烟花与粒子音效
+ * 作用: 动效中枢、多曲目黑胶播放列表控制器、歌单删除管理、熔断防跳轮播
  */
 
 class EffectsEngine {
@@ -11,6 +11,7 @@ class EffectsEngine {
     this.isPlaying = false;
     this.currentTrackIndex = 0;
     this.playlist = this.getNormalizedPlaylist();
+    this.consecutiveErrors = 0; // 错误熔断计数器，彻底解决死循环来回跳
 
     this.fireworksCanvas = document.getElementById("fireworks-canvas");
     this.fwCtx = this.fireworksCanvas ? this.fireworksCanvas.getContext("2d") : null;
@@ -24,14 +25,6 @@ class EffectsEngine {
     const audioCfg = this.config.audio || {};
     if (Array.isArray(audioCfg.playlist) && audioCfg.playlist.length > 0) {
       return audioCfg.playlist;
-    }
-    if (audioCfg.bgmUrl) {
-      return [{
-        title: audioCfg.bgmTitle || "告白气球 (浪漫钢琴版)",
-        artist: audioCfg.bgmArtist || "周杰伦",
-        url: audioCfg.bgmUrl,
-        cover: audioCfg.vinylCover || ""
-      }];
     }
     return [
       {
@@ -47,9 +40,9 @@ class EffectsEngine {
         cover: ""
       },
       {
-        title: "Sweet Memories 浪漫钢琴",
-        artist: "松田圣子 / 纯音乐",
-        url: "https://music.163.com/song/media/outer/url?id=441116287.mp3",
+        title: "七里香 (清甜尤克里里)",
+        artist: "周杰伦 / 纯音乐",
+        url: "https://music.163.com/song/media/outer/url?id=440208477.mp3",
         cover: ""
       }
     ];
@@ -62,7 +55,7 @@ class EffectsEngine {
     this.renderPlaylistPopup();
     this.updateTrackInfoDisplay();
 
-    // 首次交互手势唤醒，解除桌面端浏览器自动静音限制
+    // 手势解锁，顺应 PC 端与移动端浏览器自动播放规则
     const unlockAudio = () => {
       if (this.config.audio && this.config.audio.bgmAutoPlay !== false && !this.isPlaying) {
         this.playBgm();
@@ -97,11 +90,13 @@ class EffectsEngine {
       this.bgmAudio.preload = "auto";
 
       this.bgmAudio.addEventListener("ended", () => {
+        this.consecutiveErrors = 0;
         this.nextTrack();
       });
 
       this.bgmAudio.addEventListener("play", () => {
         this.isPlaying = true;
+        this.consecutiveErrors = 0;
         this.setVinylVisualPlaying(true);
       });
 
@@ -110,9 +105,17 @@ class EffectsEngine {
         this.setVinylVisualPlaying(false);
       });
 
+      // 错误熔断机制：最多尝试一次下一首，杜绝无限死循环来回跳
       this.bgmAudio.addEventListener("error", () => {
-        console.warn("当前曲目播放异常，自动跳入下一首...");
-        setTimeout(() => this.nextTrack(), 500);
+        this.consecutiveErrors++;
+        if (this.consecutiveErrors < this.playlist.length) {
+          console.warn("当前曲目异常，尝试载入下一首...");
+          setTimeout(() => this.nextTrack(), 300);
+        } else {
+          console.warn("已达歌单尝试上限，停止轮播");
+          this.isPlaying = false;
+          this.setVinylVisualPlaying(false);
+        }
       });
     }
 
@@ -175,17 +178,19 @@ class EffectsEngine {
   }
 
   selectTrack(index) {
+    this.consecutiveErrors = 0;
     this.loadTrack(index, true);
   }
 
-  // 🌟 前台歌单直接删除单曲
+  // 🌟 前台歌单直接删除某首歌曲
   deleteTrackFromPopup(e, index) {
     e.stopPropagation();
     if (this.playlist.length <= 1) {
       alert("⚠️ 歌单中请至少保留一首背景音乐！");
       return;
     }
-    if (!confirm(`确定要从当前歌单中移除《${this.playlist[index].title}》吗？`)) return;
+    const trackTitle = this.playlist[index].title;
+    if (!confirm(`确定要从当前播放列表中移除《${trackTitle}》吗？`)) return;
 
     const isCurrentPlaying = (this.currentTrackIndex === index);
     this.playlist.splice(index, 1);
@@ -200,7 +205,7 @@ class EffectsEngine {
     }
 
     this.renderPlaylistPopup();
-    this.showMiniToast("✓ 已从歌单中移除该歌曲");
+    this.showMiniToast(`✓ 已移除《${trackTitle}》`);
   }
 
   setVinylVisualPlaying(playing) {
