@@ -6,7 +6,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   let config = window.LOVE_CONFIG || {};
 
-  // 1. DOM 节点引用
   const dom = {
     gatekeeperScreen: document.getElementById("gatekeeper-screen"),
     gatekeeperDialog: document.querySelector(".gatekeeper__dialog"),
@@ -36,7 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
     universeFooterText: document.querySelector(".universe-footer__text")
   };
 
-  // 辅助函数：深度合并本地与云端配置，防止部分字段为空时覆盖预设
   function mergeWithDefaultConfig(cloudCfg) {
     const base = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
     if (!cloudCfg || typeof cloudCfg !== "object") return base;
@@ -59,10 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // 2. 立即初始化门禁界面与事件绑定
   initGatekeeperUI();
-
-  // 3. 异步从 R2 拉取最新动态配置与初始化视觉
   syncCloudData();
 
   function initGatekeeperUI() {
@@ -88,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     }
 
-    // 声纹誓言麦克风识别绑定
+    // 声纹语音誓言识别
     if (dom.voiceUnlockBtn) {
       dom.voiceUnlockBtn.onclick = (e) => {
         e.preventDefault();
@@ -97,50 +92,125 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 语音誓言识别逻辑 (Web Speech API)
+  // 语音识别主逻辑
   function startVoiceRecognition() {
+    // 💎 1. 兑换码专属授权拦截
+    const isLicensed = Boolean(config._license && config._license.unlocked);
+    if (!isLicensed) {
+      alert("💎 【声纹誓言语音解锁】为星河契约专属版高级特权！\n请长按网页底部版权文字或在后台激活专属授权码解锁此特权。");
+      return;
+    }
+
+    // 2. 检查浏览器内核支持情况
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("当前浏览器暂不支持语音识别，请直接在输入框输入口令解锁。");
+      alert("当前浏览器内核暂不支持语音接口，请在手机端使用 Safari / Chrome，或直接在输入框输入口令。");
       return;
     }
 
     const recognition = new SpeechRecognition();
     recognition.lang = "zh-CN";
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true; // 开启实时拾音反馈
 
     if (dom.gatekeeperHint) {
       dom.gatekeeperHint.textContent = "🎙️ 正在聆听您的誓言，请清晰念出...";
       dom.gatekeeperHint.style.color = "#fde68a";
     }
     if (dom.voiceUnlockBtn) {
-      dom.voiceUnlockBtn.style.animation = "pulse 1.2s infinite";
+      dom.voiceUnlockBtn.style.transform = "scale(1.15)";
+      dom.voiceUnlockBtn.style.boxShadow = "0 0 20px #f59e0b";
     }
 
+    let finalTranscript = "";
+
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript.trim();
-      if (dom.gatekeeperHint) {
-        dom.gatekeeperHint.textContent = `听到誓言：“${transcript}”，正在鉴证...`;
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
+        }
       }
-      verifyPassword(transcript);
+
+      const heardText = (finalTranscript || interim).trim();
+      if (dom.gatekeeperHint && heardText) {
+        dom.gatekeeperHint.textContent = `听到誓言：“${heardText}”，正在鉴证...`;
+      }
+
+      if (finalTranscript) {
+        verifyVoiceVow(finalTranscript);
+      }
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
+      let errorMsg = "未清晰识别到声音，请重试或使用数字口令。";
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        errorMsg = "⚠️ 请先在浏览器中允许开启麦克风权限！";
+      } else if (event.error === "network") {
+        errorMsg = "网络连接受限，建议直接在输入框输入口令解锁。";
+      }
+
       if (dom.gatekeeperHint) {
-        dom.gatekeeperHint.textContent = "未清晰识别到声音，请重试或使用数字口令。";
+        dom.gatekeeperHint.textContent = errorMsg;
         dom.gatekeeperHint.style.color = "#fca5a5";
       }
-      if (dom.voiceUnlockBtn) dom.voiceUnlockBtn.style.animation = "none";
+      resetVoiceBtn();
     };
 
     recognition.onend = () => {
-      if (dom.voiceUnlockBtn) dom.voiceUnlockBtn.style.animation = "none";
+      resetVoiceBtn();
+      if (finalTranscript) {
+        verifyVoiceVow(finalTranscript);
+      }
     };
+
+    function resetVoiceBtn() {
+      if (dom.voiceUnlockBtn) {
+        dom.voiceUnlockBtn.style.transform = "none";
+        dom.voiceUnlockBtn.style.boxShadow = "none";
+      }
+    }
 
     try {
       recognition.start();
-    } catch (_) {}
+    } catch (_) {
+      resetVoiceBtn();
+    }
+  }
+
+  // 校验语音识别出的文本与预设誓言
+  function verifyVoiceVow(spokenText) {
+    const cleanSpoken = spokenText.replace(/[，。！？\s]/g, "").toLowerCase();
+    
+    // 获取后台配置的多条语音誓言密码
+    const rawVows = config.gatekeeper?.voiceVows || "众水不能熄灭, 我愿一生包容你, 永远爱你, 240520";
+    const vowList = rawVows.split(/[,，|]/).map(s => s.replace(/[，。！？\s]/g, "").toLowerCase()).filter(Boolean);
+
+    // 默认兜底放行关键词与正确数字密码
+    vowList.push("众水不能熄灭");
+    vowList.push("包容");
+    vowList.push("接纳");
+    vowList.push("一生一世");
+    vowList.push(String(config.gatekeeper?.correctAnswer || "240520").trim().toLowerCase());
+    vowList.push("521");
+
+    const isMatch = vowList.some(vow => cleanSpoken.includes(vow));
+
+    if (isMatch) {
+      if (dom.gatekeeperHint) {
+        dom.gatekeeperHint.textContent = `✨ 誓言鉴证成功：“${spokenText}”`;
+        dom.gatekeeperHint.style.color = "#34d399";
+      }
+      if (window.Effects) {
+        window.Effects.playAudio("gatekeeperPass");
+        window.Effects.fireFireworks();
+      }
+      setTimeout(() => unlockMainUniverse(true), 600);
+    } else {
+      triggerPasswordError();
+    }
   }
 
   async function syncCloudData() {
@@ -159,57 +229,35 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (_) {}
 
-    // 填充元数据
     if (config.meta) {
       if (dom.heroNames) dom.heroNames.textContent = `${config.meta.boyName || "男孩"} & ${config.meta.girlName || "女孩"}`;
       if (dom.heroSubtitle) dom.heroSubtitle.textContent = config.meta.siteSubtitle || "众水不能熄灭爱情，大水不能淹没 · 一生一世的契约";
       if (config.meta.siteTitle) document.title = config.meta.siteTitle;
     }
 
-    // 激活多维主题物理引擎
     if (window.ThemeEngine) {
       const themeCfg = config.theme || {};
       window.ThemeEngine.applyTheme(themeCfg.currentTheme || "sunset-twilight", themeCfg.customBgUrl || "");
     }
 
-    // 激活「时光留白」视差照片墙
     if (window.PhotoWallManager) {
       const photoWall = new window.PhotoWallManager(config);
       photoWall.init();
     }
 
-    // 绑定底部版权长按触发隐藏星际授权兑换
     initLicenseActivationTrigger();
 
-    // 若后台关闭了门禁，则直接进入
     if (config.gatekeeper && config.gatekeeper.enabled === false) {
       unlockMainUniverse(false);
     }
   }
 
-  // 门禁口令与誓言校验
   async function verifyPassword(inputVal) {
     if (!inputVal) return;
 
     if (dom.gatekeeperBtn) {
       dom.gatekeeperBtn.disabled = true;
       dom.gatekeeperBtn.querySelector("span").textContent = "鉴证中...";
-    }
-
-    const sacredVows = ["众水不能熄灭", "一生一世", "包容", "接纳", "雅歌", "我愿", "永远爱你"];
-    const isVowMatched = sacredVows.some(vow => inputVal.includes(vow));
-
-    if (isVowMatched) {
-      if (window.Effects) {
-        window.Effects.playAudio("gatekeeperPass");
-        window.Effects.fireFireworks();
-      }
-      unlockMainUniverse(true);
-      if (dom.gatekeeperBtn) {
-        dom.gatekeeperBtn.disabled = false;
-        dom.gatekeeperBtn.querySelector("span").textContent = "解密进入圣所";
-      }
-      return;
     }
 
     try {
@@ -292,22 +340,14 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => { dom.mainContainer.classList.remove("main-container--hidden"); }, 50);
     }
 
-    // 1. 初始化生命周期引擎
     if (window.LifecycleEngine) {
       const lifecycleMgr = new window.LifecycleEngine(config);
       lifecycleMgr.init();
     }
 
-    // 2. 初始化拍立得相册
     if (window.TimelineManager) {
       const timelineMgr = new window.TimelineManager(config);
       timelineMgr.init();
-    }
-
-    // 3. 初始化特权刮刮乐
-    if (window.ScratchCardManager) {
-      const scratchMgr = new window.ScratchCardManager(config);
-      scratchMgr.init();
     }
 
     startTypewriter();
@@ -317,7 +357,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 5. 打字机告白
   function startTypewriter() {
     const letterCfg = config.letter || {};
     if (dom.letterTitle && letterCfg.title) dom.letterTitle.textContent = letterCfg.title;
@@ -340,7 +379,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(typeNextChar, 500);
   }
 
-  // 6. 长按底部版权文字触发星际授权码兑换 (附带全量数据保护)
   function initLicenseActivationTrigger() {
     if (!dom.universeFooterText) return;
 
@@ -386,7 +424,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 7. 彩蛋绑定
   const eggs = config.easterEggs || [];
   if (dom.eggStar) {
     dom.eggStar.onclick = () => showEggModal(eggs[0]?.message || "🌟 发现暗号星：爱情是一生一世、一男一女、一心一意！");
@@ -410,7 +447,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 8. 300DPI 超清海报生成
   let exportedPosterDataUrl = "";
   if (dom.generatePosterBtn) {
     dom.generatePosterBtn.onclick = () => {
