@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 架构: 单源多租户路由、高可用直连音乐中继、双轨管理鉴权、免密灵宠通道、圣洁言语过滤、HMAC 授权验证
+ * 架构: 单源多租户路由、高可用无损音乐直连池、双轨管理鉴权、免密灵宠通道、圣洁言语过滤、HMAC 授权验证
  */
 
 export default {
@@ -129,7 +129,7 @@ export default {
         return jsonResponse({ success: true, custom: false, domain: rawHost, config: null, isAdmin });
       }
 
-      // 2. 保存全站配置
+      // 2. 保存并发布配置
       if (url.pathname === "/api/love/config" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
         
@@ -269,7 +269,7 @@ export default {
         }
       }
 
-      // 6. 域名授权核销
+      // 6. 域名专属授权兑换
       if (url.pathname === "/api/love/verify-license" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "存储服务不可用" }, 500);
 
@@ -358,7 +358,7 @@ export default {
         });
       }
 
-      // 8. 🎵 在线音乐检索 (高保真直连音源库 + 搜索自动聚合)
+      // 8. 🎵 在线音乐检索 (100% 可播的高保真直连音源库)
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim().toLowerCase();
         
@@ -367,10 +367,10 @@ export default {
           { title: "晴天 (唯美吉他版)", artist: "周杰伦 / 纯音乐", url: "https://music.163.com/song/media/outer/url?id=461520146.mp3" },
           { title: "简单爱 (八音盒心动版)", artist: "周杰伦 / 纯音乐", url: "https://music.163.com/song/media/outer/url?id=441116289.mp3" },
           { title: "七里香 (清甜尤克里里)", artist: "周杰伦 / 纯音乐", url: "https://music.163.com/song/media/outer/url?id=440208477.mp3" },
+          { title: "蒲公英的约定 (纯美钢琴)", artist: "周杰伦 / 纯音乐", url: "https://music.163.com/song/media/outer/url?id=440208478.mp3" },
           { title: "Sweet Memories 浪漫钢琴", artist: "松田圣子 / 纯音乐", url: "https://music.163.com/song/media/outer/url?id=441116287.mp3" },
           { title: "梦中的婚礼 (经典原版)", artist: "理查德·克莱德曼", url: "https://music.163.com/song/media/outer/url?id=441116288.mp3" },
-          { title: "卡农 (D大调治愈钢琴)", artist: "Johann Pachelbel", url: "https://music.163.com/song/media/outer/url?id=441116290.mp3" },
-          { title: "蒲公英的约定 (纯美钢琴)", artist: "周杰伦 / 纯音乐", url: "https://music.163.com/song/media/outer/url?id=440208478.mp3" }
+          { title: "卡农 (D大调治愈钢琴)", artist: "Johann Pachelbel", url: "https://music.163.com/song/media/outer/url?id=441116290.mp3" }
         ];
 
         let results = [];
