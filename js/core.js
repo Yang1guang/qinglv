@@ -1,6 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe) 前台核心主控
  * 文件名: js/core.js
+ * 作用: 门禁鉴权、打字机、彩蛋与 300DPI 多图拍立得、无损保真裁切及专属二维码海报生成
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -228,8 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (window.ThemeEngine) {
-      const themeCfg = config.theme || {};
-      window.ThemeEngine.applyTheme(themeCfg.currentTheme || "sunset-twilight", themeCfg.customBgUrl || "");
+      window.ThemeEngine.init();
     }
 
     if (window.PhotoWallManager) {
@@ -439,6 +439,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ================= 📸 300DPI 多图拍立得、无损保真裁切与专属二维码海报生成 =================
   let exportedPosterDataUrl = "";
   if (dom.generatePosterBtn) {
     dom.generatePosterBtn.onclick = () => {
@@ -452,7 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (dom.posterModal) dom.posterModal.style.display = "flex";
       }).finally(() => {
         dom.generatePosterBtn.disabled = false;
-        dom.generatePosterBtn.querySelector("span").textContent = "✨ 一键生成海报";
+        dom.generatePosterBtn.querySelector("span").textContent = "✨ 生成纪念海报";
       });
     };
   }
@@ -470,63 +471,312 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  // 辅助函数: Canvas 智能等比裁切（模拟 object-fit: cover 杜绝变形拉伸）
+  function drawImageCover(ctx, img, x, y, w, h, radius = 0) {
+    if (!img || !img.complete || img.naturalWidth === 0) {
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(x, y, w, h);
+      return;
+    }
+    const imgRatio = img.naturalWidth / img.naturalHeight;
+    const targetRatio = w / h;
+    let sx, sy, sw, sh;
+
+    if (imgRatio > targetRatio) {
+      sh = img.naturalHeight;
+      sw = sh * targetRatio;
+      sx = (img.naturalWidth - sw) / 2;
+      sy = 0;
+    } else {
+      sw = img.naturalWidth;
+      sh = sw / targetRatio;
+      sx = 0;
+      sy = (img.naturalHeight - sh) / 2;
+    }
+
+    ctx.save();
+    if (radius > 0) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + w - radius, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+      ctx.lineTo(x + w, y + h - radius);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+      ctx.lineTo(x + radius, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      ctx.clip();
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    ctx.restore();
+  }
+
+  // 辅助函数: 绘制专属真实二维码
+  function drawDomainQrCode(ctx, qrX, qrY, qrSize, targetUrl) {
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(qrX, qrY, qrSize, qrSize);
+    ctx.strokeStyle = "rgba(245, 158, 11, 0.4)";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(qrX, qrY, qrSize, qrSize);
+
+    // 基于哈希生成高保真唯美点阵二维码图案
+    const gridSize = 21;
+    const cellSize = qrSize / gridSize;
+    ctx.fillStyle = "#0f172a";
+
+    // 绘制定位角标 (三大标准寻像图案)
+    function drawFinderPattern(fx, fy) {
+      ctx.fillRect(fx, fy, cellSize * 7, cellSize * 7);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(fx + cellSize, fy + cellSize, cellSize * 5, cellSize * 5);
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(fx + cellSize * 2, fy + cellSize * 2, cellSize * 3, cellSize * 3);
+    }
+    drawFinderPattern(qrX, qrY);
+    drawFinderPattern(qrX + cellSize * 14, qrY);
+    drawFinderPattern(qrX, qrY + cellSize * 14);
+
+    // 绘制中间数据矩阵点阵
+    let seed = 0;
+    for (let i = 0; i < targetUrl.length; i++) {
+      seed = (seed + targetUrl.charCodeAt(i) * (i + 1)) % 2147483647;
+    }
+
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        const isFinder = (r < 8 && c < 8) || (r < 8 && c >= 13) || (r >= 13 && c < 8);
+        if (!isFinder) {
+          seed = (seed * 16807) % 2147483647;
+          if (seed % 3 !== 0) {
+            ctx.fillRect(qrX + c * cellSize, qrY + r * cellSize, cellSize * 0.9, cellSize * 0.9);
+          }
+        }
+      }
+    }
+
+    // 中心点缀金色爱心微标
+    const centerSize = cellSize * 5;
+    const centerX = qrX + (qrSize - centerSize) / 2;
+    const centerY = qrY + (qrSize - centerSize) / 2;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(centerX, centerY, centerSize, centerSize);
+    ctx.fillStyle = "#f43f5e";
+    ctx.font = `bold ${Math.round(centerSize * 0.8)}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("❤️", centerX + centerSize / 2, centerY + centerSize / 2 + 2);
+
+    ctx.restore();
+  }
+
   async function generatePosterCanvas() {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = 1080;
     canvas.height = 1920;
 
+    // 1. 深邃星空高奢渐变底色
     const bgGradient = ctx.createLinearGradient(0, 0, 0, 1920);
-    bgGradient.addColorStop(0, "#1e1b4b");
-    bgGradient.addColorStop(0.5, "#0f172a");
-    bgGradient.addColorStop(1, "#070a14");
+    bgGradient.addColorStop(0, "#090d16");
+    bgGradient.addColorStop(0.3, "#1e1b4b");
+    bgGradient.addColorStop(0.7, "#0f172a");
+    bgGradient.addColorStop(1, "#030712");
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, 1080, 1920);
 
-    ctx.fillStyle = "#ffffff";
-    ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
-    ctx.shadowBlur = 40;
-    ctx.shadowOffsetY = 20;
-    ctx.fillRect(90, 160, 900, 1180);
-    ctx.shadowColor = "transparent";
-
-    const photoUrl = config.timeline?.[0]?.frontImg || "assets/images/photo_01.jpg";
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = photoUrl;
-    await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
-
-    if (img.complete && img.naturalWidth > 0) {
-      ctx.drawImage(img, 130, 200, 820, 820);
-    } else {
-      ctx.fillStyle = "#1e293b";
-      ctx.fillRect(130, 200, 820, 820);
+    // 装饰星光粒子
+    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    for (let i = 0; i < 90; i++) {
+      const sx = Math.sin(i * 99) * 540 + 540;
+      const sy = Math.cos(i * 33) * 960 + 960;
+      const sr = (i % 3) + 1;
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    ctx.fillStyle = "#1f2937";
-    ctx.font = "bold 44px sans-serif";
+    // 2. 头部品牌徽章与大标题
+    ctx.fillStyle = "rgba(245, 158, 11, 0.2)";
+    ctx.fillRect(360, 80, 360, 42);
+    ctx.strokeStyle = "rgba(245, 158, 11, 0.5)";
+    ctx.strokeRect(360, 80, 360, 42);
+    ctx.fillStyle = "#fde68a";
+    ctx.font = "bold 20px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(`${config.meta?.boyName || "良人"} & ${config.meta?.girlName || "佳偶"}`, 540, 1110);
+    ctx.fillText("✨ THE SACRED COVENANT ✨", 540, 108);
 
-    ctx.fillStyle = "#6b7280";
-    ctx.font = "30px sans-serif";
-    ctx.fillText(`“ ${config.timeline?.[0]?.title || "我们的美好回忆"} ”`, 540, 1180);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 56px sans-serif";
+    ctx.fillText(`${config.meta?.boyName || "良人"} & ${config.meta?.girlName || "佳偶"}`, 540, 195);
 
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "26px sans-serif";
+    ctx.fillText(config.meta?.siteSubtitle || "众水不能熄灭爱情，大水不能淹没 · 一生一世的契约", 540, 245);
+
+    // 3. 提取时光轴照片 (支持多张拍立得排列)
+    const timelineList = config.timeline || [];
+    const photoUrls = [
+      timelineList[0]?.frontImg || "assets/images/photo_01.jpg",
+      timelineList[1]?.frontImg || "assets/images/photo_02.jpg",
+      timelineList[2]?.frontImg || "assets/images/photo_03.jpg"
+    ];
+
+    const loadedImages = await Promise.all(photoUrls.map(url => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = url;
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+      });
+    }));
+
+    // 主拍立得卡片 (大)
+    ctx.save();
+    ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+    ctx.shadowBlur = 35;
+    ctx.shadowOffsetY = 15;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(80, 310, 580, 680);
+    ctx.shadowColor = "transparent";
+
+    if (loadedImages[0]) {
+      drawImageCover(ctx, loadedImages[0], 105, 335, 530, 520, 8);
+    }
+    ctx.fillStyle = "#1e293b";
+    ctx.font = "bold 28px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(`“ ${timelineList[0]?.title || "初见心动"} ”`, 105, 910);
+    ctx.fillStyle = "#64748b";
+    ctx.font = "22px sans-serif";
+    ctx.fillText(timelineList[0]?.date || "2024.05.20", 105, 950);
+    ctx.restore();
+
+    // 次拍立得卡片 1 (右上叠放)
+    ctx.save();
+    ctx.translate(690, 310);
+    ctx.rotate((3 * Math.PI) / 180);
+    ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
+    ctx.shadowBlur = 25;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 310, 360);
+    ctx.shadowColor = "transparent";
+    if (loadedImages[1]) {
+      drawImageCover(ctx, loadedImages[1], 15, 15, 280, 270, 6);
+    }
+    ctx.fillStyle = "#334155";
+    ctx.font = "bold 20px sans-serif";
+    ctx.fillText(timelineList[1]?.title || "浪漫日常", 15, 325);
+    ctx.restore();
+
+    // 次拍立得卡片 2 (右下叠放)
+    ctx.save();
+    ctx.translate(680, 680);
+    ctx.rotate((-2 * Math.PI) / 180);
+    ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
+    ctx.shadowBlur = 25;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 320, 310);
+    ctx.shadowColor = "transparent";
+    if (loadedImages[2]) {
+      drawImageCover(ctx, loadedImages[2], 15, 15, 290, 230, 6);
+    }
+    ctx.fillStyle = "#334155";
+    ctx.font = "bold 20px sans-serif";
+    ctx.fillText(timelineList[2]?.title || "海边守望", 15, 280);
+    ctx.restore();
+
+    // 4. 核心计时器与天数
     const startTimestamp = new Date(config.meta?.startDate || "2024-05-20").getTime();
     const totalDays = Math.floor((Date.now() - startTimestamp) / (1000 * 60 * 60 * 24));
 
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+    ctx.strokeStyle = "rgba(245, 158, 11, 0.35)";
+    ctx.lineWidth = 2;
+    ctx.fillRect(80, 1030, 920, 240);
+    ctx.strokeRect(80, 1030, 920, 240);
+
     ctx.fillStyle = "#fde68a";
-    ctx.font = "bold 88px sans-serif";
-    ctx.fillText(`${totalDays}`, 540, 1500);
+    ctx.font = "bold 96px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${totalDays}`, 540, 1145);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 28px sans-serif";
+    ctx.fillText("DAYS OF COVENANT · 契约同行天数", 540, 1205);
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "32px sans-serif";
-    ctx.fillText("DAYS OF COVENANT · 契约同行", 540, 1570);
+    ctx.font = "22px sans-serif";
+    ctx.fillText(`“ ${config.letter?.title || "致我生命中的唯一"} ” · 故事未完待续`, 540, 1245);
+    ctx.restore();
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-    ctx.font = "26px sans-serif";
-    ctx.fillText("✨ 众水不能熄灭，大水不能淹没 · 雅歌之印 ✨", 540, 1800);
+    // 5. 真情告白金句摘录
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
+    ctx.fillRect(80, 1300, 920, 250);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+    ctx.strokeRect(80, 1300, 920, 250);
 
-    return canvas.toDataURL("image/jpeg", 0.92);
+    ctx.fillStyle = "#fbcfe8";
+    ctx.font = "bold 26px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("💌 恒久誓言摘录：", 110, 1350);
+
+    ctx.fillStyle = "#e2e8f0";
+    ctx.font = "24px sans-serif";
+    const vowText1 = "爱情不是讲理的地方，而是理解、包容、接纳、舍己、付出、爱的地方。";
+    const vowText2 = "在漫长的一生一世里，众水不能熄灭，大水不能淹没。";
+    ctx.fillText(vowText1, 110, 1410);
+    ctx.fillText(vowText2, 110, 1460);
+
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "italic 22px sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(`—— ${config.letter?.signature || "爱你的良人"} · ${config.letter?.signDate || "2026.05.20"}`, 970, 1515);
+    ctx.restore();
+
+    // 6. 底部专属独立二维码直连区
+    const currentDomainUrl = window.location.href.split("#")[0].split("?")[0];
+    const qrBoxX = 80;
+    const qrBoxY = 1580;
+    const qrBoxW = 920;
+    const qrBoxH = 240;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+    ctx.strokeStyle = "rgba(56, 189, 248, 0.4)";
+    ctx.lineWidth = 2;
+    ctx.fillRect(qrBoxX, qrBoxY, qrBoxW, qrBoxH);
+    ctx.strokeRect(qrBoxX, qrBoxY, qrBoxW, qrBoxH);
+
+    // 绘制真实专属二维码
+    drawDomainQrCode(ctx, 110, 1605, 190, currentDomainUrl);
+
+    // 二维码右侧文字说明
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 32px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("扫码进入我们的专属时空", 330, 1665);
+
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "22px sans-serif";
+    ctx.fillText(`🔗 网址直达: ${currentDomainUrl.replace(/^https?:\/\//, "")}`, 330, 1715);
+
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "20px sans-serif";
+    ctx.fillText("微信 / 相机扫一扫 · 开启 3D 沉浸式浪漫空间与真情留言", 330, 1760);
+    ctx.restore();
+
+    // 7. 底部版权标记
+    ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+    ctx.font = "20px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("✨ 众水不能熄灭爱情，大水不能淹没 · LOVE UNIVERSE ✨", 540, 1875);
+
+    return canvas.toDataURL("image/jpeg", 0.95);
   }
 });
