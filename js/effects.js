@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、多曲目黑胶播放列表控制器、烟花与粒子音效
+ * 作用: 动效中枢、多曲目黑胶播放列表控制器、烟花与音效容错管理
  */
 
 class EffectsEngine {
@@ -25,21 +25,28 @@ class EffectsEngine {
     if (Array.isArray(audioCfg.playlist) && audioCfg.playlist.length > 0) {
       return audioCfg.playlist;
     }
-    // 兼容旧单曲配置
     if (audioCfg.bgmUrl) {
       return [{
-        title: audioCfg.bgmTitle || "告白气球",
-        artist: audioCfg.bgmArtist || "周杰伦",
+        title: audioCfg.bgmTitle || "Sweet Memories 浪漫钢琴",
+        artist: audioCfg.bgmArtist || "纯音乐",
         url: audioCfg.bgmUrl,
         cover: audioCfg.vinylCover || ""
       }];
     }
-    return [{
-      title: "告白气球",
-      artist: "周杰伦",
-      url: "https://music.163.com/song/media/outer/url?id=436514312.mp3",
-      cover: ""
-    }];
+    return [
+      {
+        title: "Sweet Memories 浪漫钢琴",
+        artist: "松田圣子 / 纯音乐",
+        url: "https://music.163.com/song/media/outer/url?id=441116287.mp3",
+        cover: ""
+      },
+      {
+        title: "告白气球",
+        artist: "周杰伦",
+        url: "https://music.163.com/song/media/outer/url?id=436514312.mp3",
+        cover: ""
+      }
+    ];
   }
 
   init() {
@@ -67,13 +74,12 @@ class EffectsEngine {
     }
   }
 
-  // ================= 🎵 播放器与多曲目轮播控制 =================
   initAudioPlayer() {
     if (!this.bgmAudio) {
       this.bgmAudio = new Audio();
       this.bgmAudio.preload = "auto";
+      this.bgmAudio.crossOrigin = "anonymous";
 
-      // 歌曲自然播完后，自动切入下一首 (自动循环整张歌单)
       this.bgmAudio.addEventListener("ended", () => {
         this.nextTrack(true);
       });
@@ -88,9 +94,10 @@ class EffectsEngine {
         this.setVinylVisualPlaying(false);
       });
 
+      // 错误自动恢复：当前曲目失效时平滑跳入下一首或备用源
       this.bgmAudio.addEventListener("error", () => {
-        // 音频加载异常时尝试自动跳至下一首
-        console.warn("当前音频加载受阻，正在尝试载入备用曲目...");
+        console.warn("音频载入受阻，正在智能切换高可用备用流...");
+        setTimeout(() => this.nextTrack(true), 800);
       });
     }
 
@@ -122,7 +129,6 @@ class EffectsEngine {
       const track = this.playlist[this.currentTrackIndex];
       this.showMiniToast(`🎶 正在播放: ${track.title} - ${track.artist}`);
     }).catch(() => {
-      // 浏览器未交互前拦截自动播放属于正常安全机制
       this.isPlaying = false;
       this.setVinylVisualPlaying(false);
     });
@@ -166,7 +172,6 @@ class EffectsEngine {
     }, 200);
   }
 
-  // 黑胶唱针与旋转视觉联动
   setVinylVisualPlaying(playing) {
     const disc = document.getElementById("vinyl-disc");
     const toggleBtn = document.getElementById("audio-toggle-btn");
@@ -258,7 +263,6 @@ class EffectsEngine {
     setTimeout(() => toast.classList.remove("show"), 2800);
   }
 
-  // ================= 事件与动效 =================
   initEventListeners() {
     const disc = document.getElementById("vinyl-disc");
     const toggleBtn = document.getElementById("audio-toggle-btn");
@@ -278,7 +282,6 @@ class EffectsEngine {
     };
   }
 
-  // 音效触发
   playAudio(soundName) {
     const soundMap = {
       gatekeeperPass: "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3",
@@ -298,7 +301,6 @@ class EffectsEngine {
     }
   }
 
-  // 浪漫烟花粒子
   fireFireworks() {
     if (!this.fwCtx) return;
     const colors = ["#f43f5e", "#f59e0b", "#38bdf8", "#a855f7", "#ec4899", "#ffffff"];
@@ -322,7 +324,6 @@ class EffectsEngine {
     }
   }
 
-  // 彩带喷洒
   fireConfetti() {
     if (!this.fwCtx) return;
     const colors = ["#fb7185", "#fde68a", "#a7f3d0", "#bae6fd", "#fbcfe8"];
@@ -346,12 +347,11 @@ class EffectsEngine {
       if (this.fwCtx) {
         this.fwCtx.clearRect(0, 0, this.fireworksCanvas.width, this.fireworksCanvas.height);
 
-        // 更新烟花
         for (let i = this.fireworks.length - 1; i >= 0; i--) {
           const p = this.fireworks[i];
           p.x += p.vx;
           p.y += p.vy;
-          p.vy += 0.05; // 重力
+          p.vy += 0.05;
           p.alpha -= 0.015;
 
           if (p.alpha <= 0) {
@@ -368,7 +368,6 @@ class EffectsEngine {
           }
         }
 
-        // 更新彩带
         for (let i = this.confettiParticles.length - 1; i >= 0; i--) {
           const c = this.confettiParticles[i];
           c.x += c.vx;
