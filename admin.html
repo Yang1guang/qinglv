@@ -63,7 +63,6 @@
             <p>控制当前关系阶段（自动隔离越界选项）、后台登录口令与纪念日倒计时。</p>
           </div>
           <div class="form-grid">
-            <!-- 独立管理密码修改 -->
             <div class="form-group" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1); padding: 14px; border-radius: 14px; border: 1px solid rgba(56, 189, 248, 0.3);">
               <label style="color:#7dd3fc; font-weight:800;">🔑 本站后台独立管理登录密码 (修改后请牢记，默认 521)</label>
               <input type="text" id="admin_customPassword" class="admin-input" placeholder="输入新管理密码 (留空则默认为 521)">
@@ -91,8 +90,8 @@
         <!-- 2. 门禁关卡 -->
         <section id="tab-gatekeeper" class="tab-pane">
           <div class="pane-header">
-            <h3>🔒 门禁关卡与包容提示词设置</h3>
-            <p>控制是否启用密码与声纹解锁，输错时将随机展示包容接纳提示词。</p>
+            <h3>🔒 门禁关卡、数字密码与专属语音誓言</h3>
+            <p>控制是否启用密码，设定数字密码与声纹语音识别暗号。</p>
           </div>
           <div class="form-grid">
             <div class="form-group">
@@ -105,7 +104,15 @@
             <div class="form-group"><label>门禁卡片标题</label><input type="text" id="gatekeeper_title" class="admin-input"></div>
             <div class="form-group" style="grid-column: 1 / -1;"><label>提问文案</label><input type="text" id="gatekeeper_question" class="admin-input"></div>
             <div class="form-group"><label>提示文案 (Hint)</label><input type="text" id="gatekeeper_hint" class="admin-input"></div>
-            <div class="form-group"><label>正确解锁密码 (不区分大小写)</label><input type="text" id="gatekeeper_correctAnswer" class="admin-input"></div>
+            <div class="form-group"><label>正确解锁数字密码 (如 240520)</label><input type="text" id="gatekeeper_correctAnswer" class="admin-input"></div>
+            
+            <!-- 专属语音密码设定 -->
+            <div class="form-group" style="grid-column: 1 / -1; background: rgba(245, 158, 11, 0.1); padding: 14px; border-radius: 14px; border: 1.5px solid rgba(245, 158, 11, 0.35);">
+              <label style="color:#fde68a; font-weight:800;">🎙️ 专属语音誓言解锁密码 (💎 授权专属特权 · 多个用逗号隔开)</label>
+              <input type="text" id="gatekeeper_voiceVows" class="admin-input" placeholder="例如: 众水不能熄灭, 我愿一生包容你, 永远爱你, 240520">
+              <small style="color:#94a3b8; font-size:11.5px; margin-top:6px; display:block;">访客点击主页麦克风，念出上述包含的任意一句话或数字，即可通过声纹直接解锁进入！</small>
+            </div>
+
             <div class="form-group" style="grid-column: 1 / -1;"><label>输错密码时的包容提示词 (每行一条 · 体现接纳与爱)</label><textarea id="gatekeeper_errorTips" class="admin-textarea" rows="4"></textarea></div>
           </div>
         </section>
@@ -140,8 +147,8 @@
         <section id="tab-checklist" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
-              <h3>📝 100 件同行契约清单 (全情绪图谱)</h3>
-              <p>管理各阶段的小事条目，支持选择所属阶段 (Phase 1 恋爱 / 2 订婚 / 3 结婚)。</p>
+              <h3>📝 100 件同行契约清单</h3>
+              <p>管理基础小事条目，前台会自动根据三大时期进行独立隔离展现。</p>
             </div>
             <button class="btn-add" onclick="addChecklistItem()">➕ 新增小事条目</button>
           </div>
@@ -153,7 +160,7 @@
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <h3>🎟️ 舍己与包容特权刮刮乐</h3>
-              <p>管理特权券标题、所属阶段与内容。</p>
+              <p>管理特权券标题与内容。</p>
             </div>
             <button class="btn-add" onclick="addScratchCard()">➕ 新增特权卡券</button>
           </div>
