@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、多曲目黑胶播放列表控制器、手势交互自动唤醒音频
+ * 作用: 动效中枢、多曲目黑胶播放列表控制器、歌单删除管理、烟花与粒子音效
  */
 
 class EffectsEngine {
@@ -24,6 +24,14 @@ class EffectsEngine {
     const audioCfg = this.config.audio || {};
     if (Array.isArray(audioCfg.playlist) && audioCfg.playlist.length > 0) {
       return audioCfg.playlist;
+    }
+    if (audioCfg.bgmUrl) {
+      return [{
+        title: audioCfg.bgmTitle || "告白气球 (浪漫钢琴版)",
+        artist: audioCfg.bgmArtist || "周杰伦",
+        url: audioCfg.bgmUrl,
+        cover: audioCfg.vinylCover || ""
+      }];
     }
     return [
       {
@@ -54,16 +62,16 @@ class EffectsEngine {
     this.renderPlaylistPopup();
     this.updateTrackInfoDisplay();
 
-    // 绑定全屏首次交互手势，瞬间解锁浏览器音频播放权限
-    const unlockAudioContext = () => {
+    // 首次交互手势唤醒，解除桌面端浏览器自动静音限制
+    const unlockAudio = () => {
       if (this.config.audio && this.config.audio.bgmAutoPlay !== false && !this.isPlaying) {
         this.playBgm();
       }
-      document.removeEventListener("click", unlockAudioContext);
-      document.removeEventListener("touchstart", unlockAudioContext);
+      document.removeEventListener("click", unlockAudio);
+      document.removeEventListener("touchstart", unlockAudio);
     };
-    document.addEventListener("click", unlockAudioContext, { once: true });
-    document.addEventListener("touchstart", unlockAudioContext, { once: true });
+    document.addEventListener("click", unlockAudio, { once: true });
+    document.addEventListener("touchstart", unlockAudio, { once: true });
 
     window.addEventListener("resize", () => this.initCanvasSize());
     this.startAnimationLoop();
@@ -103,9 +111,8 @@ class EffectsEngine {
       });
 
       this.bgmAudio.addEventListener("error", () => {
-        console.warn("当前音源不可用，自动切换至高可用浪漫流...");
-        this.bgmAudio.src = "https://music.163.com/song/media/outer/url?id=440208476.mp3";
-        this.bgmAudio.play().catch(() => {});
+        console.warn("当前曲目播放异常，自动跳入下一首...");
+        setTimeout(() => this.nextTrack(), 500);
       });
     }
 
@@ -171,6 +178,31 @@ class EffectsEngine {
     this.loadTrack(index, true);
   }
 
+  // 🌟 前台歌单直接删除单曲
+  deleteTrackFromPopup(e, index) {
+    e.stopPropagation();
+    if (this.playlist.length <= 1) {
+      alert("⚠️ 歌单中请至少保留一首背景音乐！");
+      return;
+    }
+    if (!confirm(`确定要从当前歌单中移除《${this.playlist[index].title}》吗？`)) return;
+
+    const isCurrentPlaying = (this.currentTrackIndex === index);
+    this.playlist.splice(index, 1);
+
+    if (isCurrentPlaying) {
+      if (this.currentTrackIndex >= this.playlist.length) {
+        this.currentTrackIndex = 0;
+      }
+      this.loadTrack(this.currentTrackIndex, this.isPlaying);
+    } else if (this.currentTrackIndex > index) {
+      this.currentTrackIndex--;
+    }
+
+    this.renderPlaylistPopup();
+    this.showMiniToast("✓ 已从歌单中移除该歌曲");
+  }
+
   setVinylVisualPlaying(playing) {
     const disc = document.getElementById("vinyl-disc");
     const toggleBtn = document.getElementById("audio-toggle-btn");
@@ -229,6 +261,7 @@ class EffectsEngine {
           <div class="vinyl-playlist-item-artist">${this.escape(track.artist)}</div>
         </div>
         <div class="vinyl-playlist-item-status">${idx === this.currentTrackIndex ? '▶' : ''}</div>
+        <button class="vinyl-playlist-item-del" title="从歌单删除" onclick="window.Effects.deleteTrackFromPopup(event, ${idx})" style="background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer; padding:2px 6px;">🗑️</button>
       </div>
     `).join("");
   }
