@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 架构: 单源多租户路由、单曲高可用流式音频代理通道、双轨管理鉴权、免密灵宠通道、圣洁言语过滤、HMAC 授权验证
+ * 作用: R2 数据持久化、云端安全验密、在线搜歌与高可用流媒体中继
  */
 
 export default {
@@ -23,10 +23,7 @@ export default {
     function jsonResponse(data, status = 200) {
       return new Response(JSON.stringify(data), {
         status,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json; charset=utf-8"
-        }
+        headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" }
       });
     }
 
@@ -354,17 +351,16 @@ export default {
         });
       }
 
-      // ================= 8. 在线音乐检索 (酷狗开放检索 + 浪漫精选库) =================
+      // 8. 🔍 在线音乐搜索引擎 (恢复原版酷狗官方检索结构)
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim();
         const songs = [];
         const seen = new Set();
 
         if (keyword) {
-          // 酷狗官方开放搜索接口
           try {
             const kgRes = await fetch(
-              `https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=1&pagesize=8&filter=2&bitrate=0&isfp=0`,
+              `https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=1&pagesize=10&filter=2&bitrate=0&isfp=0`,
               { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } }
             );
             if (kgRes.ok) {
@@ -373,14 +369,15 @@ export default {
               kgList.forEach(item => {
                 const sName = (item.SongName || "").replace(/<[^>]+>/g, "");
                 const sArtist = (item.SingerName || "").replace(/<[^>]+>/g, "");
-                const fHash = item.FileHash || item.HQFileHash;
+                const fHash = item.FileHash || item.HQFileHash || item.SQFileHash;
                 if (sName && fHash && !seen.has(fHash)) {
                   seen.add(fHash);
                   songs.push({
                     id: fHash,
                     title: sName,
                     artist: sArtist,
-                    url: `/api/love/music-stream?hash=${fHash}`
+                    albumId: item.AlbumID || "0",
+                    url: `/api/love/music-stream?hash=${fHash}&album_id=${item.AlbumID || 0}`
                   });
                 }
               });
@@ -388,54 +385,68 @@ export default {
           } catch (_) {}
         }
 
-        // 默认浪漫精选曲库 (100% 稳定可播)
-        const PRESETS = [
-          { title: "告白气球 (浪漫钢琴版)", artist: "周杰伦 / 纯音乐", url: "/api/love/music-stream?preset=gaobai" },
-          { title: "晴天 (唯美吉他版)", artist: "周杰伦 / 纯音乐", url: "/api/love/music-stream?preset=qingtian" },
-          { title: "简单爱 (心动轻柔版)", artist: "周杰伦 / 纯音乐", url: "/api/love/music-stream?preset=jiandanai" },
-          { title: "Sweet Memories 唯美之约", artist: "经典浪漫 / 纯音乐", url: "/api/love/music-stream?preset=sweet" }
-        ];
-
         if (songs.length === 0) {
-          PRESETS.forEach(item => songs.push(item));
+          const PRESET_LIST = [
+            { title: "告白气球 (经典原声)", artist: "周杰伦", hash: "E3A199727B40A5B73C4CE15CEE5FA41E", albumId: "1794711" },
+            { title: "晴天 (经典原声)", artist: "周杰伦", hash: "A0A164B62580DA8E5BCEBDEB4F69B829", albumId: "960395" },
+            { title: "简单爱 (经典原声)", artist: "周杰伦", hash: "8078BA5188E67E7DE28D08F086ED3FDE", albumId: "959958" },
+            { title: "七里香 (经典原声)", artist: "周杰伦", hash: "9B56F4543E82245C58C3602D5A8696F2", albumId: "960144" }
+          ];
+          PRESET_LIST.forEach(item => {
+            songs.push({
+              id: item.hash,
+              title: item.title,
+              artist: item.artist,
+              albumId: item.albumId,
+              url: `/api/love/music-stream?hash=${item.hash}&album_id=${item.albumId}`
+            });
+          });
         }
 
         return jsonResponse({ success: true, songs });
       }
 
-      // ================= 9. 核心流式音频中继代理 (服务端直连拉取，解决防盗链与 CORS) =================
+      // 9. 🎵 音频中继与解析 (流式转发防盗链，无损输出)
       if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
         const hash = url.searchParams.get("hash");
-        const preset = url.searchParams.get("preset");
-        let playUrl = "";
+        const albumId = url.searchParams.get("album_id") || "0";
+        let targetAudioUrl = "";
 
-        const PRESET_MAP = {
-          gaobai: "https://music.163.com/song/media/outer/url?id=440208476.mp3",
-          qingtian: "https://music.163.com/song/media/outer/url?id=461520146.mp3",
-          jiandanai: "https://music.163.com/song/media/outer/url?id=441116289.mp3",
-          sweet: "https://music.163.com/song/media/outer/url?id=441116287.mp3"
-        };
-
-        if (preset && PRESET_MAP[preset]) {
-          playUrl = PRESET_MAP[preset];
-        } else if (hash) {
+        if (hash) {
+          // 通道 A: 酷狗移动端接口
           try {
-            const kgRes = await fetch(`https://m.kugou.com/app/i/getSongInfo.php?cmd=playInfo&hash=${hash}`, {
-              headers: {
-                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)"
-              }
+            const kgInfoRes = await fetch(`https://m.kugou.com/app/i/getSongInfo.php?cmd=playInfo&hash=${hash}`, {
+              headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)" }
             });
-            if (kgRes.ok) {
-              const info = await kgRes.json();
+            if (kgInfoRes.ok) {
+              const info = await kgInfoRes.json();
               if (info && info.url && info.url.startsWith("http")) {
-                playUrl = info.url;
+                targetAudioUrl = info.url;
               }
             }
           } catch (_) {}
+
+          // 通道 B: 酷狗网页版接口兜底
+          if (!targetAudioUrl) {
+            try {
+              const kgWebRes = await fetch(`https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&album_id=${albumId}&dfid=-&mid=-&platid=4&_=${Date.now()}`, {
+                headers: {
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                  "Cookie": "kg_mid=e8d0e74b68ef5c4c95f19067b5b5c935; kg_dfid=2xP9uN2gRj5h0Xg5m54P2x9n",
+                  "Referer": "https://www.kugou.com/"
+                }
+              });
+              if (kgWebRes.ok) {
+                const data = await kgWebRes.json();
+                targetAudioUrl = data.data?.play_url || data.data?.play_backup_url || "";
+              }
+            } catch (_) {}
+          }
         }
 
-        if (!playUrl || !playUrl.startsWith("http")) {
-          playUrl = PRESET_MAP.gaobai;
+        // 终极保障直连
+        if (!targetAudioUrl || !targetAudioUrl.startsWith("http")) {
+          targetAudioUrl = "https://music.163.com/song/media/outer/url?id=1436709403.mp3";
         }
 
         // 服务端直传音频流，抹除 Referer，带上标准 CORS 与 Range 协议
@@ -447,7 +458,7 @@ export default {
           };
           if (range) forwardHeaders["Range"] = range;
 
-          const streamRes = await fetch(playUrl, {
+          const streamRes = await fetch(targetAudioUrl, {
             headers: forwardHeaders,
             redirect: "follow"
           });
@@ -469,10 +480,10 @@ export default {
           }
         } catch (_) {}
 
-        return Response.redirect(playUrl, 302);
+        return Response.redirect(targetAudioUrl, 302);
       }
 
-      // ================= 10. 静态文件流式输出 (/raw/*) =================
+      // 10. 静态文件流式输出 (/raw/*)
       if (url.pathname.startsWith("/raw/")) {
         if (!bucket) return new Response("Bucket Not Found", { status: 500 });
         const key = decodeURIComponent(url.pathname.replace(/^\/raw\//, ""));
