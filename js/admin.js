@@ -126,7 +126,6 @@ function renderAllForms() {
   renderChecklist();
   renderScratchCards();
 
-  // 单曲模式渲染
   const audio = currentConfig.audio || {};
   document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay !== false);
   document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "";
@@ -158,11 +157,21 @@ async function submitDomainLicense() {
   if (!code) return alert("请输入授权兑换码！");
   showToast("⏳ 正在验证...");
   try {
-    const res = await fetch("/api/love/verify-license", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ licenseCode: code, currentConfig }) });
+    const res = await fetch("/api/love/verify-license", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ licenseCode: code, currentConfig })
+    });
     const data = await res.json();
-    if (data.success) { alert(`🎉 ${data.message}`); await fetchConfigFromCloud(); }
-    else { alert(`❌ 激活失败: ${data.message}`); }
-  } catch (err) { alert("❌ 请求异常: " + err.message); }
+    if (data.success) {
+      alert(`🎉 ${data.message}`);
+      await fetchConfigFromCloud();
+    } else {
+      alert(`❌ 激活失败: ${data.message}`);
+    }
+  } catch (err) {
+    alert("❌ 请求异常: " + err.message);
+  }
 }
 
 function resetToCodePresets() {
@@ -176,7 +185,7 @@ function resetToCodePresets() {
   }
 }
 
-// ================= 🌟 音乐在线搜索核心逻辑 =================
+// 音乐在线检索
 function quickSearchTag(tagText) {
   document.getElementById("musicSearchKeyword").value = tagText;
   executeOnlineMusicSearch();
@@ -214,7 +223,6 @@ async function executeOnlineMusicSearch() {
   }
 }
 
-// 设置为单曲背景音乐
 function setAsSingleBGM(title, artist, url) {
   document.getElementById("audio_bgmTitle").value = title;
   document.getElementById("audio_bgmArtist").value = artist;
@@ -222,7 +230,7 @@ function setAsSingleBGM(title, artist, url) {
   showToast(`✓ 已将《${title}》填入背景音乐，请点击右上角【💾 立即发布生效】！`);
 }
 
-// 试听引擎 (直接播放 Worker 代理跨域流)
+// 试听引擎
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
@@ -244,20 +252,25 @@ function testPreviewAudio(url, btnId) {
   }
 
   currentPreviewBtnId = btnId;
-  if (currentBtn) currentBtn.textContent = "⏳ 播放中";
+  if (currentBtn) currentBtn.textContent = "⏳ 缓冲中";
 
   previewAudioObj = new Audio(url);
+
   previewAudioObj.play().then(() => {
     if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
-    showToast("🎵 正在播放代理试听曲目...");
-  }).catch(() => {
+    showToast("🎵 正在流畅试听曲目...");
+  }).catch((err) => {
     if (currentBtn) currentBtn.textContent = "🎧 试听";
-    showToast("⚠️ 浏览器拦截了播放，请再次点击");
+    showToast("⚠️ 该歌曲受版权限制无法试听，请更换其他曲目");
   });
 
-  previewAudioObj.onended = () => { if (currentBtn) currentBtn.textContent = "🎧 试听"; };
+  previewAudioObj.onended = () => {
+    if (currentBtn) currentBtn.textContent = "🎧 试听";
+  };
+  previewAudioObj.onerror = () => {
+    if (currentBtn) currentBtn.textContent = "🎧 试听";
+  };
 }
-// ================= 🎵 结束 =================
 
 function renderThemeShowroom() {
   const boyBox = document.getElementById("boyThemesContainer");
@@ -390,44 +403,108 @@ function deleteScratchCard(idx) { currentConfig.scratchCards.splice(idx, 1); ren
 
 let activeUploadCallback = null;
 let activeUploadInputId = null;
-function triggerDirectUpload(targetInputId, acceptType, callback) { activeUploadInputId = targetInputId; activeUploadCallback = callback; const uploader = document.getElementById("globalUploader"); uploader.accept = acceptType || "*/*"; uploader.click(); }
+function triggerDirectUpload(targetInputId, acceptType, callback) {
+  activeUploadInputId = targetInputId;
+  activeUploadCallback = callback;
+  const uploader = document.getElementById("globalUploader");
+  uploader.accept = acceptType || "*/*";
+  uploader.click();
+}
 
 document.getElementById("globalUploader").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
   showToast("⏳ 正在极速上传到空间里...");
-  const formData = new FormData(); formData.append("file", file);
+  const formData = new FormData();
+  formData.append("file", file);
   try {
     const token = getAuthToken();
-    const res = await fetch(`/api/love/upload?auth=${encodeURIComponent(token)}`, { method: "POST", headers: { "x-admin-auth": token, "Authorization": `Bearer ${token}` }, body: formData });
+    const res = await fetch(`/api/love/upload?auth=${encodeURIComponent(token)}`, {
+      method: "POST",
+      headers: { "x-admin-auth": token, "Authorization": `Bearer ${token}` },
+      body: formData
+    });
     const data = await res.json();
     if (data.success && data.url) {
       const targetInput = document.getElementById(activeUploadInputId);
-      if (targetInput) { targetInput.value = data.url; targetInput.dispatchEvent(new Event("input")); }
+      if (targetInput) {
+        targetInput.value = data.url;
+        targetInput.dispatchEvent(new Event("input"));
+      }
       if (activeUploadCallback) activeUploadCallback(data.url);
-      if (activeUploadInputId === "theme_customBgUrlBoy" && currentConfig) { if (!currentConfig.theme) currentConfig.theme = {}; currentConfig.theme.customBgUrlBoy = data.url; }
-      if (activeUploadInputId === "theme_customBgUrlGirl" && currentConfig) { if (!currentConfig.theme) currentConfig.theme = {}; currentConfig.theme.customBgUrlGirl = data.url; }
+      if (activeUploadInputId === "theme_customBgUrlBoy" && currentConfig) {
+        if (!currentConfig.theme) currentConfig.theme = {};
+        currentConfig.theme.customBgUrlBoy = data.url;
+      }
+      if (activeUploadInputId === "theme_customBgUrlGirl" && currentConfig) {
+        if (!currentConfig.theme) currentConfig.theme = {};
+        currentConfig.theme.customBgUrlGirl = data.url;
+      }
       showToast("✓ 上传成功！直链已自动填入");
-    } else { alert("❌ 上传失败"); }
-  } catch (err) { alert("❌ 上传异常: " + err.message); } finally { e.target.value = ""; }
+    } else {
+      alert("❌ 上传失败");
+    }
+  } catch (err) {
+    alert("❌ 上传异常: " + err.message);
+  } finally {
+    e.target.value = "";
+  }
 });
 
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
-  currentConfig.adminSecurity = { password: document.getElementById("admin_customPassword").value.trim() || "521", updatedAt: new Date().toISOString() };
+  currentConfig.adminSecurity = {
+    password: document.getElementById("admin_customPassword").value.trim() || "521",
+    updatedAt: new Date().toISOString()
+  };
   currentConfig.lifecycle = { currentPhase: document.getElementById("lifecycle_phase").value };
-  currentConfig.meta = { boyName: document.getElementById("meta_boyName").value.trim(), girlName: document.getElementById("meta_girlName").value.trim(), startDate: document.getElementById("meta_startDate").value.trim(), nextMilestoneTitle: document.getElementById("meta_nextMilestoneTitle").value.trim(), nextMilestoneDate: document.getElementById("meta_nextMilestoneDate").value.trim(), siteTitle: document.getElementById("meta_siteTitle").value.trim(), siteSubtitle: document.getElementById("meta_siteSubtitle").value.trim() };
+  currentConfig.meta = {
+    boyName: document.getElementById("meta_boyName").value.trim(),
+    girlName: document.getElementById("meta_girlName").value.trim(),
+    startDate: document.getElementById("meta_startDate").value.trim(),
+    nextMilestoneTitle: document.getElementById("meta_nextMilestoneTitle").value.trim(),
+    nextMilestoneDate: document.getElementById("meta_nextMilestoneDate").value.trim(),
+    siteTitle: document.getElementById("meta_siteTitle").value.trim(),
+    siteSubtitle: document.getElementById("meta_siteSubtitle").value.trim()
+  };
   const errorTipsRaw = document.getElementById("gatekeeper_errorTips").value.split("\n").map(s => s.trim()).filter(Boolean);
-  currentConfig.gatekeeper = { enabled: document.getElementById("gatekeeper_enabled").value === "true", title: document.getElementById("gatekeeper_title").value.trim(), question: document.getElementById("gatekeeper_question").value.trim(), hint: document.getElementById("gatekeeper_hint").value.trim(), correctAnswer: document.getElementById("gatekeeper_correctAnswer").value.trim(), voiceVows: document.getElementById("gatekeeper_voiceVows").value.trim(), errorTips: errorTipsRaw.length > 0 ? errorTipsRaw : ["没关系，慢慢想。"] };
-  currentConfig.letter = { title: document.getElementById("letter_title").value.trim(), signDate: document.getElementById("letter_signDate").value.trim(), signature: document.getElementById("letter_signature").value.trim(), content: document.getElementById("letter_content").value.trim() };
-  currentConfig.easterEggs = [ { id: "egg_1", selector: "#egg-star", message: document.getElementById("egg_1_message").value.trim() }, { id: "egg_2", selector: "#egg-paw", message: document.getElementById("egg_2_message").value.trim() } ];
-  currentConfig.theme = { ...(currentConfig.theme || {}), currentThemeBoy: currentConfig.theme?.currentThemeBoy || "sunset-twilight", currentThemeGirl: currentConfig.theme?.currentThemeGirl || "french-cream", customBgUrlBoy: document.getElementById("theme_customBgUrlBoy")?.value.trim() || "", customBgUrlGirl: document.getElementById("theme_customBgUrlGirl")?.value.trim() || "" };
+  currentConfig.gatekeeper = {
+    enabled: document.getElementById("gatekeeper_enabled").value === "true",
+    title: document.getElementById("gatekeeper_title").value.trim(),
+    question: document.getElementById("gatekeeper_question").value.trim(),
+    hint: document.getElementById("gatekeeper_hint").value.trim(),
+    correctAnswer: document.getElementById("gatekeeper_correctAnswer").value.trim(),
+    voiceVows: document.getElementById("gatekeeper_voiceVows").value.trim(),
+    errorTips: errorTipsRaw.length > 0 ? errorTipsRaw : ["没关系，慢慢想。"]
+  };
+  currentConfig.letter = {
+    title: document.getElementById("letter_title").value.trim(),
+    signDate: document.getElementById("letter_signDate").value.trim(),
+    signature: document.getElementById("letter_signature").value.trim(),
+    content: document.getElementById("letter_content").value.trim()
+  };
+  currentConfig.easterEggs = [
+    { id: "egg_1", selector: "#egg-star", message: document.getElementById("egg_1_message").value.trim() },
+    { id: "egg_2", selector: "#egg-paw", message: document.getElementById("egg_2_message").value.trim() }
+  ];
+  currentConfig.theme = {
+    ...(currentConfig.theme || {}),
+    currentThemeBoy: currentConfig.theme?.currentThemeBoy || "sunset-twilight",
+    currentThemeGirl: currentConfig.theme?.currentThemeGirl || "french-cream",
+    customBgUrlBoy: document.getElementById("theme_customBgUrlBoy")?.value.trim() || "",
+    customBgUrlGirl: document.getElementById("theme_customBgUrlGirl")?.value.trim() || ""
+  };
 
   (currentConfig.timeline || []).forEach((node, idx) => {
-    node.date = document.getElementById(`tl_date_${idx}`)?.value; node.tag = document.getElementById(`tl_tag_${idx}`)?.value; node.title = document.getElementById(`tl_title_${idx}`)?.value; node.location = document.getElementById(`tl_loc_${idx}`)?.value; node.desc = document.getElementById(`tl_desc_${idx}`)?.value; node.backText = document.getElementById(`tl_back_${idx}`)?.value; node.frontImg = document.getElementById(`tl_img_${idx}`)?.value;
+    node.date = document.getElementById(`tl_date_${idx}`)?.value;
+    node.tag = document.getElementById(`tl_tag_${idx}`)?.value;
+    node.title = document.getElementById(`tl_title_${idx}`)?.value;
+    node.location = document.getElementById(`tl_loc_${idx}`)?.value;
+    node.desc = document.getElementById(`tl_desc_${idx}`)?.value;
+    node.backText = document.getElementById(`tl_back_${idx}`)?.value;
+    node.frontImg = document.getElementById(`tl_img_${idx}`)?.value;
   });
 
-  // 单曲模式参数提取
   currentConfig.audio = {
     bgmAutoPlay: document.getElementById("audio_bgmAutoPlay").value === "true",
     bgmTitle: document.getElementById("audio_bgmTitle").value.trim(),
@@ -439,17 +516,66 @@ async function saveAllConfigToCloud() {
   showToast("⏳ 正在发布到独立存储空间...");
   const token = getAuthToken();
   try {
-    const res = await fetch(`/api/love/config?auth=${encodeURIComponent(token)}`, { method: "POST", headers: { "Content-Type": "application/json", "x-admin-auth": token, "Authorization": `Bearer ${token}` }, body: JSON.stringify({ config: currentConfig }) });
+    const res = await fetch(`/api/love/config?auth=${encodeURIComponent(token)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-auth": token, "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ config: currentConfig })
+    });
     const data = await res.json();
     if (data.success) {
       localStorage.setItem("love_admin_token", currentConfig.adminSecurity.password);
       showToast("✨ 全部配置与单曲 BGM 已成功发布！");
-    } else alert("❌ 保存失败: " + (data.error || "未授权"));
-  } catch (err) { alert("❌ 保存失败: " + err.message); }
+    } else {
+      alert("❌ 保存失败: " + (data.error || "未授权"));
+    }
+  } catch (err) {
+    alert("❌ 保存失败: " + err.message);
+  }
 }
 
-function exportBackupJSON() { if (!currentConfig) return; const a = document.createElement("a"); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentConfig, null, 2)); a.download = `雅歌契约配置备份_${Date.now()}.json`; a.click(); }
-function importConfigJSON(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (event) => { try { currentConfig = JSON.parse(event.target.result); renderAllForms(); showToast("✓ 成功载入"); } catch (_) { alert("❌ 格式损坏"); } }; reader.readAsText(file); e.target.value = ""; }
-function escapeHtml(s) { return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-document.querySelectorAll(".tab-btn").forEach(btn => { btn.addEventListener("click", () => { document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active")); btn.classList.add("active"); document.getElementById(btn.dataset.tab)?.classList.add("active"); }); });
-document.addEventListener("DOMContentLoaded", () => { const cached = localStorage.getItem("love_admin_token"); if (cached) { document.getElementById("adminPwdInput").value = cached; currentAdminToken = cached; verifyAdminLogin(); } });
+function exportBackupJSON() {
+  if (!currentConfig) return;
+  const a = document.createElement("a");
+  a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentConfig, null, 2));
+  a.download = `雅歌契约配置备份_${Date.now()}.json`;
+  a.click();
+}
+
+function importConfigJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      currentConfig = JSON.parse(event.target.result);
+      renderAllForms();
+      showToast("✓ 成功载入");
+    } catch (_) {
+      alert("❌ 格式损坏");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab)?.classList.add("active");
+  });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const cached = localStorage.getItem("love_admin_token");
+  if (cached) {
+    document.getElementById("adminPwdInput").value = cached;
+    currentAdminToken = cached;
+    verifyAdminLogin();
+  }
+});
