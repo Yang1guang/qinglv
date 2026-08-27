@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 架构: 单源多租户路由 (基于 Host 物理隔离)、双轨管理鉴权 (总控超级密码 + 租户独立密码)、圣洁言语结界过滤、HMAC 域名非对称授权、流媒体中继
+ * 架构: 单源多租户路由 (基于 Host 物理隔离)、双轨管理鉴权、免密灵宠情侣云端互通通道、圣洁言语过滤、HMAC 授权验证
  */
 
 export default {
@@ -162,6 +162,9 @@ export default {
             if (oldCfg._license && oldCfg._license.unlocked) {
               configToSave._license = oldCfg._license;
             }
+            if (oldCfg.petData && !configToSave.petData) {
+              configToSave.petData = oldCfg.petData;
+            }
           }
         } catch (_) {}
 
@@ -176,7 +179,49 @@ export default {
         });
       }
 
-      // 3. 上传多媒体附件
+      // 🌟 3. 恩典灵宠情侣免密跨端数据通道 (GET / POST)
+      if (url.pathname === "/api/love/pet") {
+        if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2" }, 500);
+
+        if (request.method === "GET") {
+          try {
+            const obj = await bucket.get(CONFIG_KEY);
+            if (obj) {
+              const cfg = JSON.parse(await obj.text());
+              return jsonResponse({ success: true, petData: cfg.petData || null });
+            }
+          } catch (_) {}
+          return jsonResponse({ success: true, petData: null });
+        }
+
+        if (request.method === "POST") {
+          let reqData = {};
+          try { reqData = await request.json(); } catch (_) {}
+          const newPetData = reqData.petData;
+
+          if (!newPetData) return jsonResponse({ success: false, error: "无数据" }, 400);
+
+          if (!sanitizeSanctity(JSON.stringify(newPetData))) {
+            return jsonResponse({ success: false, error: "言语不洁" }, 406);
+          }
+
+          let cfg = {};
+          try {
+            const obj = await bucket.get(CONFIG_KEY);
+            if (obj) cfg = JSON.parse(await obj.text());
+          } catch (_) {}
+
+          cfg.petData = newPetData;
+
+          await bucket.put(CONFIG_KEY, JSON.stringify(cfg), {
+            httpMetadata: { contentType: "application/json; charset=utf-8" }
+          });
+
+          return jsonResponse({ success: true, message: "灵宠足迹已同步至云端" });
+        }
+      }
+
+      // 4. 上传多媒体附件
       if (url.pathname === "/api/love/upload" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2 存储桶" }, 500);
         
@@ -197,7 +242,7 @@ export default {
         return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
-      // 4. 云端安全门禁校验
+      // 5. 云端安全门禁校验
       if (url.pathname === "/api/love/verify-gatekeeper" && request.method === "POST") {
         let reqData = {};
         try { reqData = await request.json(); } catch (_) {}
@@ -230,7 +275,7 @@ export default {
         }
       }
 
-      // 5. 域名专属非对称授权兑换 (防空覆盖机制)
+      // 6. 域名专属非对称授权兑换
       if (url.pathname === "/api/love/verify-license" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "存储服务不可用" }, 500);
 
@@ -278,7 +323,7 @@ export default {
         });
       }
 
-      // 6. 清理当前域名下的孤立废弃缓存
+      // 7. 清理当前域名下的孤立废弃缓存
       if (url.pathname === "/api/love/cleanup" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2 存储桶" }, 500);
         
@@ -319,7 +364,7 @@ export default {
         });
       }
 
-      // 7. 云端音乐搜索
+      // 8. 云端音乐搜索
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim();
         const songs = [];
@@ -373,7 +418,7 @@ export default {
         return jsonResponse({ success: true, songs });
       }
 
-      // 8. 音频流实时中继与解析
+      // 9. 音频流实时中继与解析
       if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
         const hash = url.searchParams.get("hash");
         const albumId = url.searchParams.get("album_id") || "0";
@@ -394,7 +439,7 @@ export default {
         return Response.redirect("https://music.163.com/song/media/outer/url?id=436514312.mp3", 302);
       }
 
-      // 9. 静态文件流式输出
+      // 10. 静态文件流式输出
       if (url.pathname.startsWith("/raw/")) {
         if (!bucket) return new Response("Bucket Not Found", { status: 500 });
         const key = decodeURIComponent(url.pathname.replace(/^\/raw\//, ""));
