@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、高稳定单曲循环播放引擎、黑胶唱针联动
+ * 作用: 动效中枢、高稳定单曲直连播放引擎、无死角流播
  */
 
 class EffectsEngine {
@@ -23,7 +23,8 @@ class EffectsEngine {
     return {
       title: audioCfg.bgmTitle || "告白气球 (浪漫钢琴版)",
       artist: audioCfg.bgmArtist || "周杰伦",
-      url: audioCfg.bgmUrl || "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
+      // 默认走本地代理，杜绝直接暴漏网易云被拦截
+      url: audioCfg.bgmUrl || "/api/love/music-stream?netease_id=440208476",
       cover: audioCfg.vinylCover || ""
     };
   }
@@ -34,7 +35,7 @@ class EffectsEngine {
     this.initEventListeners();
     this.updateTrackInfoDisplay();
 
-    // 交互唤醒手势，解除所有浏览器的静音拦截
+    // 交互唤醒手势，解除所有浏览器的防静音拦截
     const unlockAudio = () => {
       if (this.config.audio && this.config.audio.bgmAutoPlay !== false && !this.isPlaying) {
         this.playBgm();
@@ -70,7 +71,7 @@ class EffectsEngine {
       const track = this.getNormalizedAudioConfig();
       this.bgmAudio = new Audio(track.url);
       this.bgmAudio.preload = "auto";
-      this.bgmAudio.loop = true; // 经典单曲稳定循环
+      this.bgmAudio.loop = true; // 单曲稳定循环
 
       this.bgmAudio.addEventListener("play", () => {
         this.isPlaying = true;
@@ -83,7 +84,9 @@ class EffectsEngine {
       });
 
       this.bgmAudio.addEventListener("error", () => {
-        console.warn("当前背景音乐加载受阻");
+        console.warn("当前背景音乐流加载受阻，正在安全挂起...");
+        this.isPlaying = false;
+        this.setVinylVisualPlaying(false);
       });
     }
   }
@@ -94,7 +97,6 @@ class EffectsEngine {
       this.isPlaying = true;
       this.setVinylVisualPlaying(true);
     }).catch((err) => {
-      console.warn("播放受阻:", err);
       this.isPlaying = false;
       this.setVinylVisualPlaying(false);
     });
@@ -158,14 +160,6 @@ class EffectsEngine {
         if (defaultHeart) defaultHeart.style.display = "block";
       }
     }
-  }
-
-  showMiniToast(text) {
-    const toast = document.getElementById("toast") || document.createElement("div");
-    toast.className = "admin-toast show";
-    toast.textContent = text;
-    if (!document.body.contains(toast)) document.body.appendChild(toast);
-    setTimeout(() => toast.classList.remove("show"), 2800);
   }
 
   initEventListeners() {
@@ -286,10 +280,6 @@ class EffectsEngine {
       requestAnimationFrame(loop);
     };
     loop();
-  }
-
-  escape(s) {
-    return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 }
 
