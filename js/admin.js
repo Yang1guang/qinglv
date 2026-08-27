@@ -199,6 +199,7 @@ function resetToCodePresets() {
   }
 }
 
+// ================= 🎵 播放列表管理 (防重复 + 独立删除) =================
 function renderPlaylist() {
   const container = document.getElementById("playlistContainer");
   if (!container) return;
@@ -228,7 +229,7 @@ function renderPlaylist() {
     card.innerHTML = `
       <div class="item-card-header">
         <span class="item-card-title">🎵 曲目 #${idx + 1} - ${escapeHtml(track.title || "未命名歌曲")}</span>
-        <button class="btn-del" onclick="deletePlaylistItem(${idx})">🗑️ 删除</button>
+        <button class="btn-del" onclick="deletePlaylistItem(${idx})">🗑️ 删除该曲</button>
       </div>
       <div class="form-grid">
         <div class="form-group"><label>歌曲名称</label><input type="text" class="admin-input" id="pl_title_${idx}" value="${escapeHtml(track.title || "")}" oninput="currentConfig.audio.playlist[${idx}].title=this.value"></div>
@@ -258,9 +259,9 @@ function addPlaylistItem() {
   if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
 
   currentConfig.audio.playlist.push({
-    title: "告白气球 (浪漫钢琴版)",
-    artist: "周杰伦 / 纯音乐",
-    url: "https://music.163.com/song/media/outer/url?id=440208476.mp3",
+    title: "Sweet Memories 浪漫钢琴",
+    artist: "松田圣子 / 纯音乐",
+    url: "https://music.163.com/song/media/outer/url?id=441116287.mp3",
     cover: ""
   });
   renderPlaylist();
@@ -270,15 +271,24 @@ function deletePlaylistItem(idx) {
   if (currentConfig.audio.playlist.length <= 1) {
     return alert("⚠️ 歌单中请至少保留一首背景音乐！");
   }
-  if (confirm("确定从黑胶歌单中删除该曲目吗？")) {
+  const trackName = currentConfig.audio.playlist[idx]?.title || "该歌曲";
+  if (confirm(`确定从黑胶歌单中删除《${trackName}》吗？`)) {
     currentConfig.audio.playlist.splice(idx, 1);
     renderPlaylist();
+    showToast(`✓ 已移除《${trackName}》，请点击右上角保存！`);
   }
 }
 
+// 🌟 加入歌单（带重复校验，防止无意间连续点击加重复）
 function addSongToPlaylist(title, artist, url) {
   if (!currentConfig.audio) currentConfig.audio = {};
   if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
+
+  const isDuplicate = currentConfig.audio.playlist.some(item => item.title === title && item.url === url);
+  if (isDuplicate) {
+    showToast(`⚠️ 《${title}》已在当前播放列表中！`);
+    return;
+  }
 
   currentConfig.audio.playlist.push({
     title: title || "浪漫心动曲",
@@ -287,7 +297,7 @@ function addSongToPlaylist(title, artist, url) {
     cover: ""
   });
   renderPlaylist();
-  showToast(`✓ 已将【${title}】加入歌单，请点击右上角【💾 立即发布生效】！`);
+  showToast(`✓ 已成功将《${title}》加入歌单，请点击右上角【💾 立即发布生效】！`);
 }
 
 function renderThemeShowroom() {
@@ -416,7 +426,6 @@ async function executeOnlineMusicSearch() {
   }
 }
 
-// 试听引擎（同步直出，绝不弹窗拦截）
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
@@ -445,7 +454,6 @@ function testPreviewAudio(url, btnId) {
     if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
     showToast("🎵 正在流畅试听曲目...");
   }).catch(() => {
-    // 自动无感降级备用源播放
     previewAudioObj.src = "https://music.163.com/song/media/outer/url?id=440208476.mp3";
     previewAudioObj.play().then(() => {
       if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
@@ -871,7 +879,7 @@ function importConfigJSON(e) {
 }
 
 function escapeHtml(s) {
-  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 document.querySelectorAll(".tab-btn").forEach(btn => {
