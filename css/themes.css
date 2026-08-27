@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: css/themes.css
- * 作用: 12 款男女高奢主题变量定义与浅色系/深色系自适应对比度
+ * 作用: 12 款男女高奢主题变量定义与浅色系/深色系高保真自适应对比度
  */
 
 /* ================= 👦 男生 6 套深色主题 ================= */
@@ -62,26 +62,26 @@ body.theme-aurora-night {
 /* ================= 👧 女生 6 套浅色唯美主题 ================= */
 body.theme-french-cream {
   --bg-primary: #f5ebe1;
-  --bg-card: rgba(255, 255, 255, 0.85);
-  --border-card: rgba(120, 83, 56, 0.25);
-  --text-main: #3e2723;
-  --text-sub: #795548;
+  --bg-card: rgba(255, 255, 255, 0.88);
+  --border-card: rgba(120, 83, 56, 0.28);
+  --text-main: #451a03;
+  --text-sub: #78350f;
   --accent-gold: #b45309;
 }
 
 body.theme-sakura-romance {
   --bg-primary: #fce7f3;
-  --bg-card: rgba(255, 255, 255, 0.88);
-  --border-card: rgba(244, 63, 94, 0.3);
-  --text-main: #831843;
-  --text-sub: #be185d;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --border-card: rgba(244, 63, 94, 0.35);
+  --text-main: #881337;
+  --text-sub: #9f1239;
   --accent-gold: #e11d48;
 }
 
 body.theme-monet-garden {
   --bg-primary: #dcfce7;
-  --bg-card: rgba(255, 255, 255, 0.88);
-  --border-card: rgba(22, 101, 52, 0.3);
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --border-card: rgba(22, 101, 52, 0.35);
   --text-main: #14532d;
   --text-sub: #166534;
   --accent-gold: #15803d;
@@ -90,48 +90,99 @@ body.theme-monet-garden {
 body.theme-morning-dew {
   --bg-primary: #f1f5f9;
   --bg-card: rgba(255, 255, 255, 0.92);
-  --border-card: rgba(148, 163, 184, 0.4);
+  --border-card: rgba(148, 163, 184, 0.45);
   --text-main: #0f172a;
-  --text-sub: #475569;
+  --text-sub: #334155;
   --accent-gold: #d97706;
 }
 
 body.theme-sunset-blush {
   --bg-primary: #f3e8ff;
-  --bg-card: rgba(255, 255, 255, 0.88);
-  --border-card: rgba(168, 85, 247, 0.3);
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --border-card: rgba(168, 85, 247, 0.35);
   --text-main: #581c87;
-  --text-sub: #7e22ce;
+  --text-sub: #6b21a8;
   --accent-gold: #9333ea;
 }
 
 body.theme-orange-sea {
   --bg-primary: #ffedd5;
-  --bg-card: rgba(255, 255, 255, 0.88);
-  --border-card: rgba(234, 88, 12, 0.3);
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --border-card: rgba(234, 88, 12, 0.35);
   --text-main: #7c2d12;
   --text-sub: #9a3412;
   --accent-gold: #ea580c;
 }
 
-/* 浅色主题通用文字与卡片反转保护 */
+/* ================= 🌟 浅色主题全组件文字对比度保护 ================= */
+body[data-theme-type="light"] .section-title__text {
+  background: linear-gradient(135deg, #881337 0%, #be123c 50%, #9f1239 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 2px 8px rgba(244, 63, 94, 0.15)) !important;
+}
+
+body[data-theme-type="light"] .section-title__desc {
+  color: var(--text-sub) !important;
+  font-weight: 700 !important;
+  opacity: 0.9 !important;
+}
+
 body[data-theme-type="light"] .hero-section__names {
   color: var(--text-main) !important;
-  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important;
+}
+
+body[data-theme-type="light"] .hero-section__subtitle {
+  color: var(--text-sub) !important;
+  font-weight: 600 !important;
+}
+
+body[data-theme-type="light"] .hero-section__badge {
+  background: rgba(244, 63, 94, 0.12) !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+  color: #be123c !important;
+}
+
+body[data-theme-type="light"] .love-timer {
+  background: var(--bg-card) !important;
+  border-color: var(--border-card) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05) !important;
+}
+
+body[data-theme-type="light"] .love-timer__title {
+  color: var(--text-sub) !important;
+  font-weight: 700 !important;
+}
+
+body[data-theme-type="light"] .love-timer__milestone {
+  background: rgba(244, 63, 94, 0.08) !important;
+  border-color: rgba(244, 63, 94, 0.25) !important;
+  color: var(--text-main) !important;
+  font-weight: 700 !important;
 }
 
 body[data-theme-type="light"] .confession-card {
   background: var(--bg-card) !important;
   border-color: var(--border-card) !important;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05) !important;
 }
 
 body[data-theme-type="light"] .confession-card__title {
   color: var(--text-main) !important;
+  font-weight: 900 !important;
 }
 
 body[data-theme-type="light"] .confession-card__text {
+  color: var(--text-main) !important;
+  font-weight: 600 !important;
+  line-height: 1.8 !important;
+}
+
+body[data-theme-type="light"] .confession-card__date,
+body[data-theme-type="light"] .confession-card__sign {
   color: var(--text-sub) !important;
+  font-weight: 700 !important;
 }
 
 body[data-theme-type="light"] .checklist-card {
@@ -139,6 +190,22 @@ body[data-theme-type="light"] .checklist-card {
   border-color: var(--border-card) !important;
 }
 
+body[data-theme-type="light"] .checklist-card__stats {
+  color: var(--text-sub) !important;
+  font-weight: 800 !important;
+}
+
+body[data-theme-type="light"] .checklist-item {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: var(--border-card) !important;
+}
+
 body[data-theme-type="light"] .checklist-item__text {
   color: var(--text-main) !important;
+  font-weight: 700 !important;
+}
+
+body[data-theme-type="light"] .universe-footer__text {
+  color: var(--text-sub) !important;
+  font-weight: 700 !important;
 }
