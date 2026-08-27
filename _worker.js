@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 架构: 单源多租户路由、高可用无损音乐直连池、前后台歌单免密双向同步通道、双轨管理鉴权、HMAC 授权
+ * 架构: 单源多租户路由 (基于 Host 物理隔离)、专属直连音乐池、前后台歌单免密同步通道、双轨管理鉴权、HMAC 授权
  */
 
 export default {
@@ -173,7 +173,7 @@ export default {
         });
       }
 
-      // 🌟 3. 前台歌单删除与更新免密双向同步通道
+      // 3. 歌单持久化免密同步通道 (前台与后台删除实时保存)
       if (url.pathname === "/api/love/playlist" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -195,10 +195,10 @@ export default {
           httpMetadata: { contentType: "application/json; charset=utf-8" }
         });
 
-        return jsonResponse({ success: true, message: "播放列表已实时同步写入云端" });
+        return jsonResponse({ success: true, message: "播放列表已同步至云端" });
       }
 
-      // 4. 上传多媒体附件
+      // 4. 上传多媒体附件 (MP3 音频、壁纸与拍立得照片)
       if (url.pathname === "/api/love/upload" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
         
@@ -219,7 +219,7 @@ export default {
         return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
-      // 5. 恩典灵宠通道
+      // 5. 恩典灵宠免密数据通道
       if (url.pathname === "/api/love/pet") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -381,7 +381,7 @@ export default {
         });
       }
 
-      // 9. 🎵 在线音乐直连检索库 (100% 可播、无版权风控、绝无 That Girl)
+      // 9. 🎵 在线音乐直连检索池 (高品质纯直连，彻底杜绝 That Girl 陷阱与风控)
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim().toLowerCase();
         
