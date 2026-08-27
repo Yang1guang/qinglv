@@ -185,7 +185,7 @@ function resetToCodePresets() {
   }
 }
 
-// 音乐在线检索
+// 音乐在线搜索
 function quickSearchTag(tagText) {
   document.getElementById("musicSearchKeyword").value = tagText;
   executeOnlineMusicSearch();
@@ -196,7 +196,7 @@ async function executeOnlineMusicSearch() {
   const listContainer = document.getElementById("onlineSearchResultList");
   if (!kw) return alert("请输入要搜索的歌名或歌手！");
 
-  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索【${escapeHtml(kw)}】直连代理音频流...</div>`;
+  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索【${escapeHtml(kw)}】直连音频流...</div>`;
 
   try {
     const res = await fetch(`/api/love/music-search?keyword=${encodeURIComponent(kw)}`);
@@ -216,7 +216,7 @@ async function executeOnlineMusicSearch() {
         </div>
       `).join("");
     } else {
-      listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">🍃 未找到歌曲，请换个词试试</div>`;
+      listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">🍃 未找到歌曲，请换个关键词试试</div>`;
     }
   } catch (_) {
     listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">❌ 检索超时，请检查网络</div>`;
@@ -227,7 +227,7 @@ function setAsSingleBGM(title, artist, url) {
   document.getElementById("audio_bgmTitle").value = title;
   document.getElementById("audio_bgmArtist").value = artist;
   document.getElementById("audio_bgmUrl").value = url;
-  showToast(`✓ 已将《${title}》填入背景音乐，请点击右上角【💾 立即发布生效】！`);
+  showToast(`✓ 已将《${title}》设为BGM，请点击右上角【💾 立即发布生效】！`);
 }
 
 // 试听引擎
@@ -261,7 +261,7 @@ function testPreviewAudio(url, btnId) {
     showToast("🎵 正在流畅试听曲目...");
   }).catch((err) => {
     if (currentBtn) currentBtn.textContent = "🎧 试听";
-    showToast("⚠️ 该歌曲受版权限制无法试听，请更换其他曲目");
+    showToast("⚠️ 该音频流加载失败，请换一首或上传本地MP3");
   });
 
   previewAudioObj.onended = () => {
