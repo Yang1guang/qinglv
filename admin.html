@@ -60,17 +60,24 @@
         <section id="tab-meta" class="tab-pane active">
           <div class="pane-header">
             <h3>👫 基础档案与生命周期阶段设置</h3>
-            <p>控制当前关系阶段（自动隔离越界选项）、恋爱同行时间与纪念日倒计时。</p>
+            <p>控制当前关系阶段（自动隔离越界选项）、后台登录口令与纪念日倒计时。</p>
           </div>
           <div class="form-grid">
+            <!-- 独立管理密码修改 -->
+            <div class="form-group" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1); padding: 14px; border-radius: 14px; border: 1px solid rgba(56, 189, 248, 0.3);">
+              <label style="color:#7dd3fc; font-weight:800;">🔑 本站后台独立管理登录密码 (修改后请牢记，默认 521)</label>
+              <input type="text" id="admin_customPassword" class="admin-input" placeholder="输入新管理密码 (留空则默认为 521)">
+            </div>
+
             <div class="form-group" style="grid-column: 1 / -1; background: rgba(245, 158, 11, 0.12); padding: 14px; border-radius: 14px; border: 1px solid rgba(245,158,11,0.3);">
-              <label style="color:#fde68a;">🌟 当前关系生命周期 (严格边界机制)</label>
+              <label style="color:#fde68a; font-weight:800;">🌟 当前关系生命周期 (严格边界机制)</label>
               <select id="lifecycle_phase" class="admin-select" style="font-weight: 900; color: #38bdf8;">
                 <option value="dating">🌿 恋爱期 (坚守圣洁与精神守望 · 严禁越界同居与亲密选项)</option>
                 <option value="engaged">💍 订婚期 (盟约筹备与妥协舍己 · 解锁婚前规划选项)</option>
                 <option value="married">🏠 结婚期 (合为一体与生活烟火气 · 解锁同居与家庭全部选项)</option>
               </select>
             </div>
+            
             <div class="form-group"><label>男孩姓名/昵称</label><input type="text" id="meta_boyName" class="admin-input"></div>
             <div class="form-group"><label>女孩姓名/昵称</label><input type="text" id="meta_girlName" class="admin-input"></div>
             <div class="form-group"><label>恋爱同行起始时间 (YYYY-MM-DD HH:mm:ss)</label><input type="text" id="meta_startDate" class="admin-input"></div>
