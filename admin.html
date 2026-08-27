@@ -49,7 +49,7 @@
         <button class="tab-btn" data-tab="tab-timeline">🪐 4. 时光轴与拍立得相册</button>
         <button class="tab-btn" data-tab="tab-checklist">📝 5. 100 件同行契约清单</button>
         <button class="tab-btn" data-tab="tab-scratch">🎟️ 6. 舍己与包容特权刮刮乐</button>
-        <button class="tab-btn" data-tab="tab-audio">🎵 7. 专属黑胶多曲目歌单</button>
+        <button class="tab-btn" data-tab="tab-audio">🎵 7. 背景音乐 (高稳定单曲)</button>
         <button class="tab-btn" data-tab="tab-eggs">🐣 8. 隐藏彩蛋悄悄话</button>
         <button class="tab-btn" data-tab="tab-theme">🎨 9. 双视角主题陈列室</button>
         <button class="tab-btn" data-tab="tab-license">💎 10. 星河契约授权激活</button>
@@ -166,53 +166,37 @@
           <div id="scratchCardsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 7. 🎵 专属黑胶多曲目歌单 -->
+        <!-- 7. 🎵 单曲 BGM 设置 -->
         <section id="tab-audio" class="tab-pane">
-          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-            <div>
-              <h3>🎵 专属黑胶多曲目歌单 (支持在线轮播与即时删除)</h3>
-              <p>支持添加多首专属歌曲，前台黑胶唱片支持顺序轮播、切歌与删除同步。</p>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button class="btn-tool" style="background: rgba(239, 68, 68, 0.18); color:#fca5a5; border-color: rgba(239, 68, 68, 0.35);" onclick="resetOfficialPlaylist()">🔄 一键重置为官方精选歌单</button>
-              <button class="btn-add" onclick="addPlaylistItem()">➕ 新增自选歌曲</button>
-            </div>
+          <div class="pane-header">
+            <h3>🎵 背景音乐 (高稳定单曲循环模式)</h3>
+            <p>设置一首永不翻车、全平台兼容的稳定背景音乐直链，支持直接上传 MP3 文件。</p>
           </div>
-
-          <div style="background: rgba(3, 7, 18, 0.65); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: 18px; padding: 18px; margin-bottom: 22px;">
-            <label style="font-size:13px; font-weight:800; color:#fde68a; margin-bottom:10px; display:block;">🔍 在线搜索云端音乐 (点击加入歌单，绝不重复)</label>
-            
-            <div style="display:flex; gap:8px; margin-bottom:12px;">
-              <input type="text" id="musicSearchKeyword" class="admin-input" placeholder="输入歌名/歌手 (例如: 周杰伦 / 告白气球 / 晴天 / 浪漫钢琴)..." onkeydown="if(event.key==='Enter') executeOnlineMusicSearch();">
-              <button class="btn-tool" style="background:var(--gold); color:#fff; flex-shrink:0; padding:8px 18px;" onclick="executeOnlineMusicSearch()">🔎 搜索歌曲</button>
-            </div>
-
-            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
-              <span style="font-size:11px; color:#94a3b8; font-weight:700; align-self:center;">热门推荐：</span>
-              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('周杰伦 告白气球')">🎵 告白气球</button>
-              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('周杰伦 晴天')">🎵 晴天</button>
-              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('周杰伦 简单爱')">🎵 简单爱</button>
-              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('周杰伦 七里香')">🎵 七里香</button>
-              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('Sweet Memories 唯美之约')">🎹 唯美浪漫钢琴</button>
-            </div>
-
-            <div id="onlineSearchResultList" style="display:flex; flex-direction:column; gap:8px; max-height:240px; overflow-y:auto;">
-              <div style="color:#94a3b8; font-size:12px; text-align:center; padding:12px;">输入歌名搜索，或点击上方推荐标签</div>
-            </div>
-          </div>
-
-          <div class="form-grid" style="margin-bottom:20px;">
-            <div class="form-group" style="grid-column: 1 / -1;">
+          <div class="form-grid">
+            <div class="form-group">
               <label>是否尝试自动播放 BGM</label>
               <select id="audio_bgmAutoPlay" class="admin-select">
                 <option value="true">开启自动播放 (推荐)</option>
                 <option value="false">关闭自动播放 (手动点击黑胶)</option>
               </select>
             </div>
+            <div class="form-group"><label>当前 BGM 曲名</label><input type="text" id="audio_bgmTitle" class="admin-input"></div>
+            <div class="form-group"><label>当前 BGM 艺术家</label><input type="text" id="audio_bgmArtist" class="admin-input"></div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label>音频直链地址 (MP3 直链 / 建议使用上方上传按钮)</label>
+              <div class="upload-input-group">
+                <input type="text" id="audio_bgmUrl" class="admin-input">
+                <button class="btn-upload" onclick="triggerDirectUpload('audio_bgmUrl', 'audio/*')">📤 上传MP3</button>
+              </div>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label>黑胶唱片中心封面图片链接 (可选 · 留空默认显示 ❤️)</label>
+              <div class="upload-input-group">
+                <input type="text" id="audio_vinylCover" class="admin-input">
+                <button class="btn-upload" onclick="triggerDirectUpload('audio_vinylCover', 'image/*')">🖼️ 上传封面</button>
+              </div>
+            </div>
           </div>
-
-          <div style="font-size:14px; font-weight:800; color:#fde68a; margin-bottom:12px;">📑 当前黑胶播放列表 (按顺序自动轮播)：</div>
-          <div id="playlistContainer" class="dynamic-list"></div>
         </section>
 
         <!-- 8. 隐藏彩蛋 -->
