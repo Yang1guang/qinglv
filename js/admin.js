@@ -426,6 +426,7 @@ async function executeOnlineMusicSearch() {
   }
 }
 
+// 试听引擎（同步直出，绝不弹窗拦截）
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
