@@ -199,7 +199,40 @@ function resetToCodePresets() {
   }
 }
 
-// ================= 🎵 播放列表管理 (防重复 + 独立删除) =================
+// ================= 🎵 播放列表管理 (一键重置 + 独立删除 + 防重复) =================
+function resetOfficialPlaylist() {
+  if (!confirm("确定要一键清空并恢复为官方高保真精选歌单吗？")) return;
+  if (!currentConfig.audio) currentConfig.audio = {};
+
+  currentConfig.audio.playlist = [
+    {
+      title: "告白气球 (浪漫钢琴版)",
+      artist: "周杰伦 / 纯音乐",
+      url: "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
+      cover: ""
+    },
+    {
+      title: "晴天 (唯美吉他版)",
+      artist: "周杰伦 / 纯音乐",
+      url: "https://assets.mixkit.co/music/preview/mixkit-love-story-532.mp3",
+      cover: ""
+    },
+    {
+      title: "简单爱 (心动轻柔版)",
+      artist: "周杰伦 / 纯音乐",
+      url: "https://assets.mixkit.co/music/preview/mixkit-wedding-piano-walk-530.mp3",
+      cover: ""
+    }
+  ];
+
+  try {
+    localStorage.removeItem("love_universe_custom_playlist");
+  } catch (_) {}
+
+  renderPlaylist();
+  showToast("✓ 歌单已重置，请点击右上角【💾 立即发布生效】！");
+}
+
 function renderPlaylist() {
   const container = document.getElementById("playlistContainer");
   if (!container) return;
@@ -211,13 +244,13 @@ function renderPlaylist() {
       {
         title: "告白气球 (浪漫钢琴版)",
         artist: "周杰伦 / 纯音乐",
-        url: "https://music.163.com/song/media/outer/url?id=440208476.mp3",
+        url: "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
         cover: ""
       },
       {
         title: "晴天 (唯美吉他版)",
         artist: "周杰伦 / 纯音乐",
-        url: "https://music.163.com/song/media/outer/url?id=461520146.mp3",
+        url: "https://assets.mixkit.co/music/preview/mixkit-love-story-532.mp3",
         cover: ""
       }
     ];
@@ -259,9 +292,9 @@ function addPlaylistItem() {
   if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
 
   currentConfig.audio.playlist.push({
-    title: "Sweet Memories 浪漫钢琴",
-    artist: "松田圣子 / 纯音乐",
-    url: "https://music.163.com/song/media/outer/url?id=441116287.mp3",
+    title: "Sweet Memories 唯美之约",
+    artist: "经典浪漫 / 纯音乐",
+    url: "https://assets.mixkit.co/music/preview/mixkit-gentle-acoustics-54.mp3",
     cover: ""
   });
   renderPlaylist();
@@ -274,12 +307,14 @@ function deletePlaylistItem(idx) {
   const trackName = currentConfig.audio.playlist[idx]?.title || "该歌曲";
   if (confirm(`确定从黑胶歌单中删除《${trackName}》吗？`)) {
     currentConfig.audio.playlist.splice(idx, 1);
+    try {
+      localStorage.setItem("love_universe_custom_playlist", JSON.stringify(currentConfig.audio.playlist));
+    } catch (_) {}
     renderPlaylist();
-    showToast(`✓ 已移除《${trackName}》，请点击右上角保存！`);
+    showToast(`✓ 已移除《${trackName}》，请点击右上角【💾 立即发布生效】！`);
   }
 }
 
-// 🌟 加入歌单（带重复校验，防止无意间连续点击加重复）
 function addSongToPlaylist(title, artist, url) {
   if (!currentConfig.audio) currentConfig.audio = {};
   if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
@@ -293,9 +328,14 @@ function addSongToPlaylist(title, artist, url) {
   currentConfig.audio.playlist.push({
     title: title || "浪漫心动曲",
     artist: artist || "群星",
-    url: url || "https://music.163.com/song/media/outer/url?id=440208476.mp3",
+    url: url || "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
     cover: ""
   });
+
+  try {
+    localStorage.setItem("love_universe_custom_playlist", JSON.stringify(currentConfig.audio.playlist));
+  } catch (_) {}
+
   renderPlaylist();
   showToast(`✓ 已成功将《${title}》加入歌单，请点击右上角【💾 立即发布生效】！`);
 }
@@ -426,7 +466,7 @@ async function executeOnlineMusicSearch() {
   }
 }
 
-// 试听引擎（同步直出，绝不弹窗拦截）
+// 试听引擎（全平台同步直出，绝无 That Girl 兜底）
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
@@ -455,13 +495,8 @@ function testPreviewAudio(url, btnId) {
     if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
     showToast("🎵 正在流畅试听曲目...");
   }).catch(() => {
-    previewAudioObj.src = "https://music.163.com/song/media/outer/url?id=440208476.mp3";
-    previewAudioObj.play().then(() => {
-      if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
-      showToast("🎵 正在播放浪漫钢琴版试听");
-    }).catch(() => {
-      if (currentBtn) currentBtn.textContent = "🎧 试听";
-    });
+    if (currentBtn) currentBtn.textContent = "🎧 试听";
+    showToast("⚠️ 当前音源暂时无法播放，请尝试其他曲目");
   });
 
   previewAudioObj.onended = () => {
@@ -844,6 +879,10 @@ async function saveAllConfigToCloud() {
     if (data.success) {
       currentAdminToken = customPwd || "521";
       localStorage.setItem("love_admin_token", currentAdminToken);
+      // 清空旧本地歌单缓存，确保拉取最新 R2 干净配置
+      try {
+        localStorage.removeItem("love_universe_custom_playlist");
+      } catch (_) {}
       showToast("✨ 全部配置、照片与黑胶歌单已成功持久化发布！");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
