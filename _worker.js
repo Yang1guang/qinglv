@@ -1,13 +1,14 @@
 /**
- * 恋爱时光轴 & 漫游宇宙 (Love Universe)
+ * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 作用: R2 数据持久化、云端安全验密 (密码不泄露给前端)、流媒体中继与缓存清理
+ * 架构: 单源多租户路由 (基于 Host 物理隔离)、圣洁言语结界过滤、HMAC 域名非对称授权、流媒体中继
  */
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // 智能获取绑定的 R2 存储桶
     const bucket = env.R2 || env.BUCKET || env.PAN || env.MY_BUCKET || env.FILE_BUCKET;
 
     const corsHeaders = {
@@ -28,54 +29,167 @@ export default {
       });
     }
 
-    const ADMIN_PASSWORD = String(env.ADMIN_PASSWORD || env.SECRET_PWD || env.ADMIN_PWD || "521");
+    // 多租户隔离：将访问域名转换为安全目录名称 (例如 love.example.com -> love.example.com)
+    const rawHost = (url.hostname || "default.local").toLowerCase();
+    const tenantDir = rawHost.replace(/[^a-z0-9.-]/g, "_");
+    const CONFIG_KEY = `${tenantDir}/config.json`;
 
-    function checkAuth(req) {
+    // 管理员私钥与授权加密盐值
+    const ADMIN_PASSWORD = String(env.ADMIN_PASSWORD || env.SECRET_PWD || env.ADMIN_PWD || "521");
+    const MASTER_LICENSE_SECRET = String(env.MASTER_LICENSE_SECRET || "SACRED_UNQUENCHABLE_LOVE_2026_KEY");
+
+    function checkAdminAuth(req) {
       const headerAuth = req.headers.get("x-admin-auth") || req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
       const queryAuth = url.searchParams.get("auth");
       const token = headerAuth || queryAuth;
       return token === ADMIN_PASSWORD;
     }
 
-    const CONFIG_R2_KEY = "_love_universe/config.json";
+    // 圣洁言语结界过滤 (拦截低俗、污秽与不雅用词)
+    function sanitizeSanctity(contentString) {
+      const profanityRegex = /(约炮|包养|出轨|偷情|小三|色情|裸聊|淫秽|性交|做爱|操你|傻逼|贱人|去死|滚蛋|妓女|嫖娼|嫖客|大保健|开房|一夜情)/i;
+      return !profanityRegex.test(contentString);
+    }
+
+    // HMAC-SHA256 签名校验算法 (用于校验域名专属授权码)
+    async function verifyDomainLicense(domain, inputCode) {
+      try {
+        const cleanCode = String(inputCode || "").trim().toUpperCase();
+        if (!cleanCode.startsWith("LV-")) return false;
+
+        const enc = new TextEncoder();
+        const keyData = enc.encode(MASTER_LICENSE_SECRET);
+        const cryptoKey = await crypto.subtle.importKey(
+          "raw",
+          keyData,
+          { name: "HMAC", hash: "SHA-256" },
+          false,
+          ["sign"]
+        );
+
+        const dataToSign = enc.encode(`${domain.toLowerCase()}:SACRED_ETERNAL_LICENSE`);
+        const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, dataToSign);
+        const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+        const fullHex = signatureArray.map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+
+        // 提取前 16 位格式化为 LV-XXXX-XXXX-XXXX
+        const p1 = fullHex.substring(0, 4);
+        const p2 = fullHex.substring(4, 8);
+        const p3 = fullHex.substring(8, 12);
+        const p4 = fullHex.substring(12, 16);
+        const expectedCode = `LV-${p1}-${p2}-${p3}-${p4}`;
+
+        return cleanCode === expectedCode;
+      } catch (_) {
+        return false;
+      }
+    }
 
     try {
-      // 1. 获取全站配置 (前端调用时自动剔除敏感密码，保证安全性)
+      // 1. 获取全站配置 (自动多租户隔离 + 密码脱敏)
       if (url.pathname === "/api/love/config" && request.method === "GET") {
-        if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
+        if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2 存储桶" }, 500);
+
+        let customConfig = null;
         try {
-          const obj = await bucket.get(CONFIG_R2_KEY);
+          const obj = await bucket.get(CONFIG_KEY);
           if (obj) {
             const text = await obj.text();
-            const parsed = JSON.parse(text);
-
-            // 若不是管理员，剥离真实密码，防止前端代码泄露
-            if (!checkAuth(request) && parsed.gatekeeper) {
-              delete parsed.gatekeeper.correctAnswer;
-            }
-
-            return jsonResponse({ success: true, custom: true, config: parsed });
+            customConfig = JSON.parse(text);
           }
         } catch (_) {}
-        return jsonResponse({ success: true, custom: false, config: null });
+
+        if (customConfig) {
+          // 非管理员请求时剥离真实门禁密码，防止前端直接查阅
+          if (!checkAdminAuth(request) && customConfig.gatekeeper) {
+            delete customConfig.gatekeeper.correctAnswer;
+          }
+          return jsonResponse({ success: true, custom: true, domain: rawHost, config: customConfig });
+        }
+
+        return jsonResponse({ success: true, custom: false, domain: rawHost, config: null });
       }
 
-      // 2. 🔒 云端安全验密接口 (密码仅在服务端对比，代码里绝不硬编码)
+      // 2. 保存并发布配置 (圣洁过滤 + 租户隔离存储)
+      if (url.pathname === "/api/love/config" && request.method === "POST") {
+        if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2 存储桶" }, 500);
+        if (!checkAdminAuth(request)) return jsonResponse({ success: false, error: "管理口令错误或未授权" }, 401);
+
+        let reqData;
+        try {
+          reqData = await request.json();
+        } catch (_) {
+          return jsonResponse({ success: false, error: "数据格式错误" }, 400);
+        }
+
+        const configToSave = reqData.config || {};
+        const configJsonString = JSON.stringify(configToSave);
+
+        // 圣洁言语结界校验
+        if (!sanitizeSanctity(configJsonString)) {
+          return jsonResponse({
+            success: false,
+            error: "包含不洁与低俗言语，圣洁的印记已拒绝此次铭刻。请保持言语的尊重与圣洁。"
+          }, 406);
+        }
+
+        // 读取已有 License 保护信息，防止管理员保存配置时意外覆盖授权状态
+        try {
+          const existingObj = await bucket.get(CONFIG_KEY);
+          if (existingObj) {
+            const oldCfg = JSON.parse(await existingObj.text());
+            if (oldCfg._license && oldCfg._license.unlocked) {
+              configToSave._license = oldCfg._license;
+            }
+          }
+        } catch (_) {}
+
+        await bucket.put(CONFIG_KEY, JSON.stringify(configToSave), {
+          httpMetadata: { contentType: "application/json; charset=utf-8" }
+        });
+
+        return jsonResponse({
+          success: true,
+          domain: rawHost,
+          message: `配置已发布并永久同步至【${rawHost}】独立存储云端`
+        });
+      }
+
+      // 3. 上传多媒体附件 (严格按域名隔离写入 /assets/)
+      if (url.pathname === "/api/love/upload" && request.method === "POST") {
+        if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2 存储桶" }, 500);
+        if (!checkAdminAuth(request)) return jsonResponse({ success: false, error: "未授权" }, 401);
+
+        const formData = await request.formData();
+        const file = formData.get("file");
+        if (!file) return jsonResponse({ success: false, error: "未接收到文件" }, 400);
+
+        const safeName = (file.name || "media.bin").replace(/[^a-zA-Z0-9.\-_]/g, "_");
+        const r2Key = `${tenantDir}/assets/${Date.now()}_${safeName}`;
+
+        await bucket.put(r2Key, file.stream(), {
+          httpMetadata: { contentType: file.type || "application/octet-stream" }
+        });
+
+        return jsonResponse({ success: true, url: `/raw/${r2Key}` });
+      }
+
+      // 4. 云端安全门禁校验
       if (url.pathname === "/api/love/verify-gatekeeper" && request.method === "POST") {
         let reqData = {};
         try { reqData = await request.json(); } catch (_) {}
         const inputPwd = String(reqData.password || "").trim().toLowerCase();
 
-        // 2.1 管理员后门直通 (输入 521 直接判定为管理员)
+        // 管理员超级直通
         if (inputPwd === "521" || inputPwd === "admin" || inputPwd === ADMIN_PASSWORD) {
           return jsonResponse({ success: true, isAdmin: true });
         }
 
-        // 2.2 读取 R2 中存储的真实密码 (默认 240520)
+        // 读取当前域名独立的正确密码
         let correctPwd = "240520";
         if (bucket) {
           try {
-            const cfgObj = await bucket.get(CONFIG_R2_KEY);
+            const cfgObj = await bucket.get(CONFIG_KEY);
             if (cfgObj) {
               const cfg = JSON.parse(await cfgObj.text());
               if (cfg.gatekeeper?.correctAnswer) {
@@ -92,50 +206,56 @@ export default {
         }
       }
 
-      // 3. 保存并发布配置
-      if (url.pathname === "/api/love/config" && request.method === "POST") {
-        if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
-        if (!checkAuth(request)) return jsonResponse({ success: false, error: "管理口令错误或未授权" }, 401);
+      // 5. 💎 域名专属非对称授权兑换 (长按触发星际跃迁/隐藏福泽)
+      if (url.pathname === "/api/love/verify-license" && request.method === "POST") {
+        if (!bucket) return jsonResponse({ success: false, error: "存储服务不可用" }, 500);
 
-        let reqData;
-        try { reqData = await request.json(); } catch (_) {
-          return jsonResponse({ success: false, error: "数据格式错误" }, 400);
+        let reqData = {};
+        try { reqData = await request.json(); } catch (_) {}
+        const code = reqData.licenseCode;
+
+        const isValid = await verifyDomainLicense(rawHost, code);
+        if (!isValid) {
+          return jsonResponse({
+            success: false,
+            message: "⚠️ 授权激活码无效或与当前域名不匹配！"
+          }, 403);
         }
 
-        await bucket.put(CONFIG_R2_KEY, JSON.stringify(reqData.config || {}), {
+        // 校验通过，读取当前租户配置并写入永久授权标记
+        let currentCfg = {};
+        try {
+          const cfgObj = await bucket.get(CONFIG_KEY);
+          if (cfgObj) {
+            currentCfg = JSON.parse(await cfgObj.text());
+          }
+        } catch (_) {}
+
+        currentCfg._license = {
+          unlocked: true,
+          unlockedAt: new Date().toISOString(),
+          tier: "SACRED_ETERNAL_PERPETUAL",
+          boundDomain: rawHost
+        };
+
+        await bucket.put(CONFIG_KEY, JSON.stringify(currentCfg), {
           httpMetadata: { contentType: "application/json; charset=utf-8" }
         });
 
-        return jsonResponse({ success: true, message: "配置已发布并永久同步至 R2 云端" });
-      }
-
-      // 4. 上传多媒体附件
-      if (url.pathname === "/api/love/upload" && request.method === "POST") {
-        if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
-        if (!checkAuth(request)) return jsonResponse({ success: false, error: "未授权" }, 401);
-
-        const formData = await request.formData();
-        const file = formData.get("file");
-        if (!file) return jsonResponse({ success: false, error: "未接收到文件" }, 400);
-
-        const safeName = (file.name || "media.bin").replace(/[^a-zA-Z0-9.\-_]/g, "_");
-        const r2Key = `_love_universe/assets/${Date.now()}_${safeName}`;
-
-        await bucket.put(r2Key, file.stream(), {
-          httpMetadata: { contentType: file.type || "application/octet-stream" }
+        return jsonResponse({
+          success: true,
+          message: `✨ 星河契约已鉴证！【${rawHost}】专属高级隐藏福泽已永久解锁。`
         });
-
-        return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
-      // 5. 清理孤立废弃缓存
+      // 6. 清理当前域名下的孤立废弃缓存
       if (url.pathname === "/api/love/cleanup" && request.method === "POST") {
-        if (!bucket) return jsonResponse({ success: false, error: "未检测到 R2 存储桶" }, 500);
-        if (!checkAuth(request)) return jsonResponse({ success: false, error: "未授权" }, 401);
+        if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2 存储桶" }, 500);
+        if (!checkAdminAuth(request)) return jsonResponse({ success: false, error: "未授权" }, 401);
 
         let activeKeys = new Set();
         try {
-          const cfgObj = await bucket.get(CONFIG_R2_KEY);
+          const cfgObj = await bucket.get(CONFIG_KEY);
           if (cfgObj) {
             const rawText = await cfgObj.text();
             const matches = rawText.match(/\/raw\/([a-zA-Z0-9_\-\.\/]+)/g) || [];
@@ -145,7 +265,8 @@ export default {
 
         let deletedCount = 0;
         let freedBytes = 0;
-        const listed = await bucket.list({ prefix: "_love_universe/assets/" });
+        const prefix = `${tenantDir}/assets/`;
+        const listed = await bucket.list({ prefix });
 
         for (const obj of listed.objects) {
           const isReferenced = activeKeys.has(obj.key);
@@ -162,11 +283,11 @@ export default {
           success: true,
           deletedCount,
           freedBytes,
-          message: `已自动清理 ${deletedCount} 个过期废弃文件，释放空间 ${(freedBytes / (1024 * 1024)).toFixed(2)} MB`
+          message: `已清理当前站点 ${deletedCount} 个废弃文件，释放空间 ${(freedBytes / (1024 * 1024)).toFixed(2)} MB`
         });
       }
 
-      // 6. 🔍 在线音乐云端搜索引擎
+      // 7. 云端音乐搜索
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim();
         const songs = [];
@@ -220,7 +341,7 @@ export default {
         return jsonResponse({ success: true, songs });
       }
 
-      // 7. 🎵 音频中继与解析
+      // 8. 音频流实时中继与解析
       if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
         const hash = url.searchParams.get("hash");
         const albumId = url.searchParams.get("album_id") || "0";
@@ -241,7 +362,7 @@ export default {
         return Response.redirect("https://music.163.com/song/media/outer/url?id=436514312.mp3", 302);
       }
 
-      // 8. R2 静态直链分发
+      // 9. 静态文件流式输出 (/raw/:path)
       if (url.pathname.startsWith("/raw/")) {
         if (!bucket) return new Response("Bucket Not Found", { status: 500 });
         const key = decodeURIComponent(url.pathname.replace(/^\/raw\//, ""));
