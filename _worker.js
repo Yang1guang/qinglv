@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 作用: R2 数据持久化、云端安全验密、在线搜歌与高可用流媒体中继
+ * 架构: 单源多租户路由、酷狗真实音频流式转发、双轨管理鉴权、免密灵宠通道、圣洁言语过滤、HMAC 授权验证
  */
 
 export default {
@@ -23,7 +23,10 @@ export default {
     function jsonResponse(data, status = 200) {
       return new Response(JSON.stringify(data), {
         status,
-        headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" }
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json; charset=utf-8"
+        }
       });
     }
 
@@ -351,7 +354,7 @@ export default {
         });
       }
 
-      // 8. 🔍 在线音乐搜索引擎 (恢复原版酷狗官方检索结构)
+      // 8. 在线音乐检索 (酷狗官方接口)
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim();
         const songs = [];
@@ -385,35 +388,17 @@ export default {
           } catch (_) {}
         }
 
-        if (songs.length === 0) {
-          const PRESET_LIST = [
-            { title: "告白气球 (经典原声)", artist: "周杰伦", hash: "E3A199727B40A5B73C4CE15CEE5FA41E", albumId: "1794711" },
-            { title: "晴天 (经典原声)", artist: "周杰伦", hash: "A0A164B62580DA8E5BCEBDEB4F69B829", albumId: "960395" },
-            { title: "简单爱 (经典原声)", artist: "周杰伦", hash: "8078BA5188E67E7DE28D08F086ED3FDE", albumId: "959958" },
-            { title: "七里香 (经典原声)", artist: "周杰伦", hash: "9B56F4543E82245C58C3602D5A8696F2", albumId: "960144" }
-          ];
-          PRESET_LIST.forEach(item => {
-            songs.push({
-              id: item.hash,
-              title: item.title,
-              artist: item.artist,
-              albumId: item.albumId,
-              url: `/api/love/music-stream?hash=${item.hash}&album_id=${item.albumId}`
-            });
-          });
-        }
-
         return jsonResponse({ success: true, songs });
       }
 
-      // 9. 🎵 音频中继与解析 (流式转发防盗链，无损输出)
+      // 9. 🎵 音频流式代理 (严格拒绝偷梁换柱，解析失败直接抛出 404)
       if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
         const hash = url.searchParams.get("hash");
         const albumId = url.searchParams.get("album_id") || "0";
         let targetAudioUrl = "";
 
         if (hash) {
-          // 通道 A: 酷狗移动端接口
+          // 移动端接口解析
           try {
             const kgInfoRes = await fetch(`https://m.kugou.com/app/i/getSongInfo.php?cmd=playInfo&hash=${hash}`, {
               headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)" }
@@ -426,7 +411,7 @@ export default {
             }
           } catch (_) {}
 
-          // 通道 B: 酷狗网页版接口兜底
+          // 网页端接口备用解析
           if (!targetAudioUrl) {
             try {
               const kgWebRes = await fetch(`https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&album_id=${albumId}&dfid=-&mid=-&platid=4&_=${Date.now()}`, {
@@ -444,12 +429,15 @@ export default {
           }
         }
 
-        // 终极保障直连
+        // 解析失败直接返回 404，绝不静默重定向到《夏天的风》
         if (!targetAudioUrl || !targetAudioUrl.startsWith("http")) {
-          targetAudioUrl = "https://music.163.com/song/media/outer/url?id=1436709403.mp3";
+          return new Response("Audio Source Unavailable Due To Copyright", {
+            status: 404,
+            headers: corsHeaders
+          });
         }
 
-        // 服务端直传音频流，抹除 Referer，带上标准 CORS 与 Range 协议
+        // 服务端流式转发，抹除 Referer，带上标准 CORS 与 Range 协议
         try {
           const range = request.headers.get("Range");
           const forwardHeaders = {
