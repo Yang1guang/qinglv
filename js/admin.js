@@ -15,6 +15,29 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove("show"), 2500);
 }
 
+// 辅助函数：深度合并本地与云端配置
+function mergeWithDefaultConfig(cloudCfg) {
+  const base = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
+  if (!cloudCfg || typeof cloudCfg !== "object") return base;
+
+  return {
+    ...base,
+    ...cloudCfg,
+    meta: { ...(base.meta || {}), ...(cloudCfg.meta || {}) },
+    gatekeeper: { ...(base.gatekeeper || {}), ...(cloudCfg.gatekeeper || {}) },
+    letter: { ...(base.letter || {}), ...(cloudCfg.letter || {}) },
+    audio: { ...(base.audio || {}), ...(cloudCfg.audio || {}) },
+    theme: { ...(base.theme || {}), ...(cloudCfg.theme || {}) },
+    lifecycle: { ...(base.lifecycle || {}), ...(cloudCfg.lifecycle || {}) },
+    timeline: (Array.isArray(cloudCfg.timeline) && cloudCfg.timeline.length > 0) ? cloudCfg.timeline : (base.timeline || []),
+    checklist100: (Array.isArray(cloudCfg.checklist100) && cloudCfg.checklist100.length > 0) ? cloudCfg.checklist100 : (base.checklist100 || []),
+    scratchCards: (Array.isArray(cloudCfg.scratchCards) && cloudCfg.scratchCards.length > 0) ? cloudCfg.scratchCards : (base.scratchCards || []),
+    easterEggs: (Array.isArray(cloudCfg.easterEggs) && cloudCfg.easterEggs.length > 0) ? cloudCfg.easterEggs : (base.easterEggs || []),
+    _license: cloudCfg._license || base._license || null,
+    adminSecurity: cloudCfg.adminSecurity || base.adminSecurity || null
+  };
+}
+
 // 1. 验证管理员口令
 async function verifyAdminLogin() {
   const pwdInput = document.getElementById("adminPwdInput");
@@ -34,7 +57,7 @@ async function verifyAdminLogin() {
   }
 }
 
-// 2. 从 R2 拉取配置 (带多租户域名识别)
+// 2. 从 R2 拉取配置
 async function fetchConfigFromCloud() {
   try {
     const res = await fetch("/api/love/config", {
@@ -48,7 +71,7 @@ async function fetchConfigFromCloud() {
       if (domainBadge) domainBadge.textContent = `当前租户节点: ${currentDomainHost}`;
 
       if (data.custom && data.config) {
-        currentConfig = data.config;
+        currentConfig = mergeWithDefaultConfig(data.config);
       } else {
         currentConfig = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
       }
@@ -67,17 +90,14 @@ async function fetchConfigFromCloud() {
 function renderAllForms() {
   if (!currentConfig) return;
 
-  // 独立管理密码回显 (默认显示 521)
   const sec = currentConfig.adminSecurity || {};
   const pwdInput = document.getElementById("admin_customPassword");
   if (pwdInput) pwdInput.value = sec.password || "521";
 
-  // 生命周期
   const lifecycle = currentConfig.lifecycle || {};
   const phaseSelect = document.getElementById("lifecycle_phase");
   if (phaseSelect) phaseSelect.value = lifecycle.currentPhase || "dating";
 
-  // 基础档案
   const meta = currentConfig.meta || {};
   document.getElementById("meta_boyName").value = meta.boyName || "";
   document.getElementById("meta_girlName").value = meta.girlName || "";
@@ -87,7 +107,6 @@ function renderAllForms() {
   document.getElementById("meta_siteTitle").value = meta.siteTitle || "";
   document.getElementById("meta_siteSubtitle").value = meta.siteSubtitle || "";
 
-  // 门禁
   const gate = currentConfig.gatekeeper || {};
   document.getElementById("gatekeeper_enabled").value = String(gate.enabled !== false);
   document.getElementById("gatekeeper_title").value = gate.title || "";
@@ -96,7 +115,6 @@ function renderAllForms() {
   document.getElementById("gatekeeper_correctAnswer").value = gate.correctAnswer || "";
   document.getElementById("gatekeeper_errorTips").value = (gate.errorTips || []).join("\n");
 
-  // 情书
   const letter = currentConfig.letter || {};
   document.getElementById("letter_title").value = letter.title || "";
   document.getElementById("letter_signDate").value = letter.signDate || "";
@@ -107,7 +125,6 @@ function renderAllForms() {
   renderChecklist();
   renderScratchCards();
 
-  // 音频
   const audio = currentConfig.audio || {};
   document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay !== false);
   document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "";
@@ -115,7 +132,6 @@ function renderAllForms() {
   document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "";
   document.getElementById("audio_vinylCover").value = audio.vinylCover || "";
 
-  // 彩蛋
   const eggs = currentConfig.easterEggs || [];
   document.getElementById("egg_1_message").value = eggs[0]?.message || "";
   document.getElementById("egg_2_message").value = eggs[1]?.message || "";
@@ -124,7 +140,6 @@ function renderAllForms() {
   renderLicenseStatus();
 }
 
-// 授权状态渲染
 function renderLicenseStatus() {
   const badge = document.getElementById("licenseStatusBadge");
   if (!badge) return;
@@ -147,7 +162,10 @@ async function submitDomainLicense() {
     const res = await fetch("/api/love/verify-license", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ licenseCode: code })
+      body: JSON.stringify({ 
+        licenseCode: code,
+        currentConfig: currentConfig
+      })
     });
     const data = await res.json();
 
@@ -162,12 +180,14 @@ async function submitDomainLicense() {
   }
 }
 
-// ================= 🔄 载入最新代码预设 =================
 function resetToCodePresets() {
   if (!confirm("⚠️ 确定要载入代码里的最新预设吗？\n这将载入包含全情绪图谱的 48 项小事与 12 张特权刮刮乐，随后点击右上角【💾 立即发布生效】即可同步写入云端！")) return;
 
   if (window.LOVE_CONFIG) {
+    const existingLicense = currentConfig?._license;
     currentConfig = JSON.parse(JSON.stringify(window.LOVE_CONFIG));
+    if (existingLicense) currentConfig._license = existingLicense;
+
     renderAllForms();
     showToast("✓ 已载入最新预设，请点击右上角【立即发布生效】！");
   } else {
@@ -175,7 +195,6 @@ function resetToCodePresets() {
   }
 }
 
-// ================= 🎨 9. 主题陈列室 =================
 function renderThemeShowroom() {
   const container = document.getElementById("themeShowroomContainer");
   if (!container) return;
@@ -231,7 +250,6 @@ function selectThemeCard(themeId) {
   showToast(`✓ 已选择主题【${themeId}】，请点击右上角保存发布！`);
 }
 
-// ================= 🔍 云端音乐搜索 =================
 function quickSearchTag(tagText) {
   document.getElementById("musicSearchKeyword").value = tagText;
   executeOnlineMusicSearch();
@@ -322,7 +340,6 @@ function selectCloudMusic(title, artist, url) {
   showToast(`✓ 已成功将【${title}】填入配置，请点击右上角保存！`);
 }
 
-// ================= 🧹 清理 R2 缓存 =================
 async function cleanOrphanR2Cache() {
   if (!confirm("⚠️ 确定要清理当前站点存储中未引用的废弃照片与音频吗？")) return;
   showToast("⏳ 正在扫描并清理当前域名孤立文件...");
@@ -343,7 +360,6 @@ async function cleanOrphanR2Cache() {
   }
 }
 
-// ================= 动态列表渲染 =================
 function renderTimelineList() {
   const container = document.getElementById("timelineListContainer");
   container.innerHTML = "";
@@ -567,7 +583,6 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
 
-  // 保存独立管理密码
   const customPwd = (document.getElementById("admin_customPassword")?.value || "521").trim();
   currentConfig.adminSecurity = {
     password: customPwd || "521",
@@ -638,7 +653,6 @@ async function saveAllConfigToCloud() {
     const data = await res.json();
 
     if (data.success) {
-      // 成功保存后更新本地持久化凭证为新设密码，避免下次请求未授权
       currentAdminToken = customPwd || "521";
       localStorage.setItem("love_admin_token", currentAdminToken);
       showToast("✨ 全部配置已成功发布！管理密码与内容即时生效");
