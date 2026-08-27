@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、多曲目黑胶播放列表控制器、手势唤醒与静默容错播放
+ * 作用: 动效中枢、多曲目黑胶播放列表控制器、手势交互自动唤醒音频
  */
 
 class EffectsEngine {
@@ -27,12 +27,6 @@ class EffectsEngine {
     }
     return [
       {
-        title: "Sweet Memories 浪漫钢琴",
-        artist: "松田圣子 / 纯音乐",
-        url: "https://music.163.com/song/media/outer/url?id=441116287.mp3",
-        cover: ""
-      },
-      {
         title: "告白气球 (浪漫钢琴版)",
         artist: "周杰伦 / 纯音乐",
         url: "https://music.163.com/song/media/outer/url?id=440208476.mp3",
@@ -42,6 +36,12 @@ class EffectsEngine {
         title: "晴天 (唯美吉他版)",
         artist: "周杰伦 / 纯音乐",
         url: "https://music.163.com/song/media/outer/url?id=461520146.mp3",
+        cover: ""
+      },
+      {
+        title: "Sweet Memories 浪漫钢琴",
+        artist: "松田圣子 / 纯音乐",
+        url: "https://music.163.com/song/media/outer/url?id=441116287.mp3",
         cover: ""
       }
     ];
@@ -102,10 +102,9 @@ class EffectsEngine {
         this.setVinylVisualPlaying(false);
       });
 
-      // 静默切换备用流，绝不弹窗报错
       this.bgmAudio.addEventListener("error", () => {
         console.warn("当前音源不可用，自动切换至高可用浪漫流...");
-        this.bgmAudio.src = "https://music.163.com/song/media/outer/url?id=441116287.mp3";
+        this.bgmAudio.src = "https://music.163.com/song/media/outer/url?id=440208476.mp3";
         this.bgmAudio.play().catch(() => {});
       });
     }
