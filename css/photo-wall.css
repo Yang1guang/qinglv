@@ -1,0 +1,44 @@
+/**
+ * 众水不灭 · 雅歌之印
+ * 文件名: css/photo-wall.css
+ */
+
+.parallax-photo-wall {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.wall-polaroid-item {
+  position: absolute;
+  width: 110px;
+  background: #fffdfa;
+  padding: 8px 8px 24px 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  opacity: 0.22;
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 1024px) {
+  .wall-polaroid-item { width: 140px; opacity: 0.35; }
+  .wall-polaroid-item:hover { opacity: 0.95; z-index: 50; transform: scale(1.15) rotate(0deg) !important; }
+}
+
+.wall-polaroid-inner {
+  width: 100%;
+  height: 110px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #0f172a;
+}
+
+.wall-polaroid-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
