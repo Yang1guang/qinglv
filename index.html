@@ -18,6 +18,39 @@
   <link rel="stylesheet" href="css/themes.css">
   <link rel="stylesheet" href="css/photo-wall.css">
   <link rel="stylesheet" href="css/pet.css">
+  <style>
+    /* 阶段专属导航切换器样式 */
+    .phase-switch-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 32px auto 16px auto;
+      max-width: 480px;
+      padding: 6px;
+      background: rgba(3, 7, 18, 0.6);
+      border: 1.5px solid rgba(245, 158, 11, 0.3);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .phase-tab-btn {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .phase-tab-btn.active {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+      transform: scale(1.02);
+    }
+  </style>
 </head>
 <body class="universe-body">
 
@@ -114,27 +147,34 @@
       <div class="timeline-flow" id="timeline-flow"></div>
     </section>
 
-    <!-- 恋爱 100 件小事清单 (由生命周期引擎动态渲染) -->
+    <!-- 🌟 阶段专属控制中枢 (3 大时期独立按钮) 🌟 -->
+    <div class="phase-switch-bar">
+      <button class="phase-tab-btn active" data-phase="dating">🌿 恋爱期</button>
+      <button class="phase-tab-btn" data-phase="engaged">💍 订婚期</button>
+      <button class="phase-tab-btn" data-phase="married">🏠 结婚期</button>
+    </div>
+
+    <!-- 待办清单 (由阶段引擎完全独立联动渲染) -->
     <section class="checklist-section">
       <div class="section-title">
         <span class="section-title__icon">📝</span>
-        <h2 class="section-title__text" id="checklist-section-title">同行契约清单</h2>
-        <span class="section-title__desc" id="checklist-section-desc">点滴践行，每勾选一项触发心愿彩带</span>
+        <h2 class="section-title__text" id="checklist-section-title">恋爱期待办清单</h2>
+        <span class="section-title__desc" id="checklist-section-desc">在尊重与接纳中了解彼此，坚守圣洁、克制与纯粹</span>
       </div>
       <div class="checklist-card">
         <div class="checklist-card__progress-bar">
           <div class="checklist-card__progress-fill" id="checklist-progress-fill"></div>
         </div>
-        <div class="checklist-card__stats" id="checklist-stats">已达成 0 / 0 项</div>
+        <div class="checklist-card__stats" id="checklist-stats">已达成心愿 0 / 0 项 (0%)</div>
         <div class="checklist-grid" id="checklist-container"></div>
       </div>
     </section>
 
-    <!-- 恋爱特权刮刮乐兑换券 (由生命周期引擎动态渲染) -->
+    <!-- 舍己与包容特权刮刮乐 (由阶段引擎完全独立联动渲染) -->
     <section class="scratch-section">
       <div class="section-title">
         <span class="section-title__icon">🎟️</span>
-        <h2 class="section-title__text">舍己与包容特权券</h2>
+        <h2 class="section-title__text" id="scratch-section-title">恋爱期 · 舍己与包容特权券</h2>
         <span class="section-title__desc">真实刮开涂层 · 点击核销印章锁定承诺</span>
       </div>
       <div class="scratch-grid" id="scratch-container"></div>
@@ -198,19 +238,18 @@
     </div>
   </div>
 
-  <!-- 依赖脚本模块化加载 -->
+  <!-- 依赖脚本加载 (严密依赖链) -->
   <script src="js/config.js"></script>
+  <script src="js/stage-content.js"></script>
   <script src="js/theme-engine.js"></script>
   <script src="js/lifecycle.js"></script>
   <script src="js/photo-wall.js"></script>
   <script src="js/effects.js"></script>
   <script src="js/timeline.js"></script>
-  <script src="js/scratch.js"></script>
   <script src="js/pet.js"></script>
   <script src="js/export-eternal.js"></script>
   <script src="js/core.js"></script>
   <script>
-    // 初始化恩典灵宠
     document.addEventListener("DOMContentLoaded", () => {
       if (window.GracePetManager) {
         const petMgr = new window.GracePetManager(window.LOVE_CONFIG);
