@@ -36,6 +36,29 @@ document.addEventListener("DOMContentLoaded", () => {
     universeFooterText: document.querySelector(".universe-footer__text")
   };
 
+  // 辅助函数：深度合并本地与云端配置，防止部分字段为空时覆盖预设
+  function mergeWithDefaultConfig(cloudCfg) {
+    const base = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
+    if (!cloudCfg || typeof cloudCfg !== "object") return base;
+
+    return {
+      ...base,
+      ...cloudCfg,
+      meta: { ...(base.meta || {}), ...(cloudCfg.meta || {}) },
+      gatekeeper: { ...(base.gatekeeper || {}), ...(cloudCfg.gatekeeper || {}) },
+      letter: { ...(base.letter || {}), ...(cloudCfg.letter || {}) },
+      audio: { ...(base.audio || {}), ...(cloudCfg.audio || {}) },
+      theme: { ...(base.theme || {}), ...(cloudCfg.theme || {}) },
+      lifecycle: { ...(base.lifecycle || {}), ...(cloudCfg.lifecycle || {}) },
+      timeline: (Array.isArray(cloudCfg.timeline) && cloudCfg.timeline.length > 0) ? cloudCfg.timeline : (base.timeline || []),
+      checklist100: (Array.isArray(cloudCfg.checklist100) && cloudCfg.checklist100.length > 0) ? cloudCfg.checklist100 : (base.checklist100 || []),
+      scratchCards: (Array.isArray(cloudCfg.scratchCards) && cloudCfg.scratchCards.length > 0) ? cloudCfg.scratchCards : (base.scratchCards || []),
+      easterEggs: (Array.isArray(cloudCfg.easterEggs) && cloudCfg.easterEggs.length > 0) ? cloudCfg.easterEggs : (base.easterEggs || []),
+      _license: cloudCfg._license || base._license || null,
+      adminSecurity: cloudCfg.adminSecurity || base.adminSecurity || null
+    };
+  }
+
   // 2. 立即初始化门禁界面与事件绑定
   initGatekeeperUI();
 
@@ -125,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch("/api/love/config");
       const data = await res.json();
       if (data.success && data.custom && data.config) {
-        config = data.config;
+        config = mergeWithDefaultConfig(data.config);
         window.LOVE_CONFIG = config;
 
         initGatekeeperUI();
@@ -173,7 +196,6 @@ document.addEventListener("DOMContentLoaded", () => {
       dom.gatekeeperBtn.querySelector("span").textContent = "鉴证中...";
     }
 
-    // 语音模式誓言关键词包含匹配
     const sacredVows = ["众水不能熄灭", "一生一世", "包容", "接纳", "雅歌", "我愿", "永远爱你"];
     const isVowMatched = sacredVows.some(vow => inputVal.includes(vow));
 
@@ -318,7 +340,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(typeNextChar, 500);
   }
 
-  // 6. 长按底部版权文字触发星际授权码兑换
+  // 6. 长按底部版权文字触发星际授权码兑换 (附带全量数据保护)
   function initLicenseActivationTrigger() {
     if (!dom.universeFooterText) return;
 
@@ -326,7 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const startPress = () => {
       pressTimer = setTimeout(() => {
         triggerLicenseInputModal();
-      }, 2500); // 长按 2.5 秒触发
+      }, 2500);
     };
     const cancelPress = () => {
       if (pressTimer) clearTimeout(pressTimer);
@@ -347,7 +369,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch("/api/love/verify-license", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ licenseCode: code.trim() })
+        body: JSON.stringify({ 
+          licenseCode: code.trim(),
+          currentConfig: config 
+        })
       });
       const data = await res.json();
       if (data.success) {
@@ -364,7 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 7. 彩蛋绑定
   const eggs = config.easterEggs || [];
   if (dom.eggStar) {
-    dom.eggStar.onclick = () => showEggModal(eggs[0]?.message || "🌟 发现暗号星：爱情是一生一世、一心一意！");
+    dom.eggStar.onclick = () => showEggModal(eggs[0]?.message || "🌟 发现暗号星：爱情是一生一世、一男一女、一心一意！");
   }
   if (dom.eggPaw) {
     dom.eggPaw.onclick = () => showEggModal(eggs[1]?.message || "🐾 踩到猫爪印：今晚为你做一顿可口的晚餐！");
