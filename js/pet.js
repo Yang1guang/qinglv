@@ -2,12 +2,25 @@
  * 众水不灭 · 雅歌之印
  * 文件名: js/pet.js
  * 作用: 恩典灵宠状态管理、感恩喂养记录与舍己之果触发
+ * 持久化策略: 本地 LocalStorage 永久守护 + 云端免密双向同步
  */
 
 class GracePetManager {
   constructor(config) {
     this.config = config || {};
-    this.petData = this.config.petData || {
+    this.petData = this.loadLocalPetData();
+  }
+
+  // 1. 优先读取本地持久化数据
+  loadLocalPetData() {
+    try {
+      const local = localStorage.getItem("love_universe_pet_data");
+      if (local) {
+        return JSON.parse(local);
+      }
+    } catch (_) {}
+
+    return this.config.petData || {
       name: "和平灵鸽 · 恩典使者",
       icon: "🕊️",
       glowEnergy: 100,
@@ -17,14 +30,43 @@ class GracePetManager {
     };
   }
 
-  init() {
+  // 2. 本地持久化保存
+  saveLocalPetData() {
+    try {
+      localStorage.setItem("love_universe_pet_data", JSON.stringify(this.petData));
+    } catch (_) {}
+  }
+
+  async init() {
     this.injectDOM();
     this.bindEvents();
     this.updateUI();
+
+    // 初始化时从云端拉取双方最新的互通数据
+    await this.fetchCloudPetData();
+  }
+
+  // 从云端拉取并智能合并最新数据
+  async fetchCloudPetData() {
+    try {
+      const res = await fetch("/api/love/pet");
+      const data = await res.json();
+      if (data.success && data.petData) {
+        const cloudData = data.petData;
+
+        // 如果云端能量或互动次数更多，则以云端为准
+        if ((cloudData.gratitudeCount || 0) + (cloudData.sacrificeCount || 0) >= (this.petData.gratitudeCount || 0) + (this.petData.sacrificeCount || 0)) {
+          this.petData = cloudData;
+          this.saveLocalPetData();
+          this.updateUI();
+        }
+      }
+    } catch (_) {}
   }
 
   injectDOM() {
-    // 1. 注入悬浮触发挂件
+    if (document.getElementById("grace-pet-trigger")) return;
+
     const widget = document.createElement("div");
     widget.className = "grace-pet-widget";
     widget.id = "grace-pet-trigger";
@@ -38,7 +80,6 @@ class GracePetManager {
     `;
     document.body.appendChild(widget);
 
-    // 2. 注入灵宠交互模态弹窗
     const modal = document.createElement("div");
     modal.className = "grace-pet-modal";
     modal.id = "grace-pet-modal";
@@ -91,7 +132,11 @@ class GracePetManager {
     const sacrificeBtn = document.getElementById("feed-sacrifice-btn");
 
     if (trigger && modal) {
-      trigger.onclick = () => { modal.style.display = "flex"; this.updateUI(); };
+      trigger.onclick = () => { 
+        modal.style.display = "flex"; 
+        this.fetchCloudPetData();
+        this.updateUI(); 
+      };
     }
     if (closeBtn && modal) {
       closeBtn.onclick = () => { modal.style.display = "none"; };
@@ -121,12 +166,16 @@ class GracePetManager {
 
     if (input) input.value = "";
 
+    // 立即保存到本地存储，绝不丢失
+    this.saveLocalPetData();
+    this.updateUI();
+
     if (window.Effects) {
       window.Effects.fireFireworks();
       window.Effects.playAudio("stamp");
     }
 
-    this.updateUI();
+    // 异步同步到云端
     this.syncToCloud("✓ 已献上感恩之露，灵宠光芒凝聚！");
   }
 
@@ -141,12 +190,15 @@ class GracePetManager {
     const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
     this.petData.logs.unshift({ type: "sacrifice", text: "选择在分歧中退让一步，因你比对错更重要。", date: dateStr });
 
+    // 立即保存到本地存储
+    this.saveLocalPetData();
+    this.updateUI();
+
     if (window.Effects) {
       window.Effects.fireConfetti();
       window.Effects.playAudio("gatekeeperPass");
     }
 
-    this.updateUI();
     this.syncToCloud("🕊️ 结出宝贵的舍己之果，愿爱化解一切隔阂！");
   }
 
@@ -167,7 +219,7 @@ class GracePetManager {
       if (logs.length === 0) {
         container.innerHTML = `<div style="text-align:center; color:#64748b; font-size:11.5px; padding:12px;">暂无足迹，写下一句感恩开始喂养吧</div>`;
       } else {
-        container.innerHTML = logs.slice(0, 10).map(item => `
+        container.innerHTML = logs.slice(0, 15).map(item => `
           <div class="grace-log-item">
             <div>${item.type === 'sacrifice' ? '🍎 【舍己之果】' : '💧 【感恩之露】'} ${this.escape(item.text)}</div>
             <span>${item.date}</span>
@@ -178,18 +230,12 @@ class GracePetManager {
   }
 
   async syncToCloud(successMsg) {
-    if (!this.config) this.config = {};
-    this.config.petData = this.petData;
-
     try {
-      const token = localStorage.getItem("love_admin_token") || "";
-      if (token) {
-        await fetch("/api/love/config", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-admin-auth": token },
-          body: JSON.stringify({ config: this.config })
-        });
-      }
+      await fetch("/api/love/pet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ petData: this.petData })
+      });
     } catch (_) {}
 
     if (typeof showToast === "function") {
