@@ -1,10 +1,11 @@
 /**
- * 恋爱时光轴 & 漫游宇宙 (Love Universe) 控制中心逻辑
+ * 众水不灭 · 雅歌之印 (Love Universe) 控制中心主控
  * 文件名: js/admin.js
  */
 
 let currentConfig = null;
 let currentAdminToken = "";
+let currentDomainHost = "";
 
 function showToast(msg) {
   const toast = document.getElementById("toast");
@@ -27,13 +28,13 @@ async function verifyAdminLogin() {
   if (success) {
     document.getElementById("authModal").style.display = "none";
     document.getElementById("adminLayout").style.display = "block";
-    showToast("✓ 验证成功，已加载最新配置");
+    showToast("✓ 验证成功，已加载当前域名独立配置");
   } else {
     alert("❌ 口令错误或无法连接云端！");
   }
 }
 
-// 2. 从 R2 拉取配置
+// 2. 从 R2 拉取配置 (带多租户域名识别)
 async function fetchConfigFromCloud() {
   try {
     const res = await fetch("/api/love/config", {
@@ -42,6 +43,10 @@ async function fetchConfigFromCloud() {
     const data = await res.json();
 
     if (data.success) {
+      currentDomainHost = data.domain || window.location.hostname;
+      const domainBadge = document.getElementById("adminDomainBadge");
+      if (domainBadge) domainBadge.textContent = `当前租户节点: ${currentDomainHost}`;
+
       if (data.custom && data.config) {
         currentConfig = data.config;
       } else {
@@ -51,7 +56,7 @@ async function fetchConfigFromCloud() {
       return true;
     }
     return false;
-  } catch (e) {
+  } catch (_) {
     currentConfig = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
     renderAllForms();
     return true;
@@ -62,6 +67,12 @@ async function fetchConfigFromCloud() {
 function renderAllForms() {
   if (!currentConfig) return;
 
+  // 生命周期
+  const lifecycle = currentConfig.lifecycle || {};
+  const phaseSelect = document.getElementById("lifecycle_phase");
+  if (phaseSelect) phaseSelect.value = lifecycle.currentPhase || "dating";
+
+  // 基础档案
   const meta = currentConfig.meta || {};
   document.getElementById("meta_boyName").value = meta.boyName || "";
   document.getElementById("meta_girlName").value = meta.girlName || "";
@@ -71,6 +82,7 @@ function renderAllForms() {
   document.getElementById("meta_siteTitle").value = meta.siteTitle || "";
   document.getElementById("meta_siteSubtitle").value = meta.siteSubtitle || "";
 
+  // 门禁
   const gate = currentConfig.gatekeeper || {};
   document.getElementById("gatekeeper_enabled").value = String(gate.enabled !== false);
   document.getElementById("gatekeeper_title").value = gate.title || "";
@@ -79,6 +91,7 @@ function renderAllForms() {
   document.getElementById("gatekeeper_correctAnswer").value = gate.correctAnswer || "";
   document.getElementById("gatekeeper_errorTips").value = (gate.errorTips || []).join("\n");
 
+  // 情书
   const letter = currentConfig.letter || {};
   document.getElementById("letter_title").value = letter.title || "";
   document.getElementById("letter_signDate").value = letter.signDate || "";
@@ -89,6 +102,7 @@ function renderAllForms() {
   renderChecklist();
   renderScratchCards();
 
+  // 音频
   const audio = currentConfig.audio || {};
   document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay !== false);
   document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "";
@@ -96,27 +110,67 @@ function renderAllForms() {
   document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "";
   document.getElementById("audio_vinylCover").value = audio.vinylCover || "";
 
+  // 彩蛋
   const eggs = currentConfig.easterEggs || [];
   document.getElementById("egg_1_message").value = eggs[0]?.message || "";
   document.getElementById("egg_2_message").value = eggs[1]?.message || "";
 
   renderThemeShowroom();
+  renderLicenseStatus();
 }
 
-// ================= 🔄 一键载入本地 config.js 最新预设 (覆盖旧云端数据) =================
+// 授权状态渲染
+function renderLicenseStatus() {
+  const badge = document.getElementById("licenseStatusBadge");
+  if (!badge) return;
+
+  if (currentConfig._license && currentConfig._license.unlocked) {
+    badge.innerHTML = `<span style="color:#34d399;">✨ 已永久激活【${currentConfig._license.tier || "全功能版本"}】 (绑定域名: ${currentConfig._license.boundDomain || currentDomainHost})</span>`;
+  } else {
+    badge.innerHTML = `<span style="color:#f59e0b;">⏳ 基础免费版 (未输入专属激活码)</span>`;
+  }
+}
+
+async function submitDomainLicense() {
+  const codeInput = document.getElementById("inputLicenseCode");
+  const code = codeInput.value.trim();
+  if (!code) return alert("请输入授权兑换码！");
+
+  showToast("⏳ 正在验证域名授权...");
+
+  try {
+    const res = await fetch("/api/love/verify-license", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ licenseCode: code })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      alert(`🎉 ${data.message}`);
+      await fetchConfigFromCloud();
+    } else {
+      alert(`❌ 激活失败: ${data.message || "授权码与当前域名不匹配"}`);
+    }
+  } catch (err) {
+    alert("❌ 请求异常: " + err.message);
+  }
+}
+
+// ================= 🔄 载入最新代码预设 =================
 function resetToCodePresets() {
-  if (!confirm("⚠️ 确定要载入代码里的最新预设吗？\n这将载入最新的 50 项小事清单、12 张实用特权刮刮乐并清除旧卡片，随后点击右上角【💾 立即发布生效】即可同步写入云端！")) return;
+  if (!confirm("⚠️ 确定要载入代码里的最新预设吗？\n这将载入包含全情绪图谱的 48 项小事与 12 张特权刮刮乐，随后点击右上角【💾 立即发布生效】即可同步写入云端！")) return;
 
   if (window.LOVE_CONFIG) {
     currentConfig = JSON.parse(JSON.stringify(window.LOVE_CONFIG));
     renderAllForms();
-    showToast("✓ 已载入最新 50 项小事与 12 张特权卡，请点击右上角【立即发布生效】！");
+    showToast("✓ 已载入最新预设，请点击右上角【立即发布生效】！");
   } else {
     alert("❌ 未读取到本地 config.js 预设数据");
   }
 }
 
-// ================= 🎨 9. 主题陈列室渲染与交互 =================
+// ================= 🎨 9. 主题陈列室 =================
 function renderThemeShowroom() {
   const container = document.getElementById("themeShowroomContainer");
   if (!container) return;
@@ -172,7 +226,7 @@ function selectThemeCard(themeId) {
   showToast(`✓ 已选择主题【${themeId}】，请点击右上角保存发布！`);
 }
 
-// ================= 🔍 在线音乐云端搜索引擎与流畅试听控制 =================
+// ================= 🔍 云端音乐搜索 =================
 function quickSearchTag(tagText) {
   document.getElementById("musicSearchKeyword").value = tagText;
   executeOnlineMusicSearch();
@@ -203,9 +257,9 @@ async function executeOnlineMusicSearch() {
         </div>
       `).join("");
     } else {
-      listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">🍃 未找到歌曲，请尝试更简短的关键词 (例如: 晴天 / 钢琴)</div>`;
+      listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">🍃 未找到歌曲，请尝试更简短的关键词</div>`;
     }
-  } catch (err) {
+  } catch (_) {
     listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">❌ 检索超时，请检查网络后重试</div>`;
   }
 }
@@ -263,11 +317,10 @@ function selectCloudMusic(title, artist, url) {
   showToast(`✓ 已成功将【${title}】填入配置，请点击右上角保存！`);
 }
 
-// ================= 🧹 一键清理 R2 历史无用废弃缓存 =================
+// ================= 🧹 清理 R2 缓存 =================
 async function cleanOrphanR2Cache() {
-  if (!confirm("⚠️ 确定要清理 R2 存储桶中不再使用的历史废弃照片与音频吗？\n（当前正在使用的文件绝对不会被删除，仅删除未引用的缓存）")) return;
-
-  showToast("⏳ 正在深度扫描并清理 R2 孤立缓存...");
+  if (!confirm("⚠️ 确定要清理当前站点存储中未引用的废弃照片与音频吗？")) return;
+  showToast("⏳ 正在扫描并清理当前域名孤立文件...");
 
   try {
     const res = await fetch("/api/love/cleanup", {
@@ -304,8 +357,8 @@ function renderTimelineList() {
         <div class="form-group"><label>标签 (如: 初遇心动)</label><input type="text" class="admin-input" value="${escapeHtml(item.tag || "")}" onchange="currentConfig.timeline[${idx}].tag=this.value"></div>
         <div class="form-group"><label>故事标题</label><input type="text" class="admin-input" value="${escapeHtml(item.title || "")}" onchange="currentConfig.timeline[${idx}].title=this.value"></div>
         <div class="form-group"><label>地点 (如: 📍 晴天咖啡馆)</label><input type="text" class="admin-input" value="${escapeHtml(item.location || "")}" onchange="currentConfig.timeline[${idx}].location=this.value"></div>
-        <div class="form-group" style="grid-column: 1 / -1;"><label>正面描述故事</label><textarea class="admin-textarea" rows="2" onchange="currentConfig.timeline[${idx}].desc=this.value">${escapeHtml(item.desc || "")}</textarea></div>
-        <div class="form-group" style="grid-column: 1 / -1;"><label>背面手写私语留言</label><textarea class="admin-textarea" rows="2" onchange="currentConfig.timeline[${idx}].backText=this.value">${escapeHtml(item.backText || "")}</textarea></div>
+        <div class="form-group" style="grid-column: 1 / -1;"><label>正面故事描述</label><textarea class="admin-textarea" rows="2" onchange="currentConfig.timeline[${idx}].desc=this.value">${escapeHtml(item.desc || "")}</textarea></div>
+        <div class="form-group" style="grid-column: 1 / -1;"><label>背面私语留言</label><textarea class="admin-textarea" rows="2" onchange="currentConfig.timeline[${idx}].backText=this.value">${escapeHtml(item.backText || "")}</textarea></div>
         <div class="form-group">
           <label>拍立得正面照片链接</label>
           <div class="upload-input-group">
@@ -368,7 +421,15 @@ function renderChecklist() {
           <input type="text" class="admin-input" value="${escapeHtml(item.title || "")}" onchange="currentConfig.checklist100[${idx}].title=this.value">
         </div>
         <div class="form-group">
-          <label>默认完成状态</label>
+          <label>所属阶段</label>
+          <select class="admin-select" onchange="currentConfig.checklist100[${idx}].phase=parseInt(this.value,10)">
+            <option value="1" ${item.phase === 1 ? 'selected' : ''}>🌿 Phase 1 恋爱期</option>
+            <option value="2" ${item.phase === 2 ? 'selected' : ''}>💍 Phase 2 订婚期</option>
+            <option value="3" ${item.phase === 3 ? 'selected' : ''}>🏠 Phase 3 结婚期</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>完成状态</label>
           <select class="admin-select" onchange="currentConfig.checklist100[${idx}].completed=(this.value==='true')">
             <option value="false" ${!item.completed ? 'selected' : ''}>未完成</option>
             <option value="true" ${item.completed ? 'selected' : ''}>已完成 (打勾)</option>
@@ -383,7 +444,7 @@ function renderChecklist() {
 function addChecklistItem() {
   if (!currentConfig.checklist100) currentConfig.checklist100 = [];
   const nextId = currentConfig.checklist100.length + 1;
-  currentConfig.checklist100.push({ id: nextId, title: "一起去做一件浪漫的事", completed: false });
+  currentConfig.checklist100.push({ id: nextId, phase: 1, title: "一起去做一件浪漫的事", completed: false });
   renderChecklist();
 }
 
@@ -411,8 +472,16 @@ function renderScratchCards() {
           <input type="text" class="admin-input" value="${escapeHtml(item.icon || "🎁")}" onchange="currentConfig.scratchCards[${idx}].icon=this.value">
         </div>
         <div class="form-group">
-          <label>特权卡券名称</label>
+          <label>特权券名称</label>
           <input type="text" class="admin-input" value="${escapeHtml(item.title || "")}" onchange="currentConfig.scratchCards[${idx}].title=this.value">
+        </div>
+        <div class="form-group">
+          <label>所属阶段</label>
+          <select class="admin-select" onchange="currentConfig.scratchCards[${idx}].phase=parseInt(this.value,10)">
+            <option value="1" ${item.phase === 1 ? 'selected' : ''}>🌿 Phase 1 恋爱期</option>
+            <option value="2" ${item.phase === 2 ? 'selected' : ''}>💍 Phase 2 订婚期</option>
+            <option value="3" ${item.phase === 3 ? 'selected' : ''}>🏠 Phase 3 结婚期</option>
+          </select>
         </div>
         <div class="form-group" style="grid-column: 1 / -1;">
           <label>特权详细说明</label>
@@ -428,6 +497,7 @@ function addScratchCard() {
   if (!currentConfig.scratchCards) currentConfig.scratchCards = [];
   currentConfig.scratchCards.push({
     id: "card_" + Date.now(),
+    phase: 1,
     title: "专属心愿特权卡",
     content: "持此卡可无条件兑现一次专属温柔举动！",
     icon: "✨",
@@ -458,7 +528,7 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   const file = e.target.files[0];
   if (!file) return;
 
-  showToast("⏳ 正在流式上传到 R2 存储桶...");
+  showToast("⏳ 正在流式上传到当前域名 R2 空间...");
   const formData = new FormData();
   formData.append("file", file);
 
@@ -477,7 +547,7 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
       if (activeUploadCallback) {
         activeUploadCallback(data.url);
       }
-      showToast("✓ 上传成功并已填入链接");
+      showToast("✓ 上传成功并已填入直链");
     } else {
       alert("❌ 上传失败: " + (data.error || "接口异常"));
     }
@@ -488,9 +558,13 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
-// ================= 保存全量配置至云端 R2 =================
+// ================= 保存全量配置 =================
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
+
+  currentConfig.lifecycle = {
+    currentPhase: document.getElementById("lifecycle_phase").value
+  };
 
   currentConfig.meta = {
     boyName: document.getElementById("meta_boyName").value.trim(),
@@ -509,7 +583,7 @@ async function saveAllConfigToCloud() {
     question: document.getElementById("gatekeeper_question").value.trim(),
     hint: document.getElementById("gatekeeper_hint").value.trim(),
     correctAnswer: document.getElementById("gatekeeper_correctAnswer").value.trim(),
-    errorTips: errorTipsRaw.length > 0 ? errorTipsRaw : ["不对哦，再想想！"]
+    errorTips: errorTipsRaw.length > 0 ? errorTipsRaw : ["没关系，慢慢想，我一直都在这里等你。"]
   };
 
   currentConfig.letter = {
@@ -552,7 +626,7 @@ async function saveAllConfigToCloud() {
     const data = await res.json();
 
     if (data.success) {
-      showToast("✨ 全部配置已成功发布！前台即时生效");
+      showToast("✨ 全部配置已成功发布！当前域名即时生效");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
@@ -566,7 +640,7 @@ function exportBackupJSON() {
   const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentConfig, null, 2));
   const a = document.createElement("a");
   a.href = str;
-  a.download = `漫游宇宙配置备份_${Date.now()}.json`;
+  a.download = `雅歌契约配置备份_${Date.now()}.json`;
   a.click();
 }
 
