@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/theme-engine.js
- * 作用: 多维物理引擎、12 套男女主题切换、独立背景图映射与授权拦截
+ * 作用: 多维物理引擎、12 套男女主题切换、双视角胶囊激活联动与独立背景图映射
  */
 
 class ThemeEngine {
@@ -10,7 +10,7 @@ class ThemeEngine {
     this.ctx = this.canvas ? this.canvas.getContext("2d") : null;
     this.particles = [];
     this.animationFrameId = null;
-    this.currentPerspective = localStorage.getItem("love_user_perspective") || "boy"; // boy or girl
+    this.currentPerspective = localStorage.getItem("love_user_perspective") || "boy";
     this.currentThemeId = "sunset-twilight";
     this.presets = window.THEME_PRESETS || { boy: [], girl: [] };
   }
@@ -18,17 +18,18 @@ class ThemeEngine {
   init() {
     this.resizeCanvas();
     window.addEventListener("resize", () => this.resizeCanvas());
+    this.updateCapsuleUI();
 
-    // 默认应用当前视角的配置
     const config = window.LOVE_CONFIG || {};
     const themeCfg = config.theme || {};
+
     const defaultTheme = this.currentPerspective === "boy" 
-      ? (themeCfg.currentThemeBoy || "sunset-twilight")
+      ? (themeCfg.currentThemeBoy || themeCfg.currentTheme || "sunset-twilight")
       : (themeCfg.currentThemeGirl || "french-cream");
 
     const customBg = this.currentPerspective === "boy"
       ? (themeCfg.customBgUrlBoy || themeCfg.customBgUrl || "")
-      : (themeCfg.customBgUrlGirl || themeCfg.customBgUrl || "");
+      : (themeCfg.customBgUrlGirl || "");
 
     this.applyTheme(defaultTheme, customBg, false);
   }
@@ -39,41 +40,49 @@ class ThemeEngine {
     this.canvas.height = window.innerHeight;
   }
 
-  // 校验当前站点是否已兑换永久授权
   isLicensed() {
     const cfg = window.LOVE_CONFIG || {};
     return Boolean(cfg._license && cfg._license.unlocked);
   }
 
-  // 切换男女视角 (受授权保护)
+  // 切换男女视角
   switchPerspective(gender) {
-    if (!this.isLicensed()) {
-      alert("💎 【12 款男女双视角主题与独立壁纸】为星河契约专属版特权！\n请长按网页底部版权文字或进入后台输入激活码解锁此特权。");
-      return;
-    }
-
     this.currentPerspective = gender;
     localStorage.setItem("love_user_perspective", gender);
+    this.updateCapsuleUI();
 
     const config = window.LOVE_CONFIG || {};
     const themeCfg = config.theme || {};
 
     const targetTheme = gender === "boy" 
-      ? (themeCfg.currentThemeBoy || "sunset-twilight")
+      ? (themeCfg.currentThemeBoy || themeCfg.currentTheme || "sunset-twilight")
       : (themeCfg.currentThemeGirl || "french-cream");
 
     const targetBg = gender === "boy"
       ? (themeCfg.customBgUrlBoy || themeCfg.customBgUrl || "")
-      : (themeCfg.customBgUrlGirl || themeCfg.customBgUrl || "");
+      : (themeCfg.customBgUrlGirl || "");
 
     this.applyTheme(targetTheme, targetBg, true);
   }
 
-  // 应用具体主题
-  applyTheme(themeId, customBgUrl = "", showToast = false) {
+  updateCapsuleUI() {
+    const boyBtn = document.getElementById("btn-perspective-boy");
+    const girlBtn = document.getElementById("btn-perspective-girl");
+
+    if (boyBtn && girlBtn) {
+      if (this.currentPerspective === "boy") {
+        boyBtn.classList.add("active");
+        girlBtn.classList.remove("active");
+      } else {
+        girlBtn.classList.add("active");
+        boyBtn.classList.remove("active");
+      }
+    }
+  }
+
+  applyTheme(themeId, customBgUrl = "", notify = false) {
     this.currentThemeId = themeId;
 
-    // 查找主题元数据
     let themeMeta = null;
     const allThemes = [...(this.presets.boy || []), ...(this.presets.girl || [])];
     themeMeta = allThemes.find(t => t.id === themeId);
@@ -82,14 +91,14 @@ class ThemeEngine {
       themeMeta = this.presets.boy[0] || { particleType: "meteor", themeType: "dark" };
     }
 
-    // 1. 设置 Body 类名与主题类型
+    // 1. 设置 Body 类名与主题属性
     document.body.className = document.body.className
       .replace(/theme-[a-z0-9-]+/g, "")
       .trim();
     document.body.classList.add(`theme-${themeId}`);
     document.body.setAttribute("data-theme-type", themeMeta.themeType || "dark");
 
-    // 2. 注入背景色或自定义壁纸
+    // 2. 注入背景色或壁纸
     if (customBgUrl) {
       document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('${customBgUrl}')`;
       document.body.style.backgroundSize = "cover";
@@ -99,15 +108,14 @@ class ThemeEngine {
       document.body.style.backgroundImage = themeMeta.colors?.bg || "";
     }
 
-    // 3. 启动对应的 Canvas 物理粒子引擎
+    // 3. 启动物理粒子引擎
     this.initParticlePhysics(themeMeta.particleType || "meteor");
 
-    if (showToast && typeof window.showToast === "function") {
-      window.showToast(`✨ 已切换至【${themeMeta.name}】`);
+    if (notify && typeof window.showToast === "function") {
+      window.showToast(`✨ 已切入【${themeMeta.name}】专属时空`);
     }
   }
 
-  // 物理粒子系统分发
   initParticlePhysics(type) {
     if (!this.ctx) return;
     if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
@@ -121,7 +129,7 @@ class ThemeEngine {
 
     const renderLoop = () => {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.particles.forEach((p, idx) => {
+      this.particles.forEach((p) => {
         this.updateAndDrawParticle(p, type);
       });
       this.animationFrameId = requestAnimationFrame(renderLoop);
@@ -135,7 +143,7 @@ class ThemeEngine {
     const h = this.canvas.height;
 
     switch (type) {
-      case "petals": // 🌸 3D 樱花花瓣
+      case "petals":
       case "floralRipples":
         return {
           x: Math.random() * w,
@@ -148,7 +156,7 @@ class ThemeEngine {
           opacity: Math.random() * 0.6 + 0.3
         };
 
-      case "sunDust": // 🧁 丁达尔暖阳微尘
+      case "sunDust":
       case "dewDrops":
         return {
           x: Math.random() * w,
@@ -156,11 +164,10 @@ class ThemeEngine {
           radius: Math.random() * 2.5 + 1,
           speedY: (Math.random() - 0.5) * 0.3,
           speedX: (Math.random() - 0.5) * 0.3,
-          opacity: Math.random() * 0.7 + 0.2,
-          pulse: Math.random() * 0.02 + 0.01
+          opacity: Math.random() * 0.7 + 0.2
         };
 
-      case "bubbles": // 🍬 七彩梦幻气泡
+      case "bubbles":
       case "seaSpray":
         return {
           x: Math.random() * w,
@@ -171,7 +178,7 @@ class ThemeEngine {
           opacity: Math.random() * 0.4 + 0.3
         };
 
-      case "fireflies": // 🌲 幽林萤火
+      case "fireflies":
       case "bioplankton":
         return {
           x: Math.random() * w,
@@ -183,7 +190,7 @@ class ThemeEngine {
           alphaSpeed: Math.random() * 0.02 + 0.01
         };
 
-      case "cyberMatrix": // ⚡ 赛博矩阵光束
+      case "cyberMatrix":
         return {
           x: Math.random() * w,
           y: Math.random() * h,
@@ -192,7 +199,7 @@ class ThemeEngine {
           opacity: Math.random() * 0.5 + 0.2
         };
 
-      case "meteor": // 🌌 暮色流星雨
+      case "meteor":
       default:
         return {
           x: Math.random() * w,
@@ -232,7 +239,6 @@ class ThemeEngine {
       case "dewDrops":
         p.x += p.speedX;
         p.y += p.speedY;
-        p.opacity += Math.sin(Date.now() * 0.002) * 0.01;
         if (p.x < 0) p.x = w;
         if (p.x > w) p.x = 0;
         if (p.y < 0) p.y = h;
@@ -240,7 +246,7 @@ class ThemeEngine {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(245, 158, 11, ${Math.abs(p.opacity)})`;
+        ctx.fillStyle = `rgba(245, 158, 11, ${p.opacity})`;
         ctx.shadowColor = "rgba(245, 158, 11, 0.6)";
         ctx.shadowBlur = 6;
         ctx.fill();
