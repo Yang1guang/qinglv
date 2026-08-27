@@ -127,13 +127,10 @@ function renderAllForms() {
   renderTimelineList();
   renderChecklist();
   renderScratchCards();
+  renderPlaylist();
 
   const audio = currentConfig.audio || {};
   document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay !== false);
-  document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "";
-  document.getElementById("audio_bgmArtist").value = audio.bgmArtist || "";
-  document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "";
-  document.getElementById("audio_vinylCover").value = audio.vinylCover || "";
 
   const eggs = currentConfig.easterEggs || [];
   document.getElementById("egg_1_message").value = eggs[0]?.message || "";
@@ -196,6 +193,91 @@ function resetToCodePresets() {
   } else {
     alert("❌ 未读取到本地 config.js 预设数据");
   }
+}
+
+// ================= 🎵 播放列表管理 =================
+function renderPlaylist() {
+  const container = document.getElementById("playlistContainer");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!currentConfig.audio) currentConfig.audio = {};
+  if (!Array.isArray(currentConfig.audio.playlist)) {
+    currentConfig.audio.playlist = [{
+      title: currentConfig.audio.bgmTitle || "告白气球",
+      artist: currentConfig.audio.bgmArtist || "周杰伦",
+      url: currentConfig.audio.bgmUrl || "https://music.163.com/song/media/outer/url?id=436514312.mp3",
+      cover: currentConfig.audio.vinylCover || ""
+    }];
+  }
+
+  currentConfig.audio.playlist.forEach((track, idx) => {
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.innerHTML = `
+      <div class="item-card-header">
+        <span class="item-card-title">🎵 曲目 #${idx + 1} - ${escapeHtml(track.title || "未命名歌曲")}</span>
+        <button class="btn-del" onclick="deletePlaylistItem(${idx})">🗑️ 删除</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>歌曲名称</label><input type="text" class="admin-input" value="${escapeHtml(track.title || "")}" oninput="currentConfig.audio.playlist[${idx}].title=this.value"></div>
+        <div class="form-group"><label>演唱歌手 / 艺术家</label><input type="text" class="admin-input" value="${escapeHtml(track.artist || "")}" oninput="currentConfig.audio.playlist[${idx}].artist=this.value"></div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>音频直链地址</label>
+          <div class="upload-input-group">
+            <input type="text" class="admin-input" id="audio_track_url_${idx}" value="${escapeHtml(track.url || "")}" oninput="currentConfig.audio.playlist[${idx}].url=this.value">
+            <button class="btn-upload" onclick="triggerDirectUpload('audio_track_url_${idx}', 'audio/*', (url)=>{ currentConfig.audio.playlist[${idx}].url=url; })">📤 上传MP3</button>
+          </div>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>黑胶中心封面图片链接 (可选 · 留空显示 ❤️)</label>
+          <div class="upload-input-group">
+            <input type="text" class="admin-input" id="audio_track_cov_${idx}" value="${escapeHtml(track.cover || "")}" oninput="currentConfig.audio.playlist[${idx}].cover=this.value">
+            <button class="btn-upload" onclick="triggerDirectUpload('audio_track_cov_${idx}', 'image/*', (url)=>{ currentConfig.audio.playlist[${idx}].cover=url; })">🖼️ 上传封面</button>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function addPlaylistItem() {
+  if (!currentConfig.audio) currentConfig.audio = {};
+  if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
+
+  currentConfig.audio.playlist.push({
+    title: "新美好心动曲",
+    artist: "周杰伦",
+    url: "https://music.163.com/song/media/outer/url?id=436514312.mp3",
+    cover: ""
+  });
+  renderPlaylist();
+}
+
+function deletePlaylistItem(idx) {
+  if (currentConfig.audio.playlist.length <= 1) {
+    return alert("⚠️ 歌单中请至少保留一首背景音乐！");
+  }
+  if (confirm("确定从黑胶歌单中删除该曲目吗？")) {
+    currentConfig.audio.playlist.splice(idx, 1);
+    renderPlaylist();
+  }
+}
+
+// 快速加入歌单
+function addSongToPlaylist(title, artist, url) {
+  if (!currentConfig.audio) currentConfig.audio = {};
+  if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
+
+  currentConfig.audio.playlist.push({
+    title,
+    artist,
+    url,
+    cover: ""
+  });
+  renderPlaylist();
+  showToast(`✓ 已成功将【${title}】添加到歌单，请点击右上角【💾 立即发布生效】！`);
 }
 
 // ================= 🎨 9. 双视角 12 款主题渲染 =================
@@ -313,7 +395,7 @@ async function executeOnlineMusicSearch() {
           </div>
           <div style="display:flex; gap:6px; flex-shrink:0;">
             <button class="btn-tool preview-play-btn" id="prev_btn_${idx}" style="padding:5px 10px; font-size:11.5px;" onclick="testPreviewAudio('${song.url}', 'prev_btn_${idx}')">🎧 试听</button>
-            <button class="btn-tool" style="background:var(--gold); color:#fff; padding:5px 12px; font-size:11.5px;" onclick="selectCloudMusic('${escapeHtml(song.title)}', '${escapeHtml(song.artist)}', '${song.url}')">✓ 设为BGM</button>
+            <button class="btn-tool" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; padding:5px 12px; font-size:11.5px;" onclick="addSongToPlaylist('${escapeHtml(song.title)}', '${escapeHtml(song.artist)}', '${song.url}')">➕ 加入歌单</button>
           </div>
         </div>
       `).join("");
@@ -362,20 +444,6 @@ function testPreviewAudio(url, btnId) {
   previewAudioObj.onended = () => {
     if (currentBtn) currentBtn.textContent = "🎧 试听";
   };
-}
-
-function selectCloudMusic(title, artist, url) {
-  document.getElementById("audio_bgmTitle").value = title;
-  document.getElementById("audio_bgmArtist").value = artist;
-  document.getElementById("audio_bgmUrl").value = url;
-
-  if (previewAudioObj) {
-    previewAudioObj.pause();
-    previewAudioObj = null;
-    document.querySelectorAll(".preview-play-btn").forEach(b => b.textContent = "🎧 试听");
-  }
-
-  showToast(`✓ 已成功将【${title}】填入配置，请点击右上角【💾 立即发布生效】！`);
 }
 
 async function cleanOrphanR2Cache() {
@@ -676,10 +744,7 @@ async function saveAllConfigToCloud() {
   currentConfig.audio = {
     ...(currentConfig.audio || {}),
     bgmAutoPlay: document.getElementById("audio_bgmAutoPlay").value === "true",
-    bgmTitle: document.getElementById("audio_bgmTitle").value.trim(),
-    bgmArtist: document.getElementById("audio_bgmArtist").value.trim(),
-    bgmUrl: document.getElementById("audio_bgmUrl").value.trim(),
-    vinylCover: document.getElementById("audio_vinylCover").value.trim()
+    playlist: currentConfig.audio?.playlist || []
   };
 
   currentConfig.easterEggs = [
@@ -732,7 +797,7 @@ async function saveAllConfigToCloud() {
     if (data.success) {
       currentAdminToken = customPwd || "521";
       localStorage.setItem("love_admin_token", currentAdminToken);
-      showToast("✨ 全部配置与照片已成功持久化发布！");
+      showToast("✨ 全部配置、照片与黑胶歌单已成功持久化发布！");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
