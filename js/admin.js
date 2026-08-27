@@ -208,15 +208,15 @@ function renderPlaylist() {
   if (!Array.isArray(currentConfig.audio.playlist) || currentConfig.audio.playlist.length === 0) {
     currentConfig.audio.playlist = [
       {
-        title: "Sweet Memories 浪漫钢琴",
-        artist: "松田圣子 / 纯音乐",
-        url: "https://music.163.com/song/media/outer/url?id=441116287.mp3",
-        cover: ""
-      },
-      {
         title: "告白气球 (浪漫钢琴版)",
         artist: "周杰伦 / 纯音乐",
         url: "https://music.163.com/song/media/outer/url?id=440208476.mp3",
+        cover: ""
+      },
+      {
+        title: "晴天 (唯美吉他版)",
+        artist: "周杰伦 / 纯音乐",
+        url: "https://music.163.com/song/media/outer/url?id=461520146.mp3",
         cover: ""
       }
     ];
@@ -258,9 +258,9 @@ function addPlaylistItem() {
   if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
 
   currentConfig.audio.playlist.push({
-    title: "Sweet Memories 浪漫钢琴",
-    artist: "松田圣子 / 纯音乐",
-    url: "https://music.163.com/song/media/outer/url?id=441116287.mp3",
+    title: "告白气球 (浪漫钢琴版)",
+    artist: "周杰伦 / 纯音乐",
+    url: "https://music.163.com/song/media/outer/url?id=440208476.mp3",
     cover: ""
   });
   renderPlaylist();
@@ -283,7 +283,7 @@ function addSongToPlaylist(title, artist, url) {
   currentConfig.audio.playlist.push({
     title: title || "浪漫心动曲",
     artist: artist || "群星",
-    url: url || "https://music.163.com/song/media/outer/url?id=441116287.mp3",
+    url: url || "https://music.163.com/song/media/outer/url?id=440208476.mp3",
     cover: ""
   });
   renderPlaylist();
@@ -416,6 +416,7 @@ async function executeOnlineMusicSearch() {
   }
 }
 
+// 试听引擎（同步直出，绝不弹窗拦截）
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
@@ -444,11 +445,11 @@ function testPreviewAudio(url, btnId) {
     if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
     showToast("🎵 正在流畅试听曲目...");
   }).catch(() => {
-    // 自动降级为高保真备用音源播放
-    previewAudioObj.src = "https://music.163.com/song/media/outer/url?id=441116287.mp3";
+    // 自动无感降级备用源播放
+    previewAudioObj.src = "https://music.163.com/song/media/outer/url?id=440208476.mp3";
     previewAudioObj.play().then(() => {
       if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
-      showToast("🎵 正在播放浪漫钢琴曲试听");
+      showToast("🎵 正在播放浪漫钢琴版试听");
     }).catch(() => {
       if (currentBtn) currentBtn.textContent = "🎧 试听";
     });
