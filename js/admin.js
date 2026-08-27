@@ -67,6 +67,11 @@ async function fetchConfigFromCloud() {
 function renderAllForms() {
   if (!currentConfig) return;
 
+  // 独立管理密码回显 (默认显示 521)
+  const sec = currentConfig.adminSecurity || {};
+  const pwdInput = document.getElementById("admin_customPassword");
+  if (pwdInput) pwdInput.value = sec.password || "521";
+
   // 生命周期
   const lifecycle = currentConfig.lifecycle || {};
   const phaseSelect = document.getElementById("lifecycle_phase");
@@ -562,6 +567,13 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
 
+  // 保存独立管理密码
+  const customPwd = (document.getElementById("admin_customPassword")?.value || "521").trim();
+  currentConfig.adminSecurity = {
+    password: customPwd || "521",
+    updatedAt: new Date().toISOString()
+  };
+
   currentConfig.lifecycle = {
     currentPhase: document.getElementById("lifecycle_phase").value
   };
@@ -626,7 +638,10 @@ async function saveAllConfigToCloud() {
     const data = await res.json();
 
     if (data.success) {
-      showToast("✨ 全部配置已成功发布！当前域名即时生效");
+      // 成功保存后更新本地持久化凭证为新设密码，避免下次请求未授权
+      currentAdminToken = customPwd || "521";
+      localStorage.setItem("love_admin_token", currentAdminToken);
+      showToast("✨ 全部配置已成功发布！管理密码与内容即时生效");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
