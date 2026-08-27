@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、多曲目黑胶播放列表控制器、烟花与音效容错管理
+ * 作用: 动效中枢、多曲目黑胶播放列表控制器、烟花与粒子音效
  */
 
 class EffectsEngine {
@@ -41,9 +41,9 @@ class EffectsEngine {
         cover: ""
       },
       {
-        title: "告白气球",
+        title: "告白气球 (浪漫版)",
         artist: "周杰伦",
-        url: "https://music.163.com/song/media/outer/url?id=436514312.mp3",
+        url: "/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E",
         cover: ""
       }
     ];
@@ -78,10 +78,9 @@ class EffectsEngine {
     if (!this.bgmAudio) {
       this.bgmAudio = new Audio();
       this.bgmAudio.preload = "auto";
-      this.bgmAudio.crossOrigin = "anonymous";
 
       this.bgmAudio.addEventListener("ended", () => {
-        this.nextTrack(true);
+        this.nextTrack();
       });
 
       this.bgmAudio.addEventListener("play", () => {
@@ -94,16 +93,15 @@ class EffectsEngine {
         this.setVinylVisualPlaying(false);
       });
 
-      // 错误自动恢复：当前曲目失效时平滑跳入下一首或备用源
       this.bgmAudio.addEventListener("error", () => {
-        console.warn("音频载入受阻，正在智能切换高可用备用流...");
-        setTimeout(() => this.nextTrack(true), 800);
+        console.warn("音频载入受阻，正在跳入下一曲...");
       });
     }
 
     this.loadTrack(this.currentTrackIndex, false);
   }
 
+  // 同步载入并播放（杜绝 setTimeout 导致的浏览器手势拦截）
   loadTrack(index, autoPlay = true) {
     if (this.playlist.length === 0) return;
     if (index < 0) index = this.playlist.length - 1;
@@ -149,27 +147,18 @@ class EffectsEngine {
     }
   }
 
-  nextTrack(isAuto = false) {
+  nextTrack() {
     const nextIdx = (this.currentTrackIndex + 1) % this.playlist.length;
-    this.setNeedleState(false);
-    setTimeout(() => {
-      this.loadTrack(nextIdx, true);
-    }, 250);
+    this.loadTrack(nextIdx, true);
   }
 
   prevTrack() {
     const prevIdx = (this.currentTrackIndex - 1 + this.playlist.length) % this.playlist.length;
-    this.setNeedleState(false);
-    setTimeout(() => {
-      this.loadTrack(prevIdx, true);
-    }, 250);
+    this.loadTrack(prevIdx, true);
   }
 
   selectTrack(index) {
-    this.setNeedleState(false);
-    setTimeout(() => {
-      this.loadTrack(index, true);
-    }, 200);
+    this.loadTrack(index, true);
   }
 
   setVinylVisualPlaying(playing) {
