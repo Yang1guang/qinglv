@@ -128,9 +128,9 @@ function renderAllForms() {
 
   const audio = currentConfig.audio || {};
   document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay !== false);
-  document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "";
-  document.getElementById("audio_bgmArtist").value = audio.bgmArtist || "";
-  document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "";
+  document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "告白气球";
+  document.getElementById("audio_bgmArtist").value = audio.bgmArtist || "周杰伦";
+  document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E";
   document.getElementById("audio_vinylCover").value = audio.vinylCover || "";
 
   const eggs = currentConfig.easterEggs || [];
@@ -185,7 +185,6 @@ function resetToCodePresets() {
   }
 }
 
-// 音乐在线搜索
 function quickSearchTag(tagText) {
   document.getElementById("musicSearchKeyword").value = tagText;
   executeOnlineMusicSearch();
@@ -194,9 +193,8 @@ function quickSearchTag(tagText) {
 async function executeOnlineMusicSearch() {
   const kw = document.getElementById("musicSearchKeyword").value.trim();
   const listContainer = document.getElementById("onlineSearchResultList");
-  if (!kw) return alert("请输入要搜索的歌名或歌手！");
 
-  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索【${escapeHtml(kw)}】直连音频流...</div>`;
+  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索直连音频流...</div>`;
 
   try {
     const res = await fetch(`/api/love/music-search?keyword=${encodeURIComponent(kw)}`);
@@ -230,7 +228,6 @@ function setAsSingleBGM(title, artist, url) {
   showToast(`✓ 已将《${title}》设为BGM，请点击右上角【💾 立即发布生效】！`);
 }
 
-// 试听引擎
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
@@ -259,15 +256,12 @@ function testPreviewAudio(url, btnId) {
   previewAudioObj.play().then(() => {
     if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
     showToast("🎵 正在流畅试听曲目...");
-  }).catch((err) => {
+  }).catch(() => {
     if (currentBtn) currentBtn.textContent = "🎧 试听";
-    showToast("⚠️ 该音频流加载失败，请换一首或上传本地MP3");
+    showToast("⚠️ 该歌曲受版权限制无法试听，建议使用右侧【上传MP3】直传");
   });
 
   previewAudioObj.onended = () => {
-    if (currentBtn) currentBtn.textContent = "🎧 试听";
-  };
-  previewAudioObj.onerror = () => {
     if (currentBtn) currentBtn.textContent = "🎧 试听";
   };
 }
