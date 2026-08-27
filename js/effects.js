@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、多曲目黑胶播放列表控制器、网易云/酷狗中继流适配
+ * 作用: 动效中枢、高稳定单曲循环播放引擎、黑胶唱针联动
  */
 
 class EffectsEngine {
@@ -9,8 +9,6 @@ class EffectsEngine {
     this.config = config || window.LOVE_CONFIG || {};
     this.bgmAudio = null;
     this.isPlaying = false;
-    this.currentTrackIndex = 0;
-    this.playlist = this.getNormalizedPlaylist();
 
     this.fireworksCanvas = document.getElementById("fireworks-canvas");
     this.fwCtx = this.fireworksCanvas ? this.fireworksCanvas.getContext("2d") : null;
@@ -20,50 +18,23 @@ class EffectsEngine {
     this.init();
   }
 
-  getNormalizedPlaylist() {
-    try {
-      const cached = localStorage.getItem("love_universe_custom_playlist");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (_) {}
-
+  getNormalizedAudioConfig() {
     const audioCfg = this.config.audio || {};
-    if (Array.isArray(audioCfg.playlist) && audioCfg.playlist.length > 0) {
-      return audioCfg.playlist;
-    }
-
-    return [
-      {
-        title: "告白气球",
-        artist: "周杰伦",
-        url: "/api/love/music-stream?netease_id=411521",
-        cover: ""
-      },
-      {
-        title: "晴天",
-        artist: "周杰伦",
-        url: "/api/love/music-stream?netease_id=186016",
-        cover: ""
-      },
-      {
-        title: "简单爱",
-        artist: "周杰伦",
-        url: "/api/love/music-stream?netease_id=185928",
-        cover: ""
-      }
-    ];
+    return {
+      title: audioCfg.bgmTitle || "告白气球 (浪漫钢琴版)",
+      artist: audioCfg.bgmArtist || "周杰伦",
+      url: audioCfg.bgmUrl || "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
+      cover: audioCfg.vinylCover || ""
+    };
   }
 
   init() {
     this.initAudioPlayer();
     this.initCanvasSize();
     this.initEventListeners();
-    this.renderPlaylistPopup();
     this.updateTrackInfoDisplay();
 
-    // 交互唤醒手势
+    // 交互唤醒手势，解除所有浏览器的静音拦截
     const unlockAudio = () => {
       if (this.config.audio && this.config.audio.bgmAutoPlay !== false && !this.isPlaying) {
         this.playBgm();
@@ -80,8 +51,10 @@ class EffectsEngine {
 
   updateConfig(newConfig) {
     this.config = newConfig || {};
-    this.playlist = this.getNormalizedPlaylist();
-    this.renderPlaylistPopup();
+    const track = this.getNormalizedAudioConfig();
+    if (this.bgmAudio && this.bgmAudio.src !== track.url) {
+      this.bgmAudio.src = track.url;
+    }
     this.updateTrackInfoDisplay();
   }
 
@@ -94,12 +67,10 @@ class EffectsEngine {
 
   initAudioPlayer() {
     if (!this.bgmAudio) {
-      this.bgmAudio = new Audio();
+      const track = this.getNormalizedAudioConfig();
+      this.bgmAudio = new Audio(track.url);
       this.bgmAudio.preload = "auto";
-
-      this.bgmAudio.addEventListener("ended", () => {
-        this.nextTrack();
-      });
+      this.bgmAudio.loop = true; // 经典单曲稳定循环
 
       this.bgmAudio.addEventListener("play", () => {
         this.isPlaying = true;
@@ -112,28 +83,8 @@ class EffectsEngine {
       });
 
       this.bgmAudio.addEventListener("error", () => {
-        console.warn("当前曲目音频流异常，平滑跳入下一首...");
-        setTimeout(() => this.nextTrack(), 500);
+        console.warn("当前背景音乐加载受阻");
       });
-    }
-
-    this.loadTrack(this.currentTrackIndex, false);
-  }
-
-  loadTrack(index, autoPlay = true) {
-    if (this.playlist.length === 0) return;
-    if (index < 0) index = this.playlist.length - 1;
-    if (index >= this.playlist.length) index = 0;
-
-    this.currentTrackIndex = index;
-    const track = this.playlist[this.currentTrackIndex];
-
-    this.bgmAudio.src = track.url;
-    this.updateTrackInfoDisplay();
-    this.highlightActivePlaylistItem();
-
-    if (autoPlay) {
-      this.playBgm();
     }
   }
 
@@ -142,9 +93,8 @@ class EffectsEngine {
     this.bgmAudio.play().then(() => {
       this.isPlaying = true;
       this.setVinylVisualPlaying(true);
-      const track = this.playlist[this.currentTrackIndex];
-      this.showMiniToast(`🎶 正在播放: ${track.title} - ${track.artist}`);
-    }).catch(() => {
+    }).catch((err) => {
+      console.warn("播放受阻:", err);
       this.isPlaying = false;
       this.setVinylVisualPlaying(false);
     });
@@ -163,57 +113,6 @@ class EffectsEngine {
     } else {
       this.playBgm();
     }
-  }
-
-  nextTrack() {
-    const nextIdx = (this.currentTrackIndex + 1) % this.playlist.length;
-    this.loadTrack(nextIdx, true);
-  }
-
-  prevTrack() {
-    const prevIdx = (this.currentTrackIndex - 1 + this.playlist.length) % this.playlist.length;
-    this.loadTrack(prevIdx, true);
-  }
-
-  selectTrack(index) {
-    this.loadTrack(index, true);
-  }
-
-  async deleteTrackFromPopup(e, index) {
-    e.stopPropagation();
-    if (this.playlist.length <= 1) {
-      alert("⚠️ 歌单中请至少保留一首背景音乐！");
-      return;
-    }
-    const trackTitle = this.playlist[index].title;
-    if (!confirm(`确定要从当前播放列表中移除《${trackTitle}》吗？`)) return;
-
-    const isCurrentPlaying = (this.currentTrackIndex === index);
-    this.playlist.splice(index, 1);
-
-    try {
-      localStorage.setItem("love_universe_custom_playlist", JSON.stringify(this.playlist));
-    } catch (_) {}
-
-    try {
-      fetch("/api/love/playlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playlist: this.playlist })
-      });
-    } catch (_) {}
-
-    if (isCurrentPlaying) {
-      if (this.currentTrackIndex >= this.playlist.length) {
-        this.currentTrackIndex = 0;
-      }
-      this.loadTrack(this.currentTrackIndex, this.isPlaying);
-    } else if (this.currentTrackIndex > index) {
-      this.currentTrackIndex--;
-    }
-
-    this.renderPlaylistPopup();
-    this.showMiniToast(`✓ 已移除《${trackTitle}》`);
   }
 
   setVinylVisualPlaying(playing) {
@@ -245,8 +144,7 @@ class EffectsEngine {
   }
 
   updateTrackInfoDisplay() {
-    if (this.playlist.length === 0) return;
-    const track = this.playlist[this.currentTrackIndex];
+    const track = this.getNormalizedAudioConfig();
     const coverImg = document.getElementById("vinyl-cover");
     const defaultHeart = document.querySelector(".vinyl-player__default-heart");
 
@@ -262,44 +160,6 @@ class EffectsEngine {
     }
   }
 
-  renderPlaylistPopup() {
-    const container = document.getElementById("vinyl-playlist-items");
-    if (!container) return;
-
-    container.innerHTML = this.playlist.map((track, idx) => `
-      <div class="vinyl-playlist-item ${idx === this.currentTrackIndex ? 'active' : ''}" onclick="window.Effects.selectTrack(${idx})">
-        <div class="vinyl-playlist-item-idx">${idx + 1}</div>
-        <div class="vinyl-playlist-item-info">
-          <div class="vinyl-playlist-item-title">${this.escape(track.title)}</div>
-          <div class="vinyl-playlist-item-artist">${this.escape(track.artist)}</div>
-        </div>
-        <div class="vinyl-playlist-item-status">${idx === this.currentTrackIndex ? '▶' : ''}</div>
-        <button class="vinyl-playlist-item-del" title="从歌单删除" onclick="window.Effects.deleteTrackFromPopup(event, ${idx})" style="background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer; padding:2px 6px;">🗑️</button>
-      </div>
-    `).join("");
-  }
-
-  highlightActivePlaylistItem() {
-    document.querySelectorAll(".vinyl-playlist-item").forEach((el, idx) => {
-      if (idx === this.currentTrackIndex) {
-        el.classList.add("active");
-        const status = el.querySelector(".vinyl-playlist-item-status");
-        if (status) status.textContent = "▶";
-      } else {
-        el.classList.remove("active");
-        const status = el.querySelector(".vinyl-playlist-item-status");
-        if (status) status.textContent = "";
-      }
-    });
-  }
-
-  togglePlaylistPopup() {
-    const popup = document.getElementById("vinyl-playlist-popup");
-    if (!popup) return;
-    const isVisible = popup.style.display === "block";
-    popup.style.display = isVisible ? "none" : "block";
-  }
-
   showMiniToast(text) {
     const toast = document.getElementById("toast") || document.createElement("div");
     toast.className = "admin-toast show";
@@ -311,20 +171,9 @@ class EffectsEngine {
   initEventListeners() {
     const disc = document.getElementById("vinyl-disc");
     const toggleBtn = document.getElementById("audio-toggle-btn");
-    const prevBtn = document.getElementById("audio-prev-btn");
-    const nextBtn = document.getElementById("audio-next-btn");
-    const playlistBtn = document.getElementById("audio-playlist-btn");
-    const playlistClose = document.getElementById("vinyl-playlist-close");
 
     if (disc) disc.onclick = () => this.toggleBgm();
     if (toggleBtn) toggleBtn.onclick = () => this.toggleBgm();
-    if (prevBtn) prevBtn.onclick = (e) => { e.stopPropagation(); this.prevTrack(); };
-    if (nextBtn) nextBtn.onclick = (e) => { e.stopPropagation(); this.nextTrack(); };
-    if (playlistBtn) playlistBtn.onclick = (e) => { e.stopPropagation(); this.togglePlaylistPopup(); };
-    if (playlistClose) playlistClose.onclick = () => {
-      const popup = document.getElementById("vinyl-playlist-popup");
-      if (popup) popup.style.display = "none";
-    };
   }
 
   playAudio(soundName) {
