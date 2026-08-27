@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/pet.css">
   <link rel="stylesheet" href="css/scratch-card.css">
   <style>
-    /* 萌系轻奢双视角切换胶囊 (最高层级，防止被彩蛋遮挡) */
+    /* 萌系轻奢双视角切换胶囊 (最高层级，杜绝遮挡) */
     .perspective-capsule {
       position: fixed;
       top: 18px;
@@ -65,7 +65,6 @@
       box-shadow: 0 2px 12px rgba(244, 63, 94, 0.45);
     }
 
-    /* 星星彩蛋向下避让，杜绝重叠碰撞 */
     .easter-egg-trigger--star {
       position: fixed;
       top: 72px !important;
@@ -73,7 +72,6 @@
       z-index: 90 !important;
     }
 
-    /* 黑胶歌单浮窗 */
     .vinyl-playlist-popup {
       position: absolute;
       bottom: 75px;
@@ -187,8 +185,8 @@
 
   <!-- 萌系轻奢双视角胶囊 -->
   <div class="perspective-capsule" id="perspective-capsule">
-    <button class="perspective-btn active" id="btn-perspective-boy" onclick="ThemeEngine.switchPerspective('boy')">🪐 他的星河</button>
-    <button class="perspective-btn" id="btn-perspective-girl" onclick="ThemeEngine.switchPerspective('girl')">🌸 她的花汐</button>
+    <button class="perspective-btn active" id="btn-perspective-boy" onclick="window.ThemeEngine.switchPerspective('boy')">🪐 他的星河</button>
+    <button class="perspective-btn" id="btn-perspective-girl" onclick="window.ThemeEngine.switchPerspective('girl')">🌸 她的花汐</button>
   </div>
 
   <div id="parallax-photo-wall" class="parallax-photo-wall"></div>
@@ -346,7 +344,6 @@
       <button class="vinyl-player__btn" id="audio-playlist-btn" title="展开歌单">📑</button>
     </div>
 
-    <!-- 歌单弹窗 -->
     <div class="vinyl-playlist-popup" id="vinyl-playlist-popup" style="display:none;">
       <div class="vinyl-playlist-header">
         <span>🎶 专属黑胶歌单</span>
