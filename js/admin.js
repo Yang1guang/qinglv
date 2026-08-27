@@ -128,9 +128,9 @@ function renderAllForms() {
 
   const audio = currentConfig.audio || {};
   document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay !== false);
-  document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "告白气球";
-  document.getElementById("audio_bgmArtist").value = audio.bgmArtist || "周杰伦";
-  document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E";
+  document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "";
+  document.getElementById("audio_bgmArtist").value = audio.bgmArtist || "";
+  document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "";
   document.getElementById("audio_vinylCover").value = audio.vinylCover || "";
 
   const eggs = currentConfig.easterEggs || [];
@@ -193,8 +193,9 @@ function quickSearchTag(tagText) {
 async function executeOnlineMusicSearch() {
   const kw = document.getElementById("musicSearchKeyword").value.trim();
   const listContainer = document.getElementById("onlineSearchResultList");
+  if (!kw) return alert("请输入要搜索的歌名或歌手！");
 
-  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索直连音频流...</div>`;
+  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索酷狗直连音频流...</div>`;
 
   try {
     const res = await fetch(`/api/love/music-search?keyword=${encodeURIComponent(kw)}`);
@@ -208,13 +209,13 @@ async function executeOnlineMusicSearch() {
             <div style="font-size:11.5px; color:#94a3b8;">${escapeHtml(song.artist)}</div>
           </div>
           <div style="display:flex; gap:6px; flex-shrink:0;">
-            <button class="btn-tool preview-play-btn" id="prev_btn_${idx}" style="padding:5px 10px; font-size:11.5px;" onclick="testPreviewAudio('${song.url}', 'prev_btn_${idx}')">🎧 试听</button>
+            <button class="btn-tool preview-play-btn" id="prev_btn_${idx}" style="padding:5px 10px; font-size:11.5px;" onclick="testPreviewAudio('${song.url}', 'prev_btn_${idx}', '${escapeHtml(song.title)}')">🎧 试听</button>
             <button class="btn-tool" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; padding:5px 12px; font-size:11.5px;" onclick="setAsSingleBGM('${escapeHtml(song.title)}', '${escapeHtml(song.artist)}', '${song.url}')">✓ 设为背景音乐</button>
           </div>
         </div>
       `).join("");
     } else {
-      listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">🍃 未找到歌曲，请换个关键词试试</div>`;
+      listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">🍃 未找到可用音频，建议点击下方【上传MP3】直接上传歌曲文件</div>`;
     }
   } catch (_) {
     listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">❌ 检索超时，请检查网络</div>`;
@@ -231,7 +232,7 @@ function setAsSingleBGM(title, artist, url) {
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
-function testPreviewAudio(url, btnId) {
+function testPreviewAudio(url, btnId, songTitle) {
   const currentBtn = document.getElementById(btnId);
 
   if (previewAudioObj && currentPreviewBtnId === btnId && !previewAudioObj.paused) {
@@ -255,10 +256,10 @@ function testPreviewAudio(url, btnId) {
 
   previewAudioObj.play().then(() => {
     if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
-    showToast("🎵 正在流畅试听曲目...");
+    showToast(`🎵 正在试听: ${songTitle || "选定曲目"}`);
   }).catch(() => {
     if (currentBtn) currentBtn.textContent = "🎧 试听";
-    showToast("⚠️ 该歌曲受版权限制无法试听，建议使用右侧【上传MP3】直传");
+    alert(`⚠️ 《${songTitle || "该歌曲"}》因平台 VIP 版权风控无法在线解析。\n\n💡 完美解决方案：\n请使用下方【📤 上传MP3】按钮，直接上传您本地下载好的原版 MP3 文件，100% 永久稳定可播！`);
   });
 
   previewAudioObj.onended = () => {
@@ -397,20 +398,13 @@ function deleteScratchCard(idx) { currentConfig.scratchCards.splice(idx, 1); ren
 
 let activeUploadCallback = null;
 let activeUploadInputId = null;
-function triggerDirectUpload(targetInputId, acceptType, callback) {
-  activeUploadInputId = targetInputId;
-  activeUploadCallback = callback;
-  const uploader = document.getElementById("globalUploader");
-  uploader.accept = acceptType || "*/*";
-  uploader.click();
-}
+function triggerDirectUpload(targetInputId, acceptType, callback) { activeUploadInputId = targetInputId; activeUploadCallback = callback; const uploader = document.getElementById("globalUploader"); uploader.accept = acceptType || "*/*"; uploader.click(); }
 
 document.getElementById("globalUploader").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
   showToast("⏳ 正在极速上传到空间里...");
-  const formData = new FormData();
-  formData.append("file", file);
+  const formData = new FormData(); formData.append("file", file);
   try {
     const token = getAuthToken();
     const res = await fetch(`/api/love/upload?auth=${encodeURIComponent(token)}`, {
