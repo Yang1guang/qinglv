@@ -26,7 +26,6 @@
   <link rel="stylesheet" href="css/pet.css">
   <link rel="stylesheet" href="css/scratch-card.css">
   <style>
-    /* 萌系轻奢双视角切换胶囊 (最高层级，杜绝遮挡) */
     .perspective-capsule {
       position: fixed;
       top: 18px;
@@ -64,91 +63,12 @@
       color: #ffffff;
       box-shadow: 0 2px 12px rgba(244, 63, 94, 0.45);
     }
-
     .easter-egg-trigger--star {
       position: fixed;
       top: 72px !important;
       right: 22px !important;
       z-index: 90 !important;
     }
-
-    .vinyl-playlist-popup {
-      position: absolute;
-      bottom: 75px;
-      right: 0;
-      width: 260px;
-      max-height: 280px;
-      background: rgba(15, 23, 42, 0.92);
-      border: 1.5px solid rgba(245, 158, 11, 0.35);
-      border-radius: 18px;
-      backdrop-filter: blur(16px);
-      padding: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-      z-index: 100;
-      overflow-y: auto;
-    }
-    .vinyl-playlist-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12.5px;
-      font-weight: 800;
-      color: #fde68a;
-      margin-bottom: 8px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .vinyl-playlist-close {
-      cursor: pointer;
-      color: #94a3b8;
-      font-size: 13px;
-      padding: 2px 6px;
-    }
-    .vinyl-playlist-list {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    .vinyl-playlist-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 8px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .vinyl-playlist-item:hover, .vinyl-playlist-item.active {
-      background: rgba(245, 158, 11, 0.2);
-    }
-    .vinyl-playlist-item-idx {
-      font-size: 11px;
-      font-weight: 800;
-      color: #f59e0b;
-      width: 14px;
-    }
-    .vinyl-playlist-item-info {
-      flex: 1;
-      overflow: hidden;
-    }
-    .vinyl-playlist-item-title {
-      font-size: 12px;
-      font-weight: 800;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .vinyl-playlist-item-artist {
-      font-size: 10.5px;
-      color: #94a3b8;
-    }
-    .vinyl-playlist-item-status {
-      font-size: 10px;
-      color: #f59e0b;
-      font-weight: 900;
-    }
-
     .phase-switch-bar {
       display: flex;
       justify-content: center;
@@ -183,44 +103,29 @@
 </head>
 <body class="universe-body">
 
-  <!-- 萌系轻奢双视角胶囊 -->
   <div class="perspective-capsule" id="perspective-capsule">
     <button class="perspective-btn active" id="btn-perspective-boy" onclick="window.ThemeEngine.switchPerspective('boy')">🪐 他的星河</button>
     <button class="perspective-btn" id="btn-perspective-girl" onclick="window.ThemeEngine.switchPerspective('girl')">🌸 她的花汐</button>
   </div>
 
   <div id="parallax-photo-wall" class="parallax-photo-wall"></div>
-
   <canvas id="starry-canvas" class="universe-canvas"></canvas>
   <canvas id="fireworks-canvas" class="fireworks-canvas"></canvas>
 
-  <!-- ================= 1. 声纹与密码门禁层 ================= -->
   <section id="gatekeeper-screen" class="gatekeeper">
     <div class="gatekeeper__dialog">
       <div class="gatekeeper__header">
         <div class="gatekeeper__badge">SACRED ARCHIVE</div>
         <h2 class="gatekeeper__title" id="gatekeeper-title">🔒 验证恒久契约</h2>
       </div>
-
       <div class="gatekeeper__content">
         <p class="gatekeeper__question" id="gatekeeper-question">请输入纪念日口令，或点击麦克风念出誓言：</p>
         <div class="gatekeeper__input-group" style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
-          <input 
-            type="password" 
-            id="gatekeeper-input" 
-            class="gatekeeper__input" 
-            placeholder="输入6位口令..." 
-            maxlength="20" 
-            autocomplete="off"
-            style="flex: 1;"
-          >
-          <button id="voice-unlock-btn" class="btn-universe btn-universe--secondary" title="点击念出誓言语音解锁" style="padding: 12px 16px; border-radius: 14px;">
-            🎙️
-          </button>
+          <input type="password" id="gatekeeper-input" class="gatekeeper__input" placeholder="输入6位口令..." maxlength="20" autocomplete="off" style="flex: 1;">
+          <button id="voice-unlock-btn" class="btn-universe btn-universe--secondary" title="点击念出誓言语音解锁" style="padding: 12px 16px; border-radius: 14px;">🎙️</button>
         </div>
         <p class="gatekeeper__hint" id="gatekeeper-hint">提示：包容与接纳，爱是永不止息</p>
       </div>
-
       <div class="gatekeeper__footer">
         <button id="gatekeeper-btn" class="btn-universe btn-universe--primary gatekeeper__btn">
           <span>开启专属时空</span>
@@ -230,14 +135,11 @@
     </div>
   </section>
 
-  <!-- ================= 2. 主内容视窗 ================= -->
   <main id="main-container" class="main-container main-container--hidden">
-    
     <header class="hero-section">
       <div class="hero-section__badge">THE ETERNAL SEAL</div>
       <h1 class="hero-section__names" id="hero-names">张小阳 & 李小光</h1>
       <p class="hero-section__subtitle" id="hero-subtitle">众水不能熄灭爱情，大水不能淹没 · 一生一世的契约</p>
-
       <div class="love-timer">
         <div class="love-timer__title">我们已经同行并守护了</div>
         <div class="love-timer__grid" id="timer-grid">
@@ -328,7 +230,7 @@
     </footer>
   </main>
 
-  <!-- ================= 3. 黑胶唱片控制台 ================= -->
+  <!-- ================= 3. 黑胶唱片控制台 (极简版) ================= -->
   <aside class="vinyl-player" id="vinyl-player">
     <div class="vinyl-player__needle" id="vinyl-needle"></div>
     <div class="vinyl-player__disc" id="vinyl-disc" title="点击播放/暂停音乐">
@@ -337,19 +239,9 @@
         <img id="vinyl-cover" class="vinyl-player__cover" src="" alt="" onerror="this.style.display='none'" onload="this.style.display='block'">
       </div>
     </div>
-    <div class="vinyl-player__control" style="display:flex; gap:4px; align-items:center;">
-      <button class="vinyl-player__btn" id="audio-prev-btn" title="上一首">⏮️</button>
+    <!-- 删除了冗余的上下首与歌单按钮，只保留纯粹的播放器控制 -->
+    <div class="vinyl-player__control" style="display:flex; justify-content:center; align-items:center;">
       <button class="vinyl-player__btn" id="audio-toggle-btn" title="播放/暂停">🎵</button>
-      <button class="vinyl-player__btn" id="audio-next-btn" title="下一首">⏭️</button>
-      <button class="vinyl-player__btn" id="audio-playlist-btn" title="展开歌单">📑</button>
-    </div>
-
-    <div class="vinyl-playlist-popup" id="vinyl-playlist-popup" style="display:none;">
-      <div class="vinyl-playlist-header">
-        <span>🎶 专属黑胶歌单</span>
-        <span class="vinyl-playlist-close" id="vinyl-playlist-close">✕</span>
-      </div>
-      <div class="vinyl-playlist-list" id="vinyl-playlist-items"></div>
     </div>
   </aside>
 
@@ -374,7 +266,6 @@
     </div>
   </div>
 
-  <!-- 脚本加载 -->
   <script src="js/config.js"></script>
   <script src="js/theme-presets.js"></script>
   <script src="js/stage-content.js"></script>
