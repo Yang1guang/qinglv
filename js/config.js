@@ -10,8 +10,10 @@ window.LOVE_CONFIG = {
     currentPhase: "dating"
   },
   theme: {
-    currentTheme: "sunset-twilight",
-    customBgUrl: ""
+    currentThemeBoy: "sunset-twilight",
+    currentThemeGirl: "french-cream",
+    customBgUrlBoy: "",
+    customBgUrlGirl: ""
   },
 
   // ================= 1. 基础档案与灵魂印记 =================
@@ -42,20 +44,29 @@ window.LOVE_CONFIG = {
     ]
   },
 
-  // ================= 3. 音频系统 =================
+  // ================= 3. 专属黑胶播放列表 =================
   audio: {
     bgmAutoPlay: true,
-    bgmUrl: "https://music.163.com/song/media/outer/url?id=436514312.mp3",
-    bgmTitle: "告白气球",
-    bgmArtist: "周杰伦",
-    vinylCover: "",
-    sounds: {
-      gatekeeperPass: "",
-      gatekeeperError: "",
-      scratch: "",
-      stamp: "",
-      flip: ""
-    }
+    playlist: [
+      {
+        title: "告白气球 (浪漫钢琴版)",
+        artist: "周杰伦 / 纯音乐",
+        url: "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
+        cover: ""
+      },
+      {
+        title: "晴天 (唯美吉他版)",
+        artist: "周杰伦 / 纯音乐",
+        url: "https://assets.mixkit.co/music/preview/mixkit-love-story-532.mp3",
+        cover: ""
+      },
+      {
+        title: "简单爱 (心动轻柔版)",
+        artist: "周杰伦 / 纯音乐",
+        url: "https://assets.mixkit.co/music/preview/mixkit-wedding-piano-walk-530.mp3",
+        cover: ""
+      }
+    ]
   },
 
   // ================= 4. 打字机真情告白 =================
@@ -66,7 +77,7 @@ window.LOVE_CONFIG = {
     signature: "永远爱你的 小阳"
   },
 
-  // ================= 5. 时光轴节点 (拍立得照片墙素材库) =================
+  // ================= 5. 时光轴节点 =================
   timeline: [
     {
       id: "node_1",
