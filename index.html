@@ -26,22 +26,22 @@
   <link rel="stylesheet" href="css/pet.css">
   <link rel="stylesheet" href="css/scratch-card.css">
   <style>
-    /* 萌系轻奢双视角切换胶囊 */
+    /* 萌系轻奢双视角切换胶囊 (最高层级，防止被彩蛋遮挡) */
     .perspective-capsule {
       position: fixed;
       top: 18px;
       right: 18px;
-      z-index: 95;
+      z-index: 100;
       display: flex;
-      background: rgba(3, 7, 18, 0.72);
+      background: rgba(3, 7, 18, 0.75);
       border: 1.5px solid rgba(245, 158, 11, 0.4);
       border-radius: 26px;
       padding: 3.5px;
       backdrop-filter: blur(14px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     }
     .perspective-btn {
-      padding: 7px 14px;
+      padding: 7px 15px;
       border-radius: 20px;
       border: none;
       background: transparent;
@@ -65,14 +65,22 @@
       box-shadow: 0 2px 12px rgba(244, 63, 94, 0.45);
     }
 
-    /* 黑胶歌单毛玻璃弹窗 */
+    /* 星星彩蛋向下避让，杜绝重叠碰撞 */
+    .easter-egg-trigger--star {
+      position: fixed;
+      top: 72px !important;
+      right: 22px !important;
+      z-index: 90 !important;
+    }
+
+    /* 黑胶歌单浮窗 */
     .vinyl-playlist-popup {
       position: absolute;
       bottom: 75px;
       right: 0;
-      width: 250px;
+      width: 260px;
       max-height: 280px;
-      background: rgba(15, 23, 42, 0.88);
+      background: rgba(15, 23, 42, 0.92);
       border: 1.5px solid rgba(245, 158, 11, 0.35);
       border-radius: 18px;
       backdrop-filter: blur(16px);
@@ -304,7 +312,7 @@
       <div class="poster-card" style="display:flex; flex-direction:column; gap:14px;">
         <div class="poster-card__info">
           <h3 class="poster-card__title">📸 导出超清壁纸与数字永存资产</h3>
-          <p class="poster-card__desc">基于当前同行天数渲染高清海报，或将全站数据打包为独立 HTML 永久珍藏</p>
+          <p class="poster-card__desc">基于当前同行天数与时光回忆渲染高清海报，或将全站数据打包为独立 HTML 永久珍藏</p>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <button id="generate-poster-btn" class="btn-universe btn-universe--accent" style="flex:1;">
@@ -322,7 +330,7 @@
     </footer>
   </main>
 
-  <!-- ================= 3. 黑胶唱片控制台 (带多曲切歌与歌单) ================= -->
+  <!-- ================= 3. 黑胶唱片控制台 ================= -->
   <aside class="vinyl-player" id="vinyl-player">
     <div class="vinyl-player__needle" id="vinyl-needle"></div>
     <div class="vinyl-player__disc" id="vinyl-disc" title="点击播放/暂停音乐">
