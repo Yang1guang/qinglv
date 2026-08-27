@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 架构: 单源多租户路由 (基于 Host 物理隔离)、专属直连音乐池、前后台歌单免密同步通道、双轨管理鉴权、HMAC 授权
+ * 架构: 单源多租户路由、酷狗/网易云高可用音乐中继代理、双轨管理鉴权、免密灵宠通道
  */
 
 export default {
@@ -49,9 +49,6 @@ export default {
             const cfg = JSON.parse(await obj.text());
             if (cfg.adminSecurity && cfg.adminSecurity.password) {
               if (token === String(cfg.adminSecurity.password).trim()) return true;
-            }
-            if (cfg.gatekeeper && cfg.gatekeeper.correctAnswer) {
-              if (token.toLowerCase() === String(cfg.gatekeeper.correctAnswer).trim().toLowerCase()) return true;
             }
           }
         } catch (_) {}
@@ -173,7 +170,7 @@ export default {
         });
       }
 
-      // 3. 歌单持久化免密同步通道 (前台与后台删除实时保存)
+      // 3. 歌单持久化免密同步通道
       if (url.pathname === "/api/love/playlist" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -198,7 +195,7 @@ export default {
         return jsonResponse({ success: true, message: "播放列表已同步至云端" });
       }
 
-      // 4. 上传多媒体附件 (MP3 音频、壁纸与拍立得照片)
+      // 4. 上传多媒体附件
       if (url.pathname === "/api/love/upload" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
         
@@ -219,7 +216,7 @@ export default {
         return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
-      // 5. 恩典灵宠免密数据通道
+      // 5. 恩典灵宠通道
       if (url.pathname === "/api/love/pet") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -381,33 +378,135 @@ export default {
         });
       }
 
-      // 9. 🎵 在线音乐直连检索池 (高品质纯直连，彻底杜绝 That Girl 陷阱与风控)
+      // 🌟 9. 音乐在线检索 (聚合网易云 + 酷狗官方接口)
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
-        const keyword = (url.searchParams.get("keyword") || "").trim().toLowerCase();
-        
-        const MUSIC_VAULT = [
-          { title: "告白气球 (浪漫钢琴版)", artist: "周杰伦 / 纯音乐", url: "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3" },
-          { title: "晴天 (唯美吉他版)", artist: "周杰伦 / 纯音乐", url: "https://assets.mixkit.co/music/preview/mixkit-love-story-532.mp3" },
-          { title: "简单爱 (心动轻柔版)", artist: "周杰伦 / 纯音乐", url: "https://assets.mixkit.co/music/preview/mixkit-wedding-piano-walk-530.mp3" },
-          { title: "七里香 (清甜钢琴版)", artist: "周杰伦 / 纯音乐", url: "https://assets.mixkit.co/music/preview/mixkit-piano-reflections-22.mp3" },
-          { title: "蒲公英的约定 (治愈微风)", artist: "周杰伦 / 纯音乐", url: "https://assets.mixkit.co/music/preview/mixkit-tender-moment-70.mp3" },
-          { title: "Sweet Memories 唯美之约", artist: "经典浪漫 / 纯音乐", url: "https://assets.mixkit.co/music/preview/mixkit-gentle-acoustics-54.mp3" },
-          { title: "梦中的婚礼 (钢琴真情演绎)", artist: "理查德·克莱德曼", url: "https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3" },
-          { title: "卡农 (D大调永恒盟约)", artist: "Johann Pachelbel", url: "https://assets.mixkit.co/music/preview/mixkit-a-very-happy-christmas-897.mp3" }
-        ];
+        const keyword = (url.searchParams.get("keyword") || "").trim();
+        const songs = [];
+        const seen = new Set();
 
-        let results = [];
         if (keyword) {
-          results = MUSIC_VAULT.filter(s => s.title.toLowerCase().includes(keyword) || s.artist.toLowerCase().includes(keyword));
-        }
-        if (results.length === 0) {
-          results = MUSIC_VAULT;
+          // 通道 1: 酷狗搜索
+          try {
+            const kgRes = await fetch(
+              `https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=1&pagesize=8&filter=2&bitrate=0&isfp=0`,
+              { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } }
+            );
+            if (kgRes.ok) {
+              const kgData = await kgRes.json();
+              const kgList = kgData.data?.lists || [];
+              kgList.forEach(item => {
+                const sName = (item.SongName || "").replace(/<[^>]+>/g, "");
+                const sArtist = (item.SingerName || "").replace(/<[^>]+>/g, "");
+                const fHash = item.FileHash || item.HQFileHash;
+                if (sName && fHash && !seen.has(fHash)) {
+                  seen.add(fHash);
+                  songs.push({
+                    id: fHash,
+                    title: sName,
+                    artist: sArtist,
+                    url: `/api/love/music-stream?hash=${fHash}&album_id=${item.AlbumID || 0}`
+                  });
+                }
+              });
+            }
+          } catch (_) {}
+
+          // 通道 2: 网易云搜索
+          try {
+            const neRes = await fetch(
+              `https://music.163.com/api/search/get/web?csrf_token=&hlpretag=&hlposttag=&s=${encodeURIComponent(keyword)}&type=1&offset=0&total=true&limit=6`,
+              { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } }
+            );
+            if (neRes.ok) {
+              const neData = await neRes.json();
+              const neSongs = neData.result?.songs || [];
+              neSongs.forEach(item => {
+                if (item.id && item.name && !seen.has(`ne_${item.id}`)) {
+                  seen.add(`ne_${item.id}`);
+                  const artist = (item.artists && item.artists[0]) ? item.artists[0].name : "群星";
+                  songs.push({
+                    id: `ne_${item.id}`,
+                    title: item.name,
+                    artist: artist,
+                    url: `/api/love/music-stream?netease_id=${item.id}`
+                  });
+                }
+              });
+            }
+          } catch (_) {}
         }
 
-        return jsonResponse({ success: true, songs: results });
+        if (songs.length === 0) {
+          const PRESET = [
+            { title: "告白气球", artist: "周杰伦", url: "/api/love/music-stream?netease_id=411521" },
+            { title: "晴天", artist: "周杰伦", url: "/api/love/music-stream?netease_id=186016" },
+            { title: "简单爱", artist: "周杰伦", url: "/api/love/music-stream?netease_id=185928" },
+            { title: "Sweet Memories 浪漫钢琴", artist: "纯音乐", url: "/api/love/music-stream?netease_id=441116287" }
+          ];
+          PRESET.forEach(item => songs.push(item));
+        }
+
+        return jsonResponse({ success: true, songs });
       }
 
-      // 10. 静态文件流式输出
+      // 🌟 10. 🎵 核心音乐流代理中继 (完美解决跨域、防盗链与That Girl陷阱)
+      if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
+        const hash = url.searchParams.get("hash");
+        const albumId = url.searchParams.get("album_id") || "0";
+        const neteaseId = url.searchParams.get("netease_id");
+        let playUrl = "";
+
+        if (neteaseId) {
+          playUrl = `https://music.163.com/song/media/outer/url?id=${neteaseId}.mp3`;
+        } else if (hash) {
+          try {
+            const kgRes = await fetch(`https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&album_id=${albumId}&dfid=-&mid=-&platid=4&_=${Date.now()}`, {
+              headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                "Cookie": "kg_mid=e8d0e74b68ef5c4c95f19067b5b5c935",
+                "Referer": "https://www.kugou.com/"
+              }
+            });
+            if (kgRes.ok) {
+              const data = await kgRes.json();
+              playUrl = data.data?.play_url || data.data?.play_backup_url || "";
+            }
+          } catch (_) {}
+        }
+
+        if (!playUrl || !playUrl.startsWith("http")) {
+          playUrl = "https://music.163.com/song/media/outer/url?id=441116287.mp3";
+        }
+
+        try {
+          const range = request.headers.get("Range");
+          const forwardHeaders = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "Referer": "https://www.kugou.com/"
+          };
+          if (range) forwardHeaders["Range"] = range;
+
+          const streamRes = await fetch(playUrl, { headers: forwardHeaders });
+          const responseHeaders = new Headers(corsHeaders);
+          responseHeaders.set("Content-Type", streamRes.headers.get("Content-Type") || "audio/mpeg");
+          responseHeaders.set("Accept-Ranges", "bytes");
+          if (streamRes.headers.get("Content-Length")) {
+            responseHeaders.set("Content-Length", streamRes.headers.get("Content-Length"));
+          }
+          if (streamRes.headers.get("Content-Range")) {
+            responseHeaders.set("Content-Range", streamRes.headers.get("Content-Range"));
+          }
+
+          return new Response(streamRes.body, {
+            status: streamRes.status,
+            headers: responseHeaders
+          });
+        } catch (_) {
+          return Response.redirect(playUrl, 302);
+        }
+      }
+
+      // 11. 静态文件流式输出
       if (url.pathname.startsWith("/raw/")) {
         if (!bucket) return new Response("Bucket Not Found", { status: 500 });
         const key = decodeURIComponent(url.pathname.replace(/^\/raw\//, ""));
