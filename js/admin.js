@@ -41,7 +41,6 @@ function mergeWithDefaultConfig(cloudCfg) {
   };
 }
 
-// 登录验证 (严格要求服务端返回 isAdmin: true)
 async function verifyAdminLogin() {
   const pwdInput = document.getElementById("adminPwdInput");
   const pwd = pwdInput ? pwdInput.value.trim() : "";
@@ -200,7 +199,6 @@ function resetToCodePresets() {
   }
 }
 
-// ================= 🎵 播放列表管理 =================
 function renderPlaylist() {
   const container = document.getElementById("playlistContainer");
   if (!container) return;
@@ -254,7 +252,7 @@ function addPlaylistItem() {
   currentConfig.audio.playlist.push({
     title: "新美好心动曲",
     artist: "周杰伦",
-    url: "https://music.163.com/song/media/outer/url?id=436514312.mp3",
+    url: "/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E",
     cover: ""
   });
   renderPlaylist();
@@ -277,14 +275,13 @@ function addSongToPlaylist(title, artist, url) {
   currentConfig.audio.playlist.push({
     title: title || "浪漫心动曲",
     artist: artist || "群星",
-    url: url || "https://music.163.com/song/media/outer/url?id=436514312.mp3",
+    url: url || "/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E",
     cover: ""
   });
   renderPlaylist();
-  showToast(`✓ 已成功将【${title}】添加到歌单，请点击右上角【💾 立即发布生效】！`);
+  showToast(`✓ 已将【${title}】加入歌单，请点击右上角【💾 立即发布生效】！`);
 }
 
-// ================= 🎨 9. 双视角 12 款主题渲染 =================
 function renderThemeShowroom() {
   const boyBox = document.getElementById("boyThemesContainer");
   const girlBox = document.getElementById("girlThemesContainer");
@@ -411,7 +408,7 @@ async function executeOnlineMusicSearch() {
   }
 }
 
-// 试听引擎 (带容错与备用流支持)
+// 试听引擎（点击手势同步即时触发，杜绝弹窗拦截）
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
@@ -435,27 +432,19 @@ function testPreviewAudio(url, btnId) {
   currentPreviewBtnId = btnId;
   if (currentBtn) currentBtn.textContent = "⏳ 缓冲中...";
 
-  previewAudioObj = new Audio();
-  previewAudioObj.src = url;
-
-  previewAudioObj.play()
-    .then(() => {
-      if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
-      showToast("🎵 正在流畅试听曲目...");
-    })
-    .catch(() => {
-      // 备用音源无缝兜底
-      previewAudioObj.src = "https://music.163.com/song/media/outer/url?id=441116287.mp3";
-      previewAudioObj.play().then(() => {
-        if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
-        showToast("🎵 正在播放浪漫钢琴曲试听");
-      }).catch(() => {
-        if (currentBtn) currentBtn.textContent = "🎧 试听";
-        alert("⚠️ 试听受浏览器交互限制，请再次点击试听按钮。");
-      });
-    });
+  previewAudioObj = new Audio(url);
+  previewAudioObj.play().then(() => {
+    if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
+    showToast("🎵 正在播放试听曲目...");
+  }).catch(() => {
+    if (currentBtn) currentBtn.textContent = "🎧 试听";
+    showToast("⚠️ 音频缓冲失败，请重试或更换曲目");
+  });
 
   previewAudioObj.onended = () => {
+    if (currentBtn) currentBtn.textContent = "🎧 试听";
+  };
+  previewAudioObj.onerror = () => {
     if (currentBtn) currentBtn.textContent = "🎧 试听";
   };
 }
@@ -672,7 +661,6 @@ function triggerDirectUpload(targetInputId, acceptType, callback) {
   uploader.click();
 }
 
-// 统一极速上传 (附带 URL auth 参数兜底保证 100% 鉴权成功)
 document.getElementById("globalUploader").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -724,7 +712,6 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
-// 发布全量配置 (附带三重鉴权通道)
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
 
@@ -785,7 +772,6 @@ async function saveAllConfigToCloud() {
     customBgUrlGirl: document.getElementById("theme_customBgUrlGirl") ? document.getElementById("theme_customBgUrlGirl").value.trim() : ""
   };
 
-  // 严格从 DOM 提取同步时光轴
   const timelineNodes = currentConfig.timeline || [];
   timelineNodes.forEach((node, idx) => {
     const d = document.getElementById(`tl_date_${idx}`);
@@ -807,7 +793,6 @@ async function saveAllConfigToCloud() {
     if (voi) node.voiceAudio = voi.value;
   });
 
-  // 严格从 DOM 提取同步黑胶歌单
   const playlistTracks = currentConfig.audio.playlist || [];
   playlistTracks.forEach((track, idx) => {
     const pt = document.getElementById(`pl_title_${idx}`);
