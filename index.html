@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/themes.css">
   <link rel="stylesheet" href="css/photo-wall.css">
+  <link rel="stylesheet" href="css/pet.css">
 </head>
 <body class="universe-body">
 
@@ -139,16 +140,19 @@
       <div class="scratch-grid" id="scratch-container"></div>
     </section>
 
-    <!-- 海报与离线永存打包区 -->
+    <!-- 300DPI 海报与离线永存打包区 -->
     <section class="poster-section">
       <div class="poster-card" style="display:flex; flex-direction:column; gap:14px;">
         <div class="poster-card__info">
-          <h3 class="poster-card__title">📸 导出专属拍立得壁纸</h3>
-          <p class="poster-card__desc">基于当前同行天数与合照，一键渲染超高清纪念图</p>
+          <h3 class="poster-card__title">📸 导出超清壁纸与数字永存资产</h3>
+          <p class="poster-card__desc">基于当前同行天数渲染高清海报，或将全站数据打包为独立 HTML 永久珍藏</p>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <button id="generate-poster-btn" class="btn-universe btn-universe--accent" style="flex:1;">
-            <span>✨ 一键生成海报</span>
+            <span>✨ 生成纪念海报</span>
+          </button>
+          <button id="export-eternal-btn" class="btn-universe btn-universe--primary" style="flex:1;" onclick="EternalSealExporter.downloadSingleFileArchive()">
+            <span>📦 铸造永恒印记 (单文件下载)</span>
           </button>
         </div>
       </div>
@@ -202,6 +206,17 @@
   <script src="js/effects.js"></script>
   <script src="js/timeline.js"></script>
   <script src="js/scratch.js"></script>
+  <script src="js/pet.js"></script>
+  <script src="js/export-eternal.js"></script>
   <script src="js/core.js"></script>
+  <script>
+    // 初始化恩典灵宠
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.GracePetManager) {
+        const petMgr = new window.GracePetManager(window.LOVE_CONFIG);
+        petMgr.init();
+      }
+    });
+  </script>
 </body>
 </html>
