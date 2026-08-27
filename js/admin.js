@@ -7,6 +7,10 @@ let currentConfig = null;
 let currentAdminToken = "";
 let currentDomainHost = "";
 
+function getAuthToken() {
+  return currentAdminToken || localStorage.getItem("love_admin_token") || "521";
+}
+
 function showToast(msg) {
   const toast = document.getElementById("toast");
   if (!toast) return;
@@ -39,17 +43,19 @@ function mergeWithDefaultConfig(cloudCfg) {
 
 async function verifyAdminLogin() {
   const pwdInput = document.getElementById("adminPwdInput");
-  const pwd = pwdInput.value.trim();
-  if (!pwd) return alert("请输入管理员口令！");
+  const pwd = pwdInput ? pwdInput.value.trim() : "";
+  const tokenToVerify = pwd || getAuthToken();
 
-  currentAdminToken = pwd;
-  localStorage.setItem("love_admin_token", pwd);
+  currentAdminToken = tokenToVerify;
+  localStorage.setItem("love_admin_token", tokenToVerify);
 
   const success = await fetchConfigFromCloud();
   if (success) {
-    document.getElementById("authModal").style.display = "none";
-    document.getElementById("adminLayout").style.display = "block";
-    showToast("✓ 验证成功，已加载当前域名独立配置");
+    const modal = document.getElementById("authModal");
+    const layout = document.getElementById("adminLayout");
+    if (modal) modal.style.display = "none";
+    if (layout) layout.style.display = "block";
+    showToast("✓ 验证成功，已连接独立云端存储");
   } else {
     alert("❌ 口令错误或无法连接云端！");
   }
@@ -58,7 +64,7 @@ async function verifyAdminLogin() {
 async function fetchConfigFromCloud() {
   try {
     const res = await fetch("/api/love/config", {
-      headers: { "x-admin-auth": currentAdminToken }
+      headers: { "x-admin-auth": getAuthToken() }
     });
     const data = await res.json();
 
@@ -103,7 +109,6 @@ function renderAllForms() {
   document.getElementById("meta_siteTitle").value = meta.siteTitle || "";
   document.getElementById("meta_siteSubtitle").value = meta.siteSubtitle || "";
 
-  // 门禁与专属语音密码
   const gate = currentConfig.gatekeeper || {};
   document.getElementById("gatekeeper_enabled").value = String(gate.enabled !== false);
   document.getElementById("gatekeeper_title").value = gate.title || "";
@@ -151,7 +156,7 @@ function renderLicenseStatus() {
 
 async function submitDomainLicense() {
   const codeInput = document.getElementById("inputLicenseCode");
-  const code = codeInput.value.trim();
+  const code = codeInput ? codeInput.value.trim() : "";
   if (!code) return alert("请输入授权兑换码！");
 
   showToast("⏳ 正在验证域名授权...");
@@ -245,7 +250,7 @@ function selectThemeCard(themeId) {
   if (!currentConfig.theme) currentConfig.theme = {};
   currentConfig.theme.currentTheme = themeId;
   renderThemeShowroom();
-  showToast(`✓ 已选择主题【${themeId}】，请点击右上角保存发布！`);
+  showToast(`✓ 已选择主题【${themeId}】，请点击右上角【💾 立即发布生效】！`);
 }
 
 function quickSearchTag(tagText) {
@@ -335,7 +340,7 @@ function selectCloudMusic(title, artist, url) {
     document.querySelectorAll(".preview-play-btn").forEach(b => b.textContent = "🎧 试听");
   }
 
-  showToast(`✓ 已成功将【${title}】填入配置，请点击右上角保存！`);
+  showToast(`✓ 已成功将【${title}】填入配置，请点击右上角【💾 立即发布生效】！`);
 }
 
 async function cleanOrphanR2Cache() {
@@ -345,7 +350,7 @@ async function cleanOrphanR2Cache() {
   try {
     const res = await fetch("/api/love/cleanup", {
       method: "POST",
-      headers: { "x-admin-auth": currentAdminToken }
+      headers: { "x-admin-auth": getAuthToken() }
     });
     const data = await res.json();
     if (data.success) {
@@ -360,6 +365,7 @@ async function cleanOrphanR2Cache() {
 
 function renderTimelineList() {
   const container = document.getElementById("timelineListContainer");
+  if (!container) return;
   container.innerHTML = "";
   const list = currentConfig.timeline || [];
 
@@ -372,23 +378,23 @@ function renderTimelineList() {
         <button class="btn-del" onclick="deleteTimelineNode(${idx})">🗑️ 删除</button>
       </div>
       <div class="form-grid">
-        <div class="form-group"><label>日期 (如: 2024.05.20)</label><input type="text" class="admin-input" value="${escapeHtml(item.date || "")}" onchange="currentConfig.timeline[${idx}].date=this.value"></div>
-        <div class="form-group"><label>标签 (如: 初遇心动)</label><input type="text" class="admin-input" value="${escapeHtml(item.tag || "")}" onchange="currentConfig.timeline[${idx}].tag=this.value"></div>
-        <div class="form-group"><label>故事标题</label><input type="text" class="admin-input" value="${escapeHtml(item.title || "")}" onchange="currentConfig.timeline[${idx}].title=this.value"></div>
-        <div class="form-group"><label>地点 (如: 📍 晴天咖啡馆)</label><input type="text" class="admin-input" value="${escapeHtml(item.location || "")}" onchange="currentConfig.timeline[${idx}].location=this.value"></div>
-        <div class="form-group" style="grid-column: 1 / -1;"><label>正面故事描述</label><textarea class="admin-textarea" rows="2" onchange="currentConfig.timeline[${idx}].desc=this.value">${escapeHtml(item.desc || "")}</textarea></div>
-        <div class="form-group" style="grid-column: 1 / -1;"><label>背面私语留言</label><textarea class="admin-textarea" rows="2" onchange="currentConfig.timeline[${idx}].backText=this.value">${escapeHtml(item.backText || "")}</textarea></div>
+        <div class="form-group"><label>日期 (如: 2024.05.20)</label><input type="text" class="admin-input" id="tl_date_${idx}" value="${escapeHtml(item.date || "")}" oninput="currentConfig.timeline[${idx}].date=this.value"></div>
+        <div class="form-group"><label>标签 (如: 初遇心动)</label><input type="text" class="admin-input" id="tl_tag_${idx}" value="${escapeHtml(item.tag || "")}" oninput="currentConfig.timeline[${idx}].tag=this.value"></div>
+        <div class="form-group"><label>故事标题</label><input type="text" class="admin-input" id="tl_title_${idx}" value="${escapeHtml(item.title || "")}" oninput="currentConfig.timeline[${idx}].title=this.value"></div>
+        <div class="form-group"><label>地点 (如: 📍 晴天咖啡馆)</label><input type="text" class="admin-input" id="tl_loc_${idx}" value="${escapeHtml(item.location || "")}" oninput="currentConfig.timeline[${idx}].location=this.value"></div>
+        <div class="form-group" style="grid-column: 1 / -1;"><label>正面故事描述</label><textarea class="admin-textarea" id="tl_desc_${idx}" rows="2" oninput="currentConfig.timeline[${idx}].desc=this.value">${escapeHtml(item.desc || "")}</textarea></div>
+        <div class="form-group" style="grid-column: 1 / -1;"><label>背面私语留言</label><textarea class="admin-textarea" id="tl_back_${idx}" rows="2" oninput="currentConfig.timeline[${idx}].backText=this.value">${escapeHtml(item.backText || "")}</textarea></div>
         <div class="form-group">
           <label>拍立得正面照片链接</label>
           <div class="upload-input-group">
-            <input type="text" class="admin-input" id="tl_img_${idx}" value="${escapeHtml(item.frontImg || "")}" onchange="currentConfig.timeline[${idx}].frontImg=this.value">
+            <input type="text" class="admin-input" id="tl_img_${idx}" value="${escapeHtml(item.frontImg || "")}" oninput="currentConfig.timeline[${idx}].frontImg=this.value">
             <button class="btn-upload" onclick="triggerDirectUpload('tl_img_${idx}', 'image/*', (url)=>{ currentConfig.timeline[${idx}].frontImg=url; })">🖼️ 上传照片</button>
           </div>
         </div>
         <div class="form-group">
           <label>专属录音音频链接 (可选)</label>
           <div class="upload-input-group">
-            <input type="text" class="admin-input" id="tl_voice_${idx}" value="${escapeHtml(item.voiceAudio || "")}" onchange="currentConfig.timeline[${idx}].voiceAudio=this.value">
+            <input type="text" class="admin-input" id="tl_voice_${idx}" value="${escapeHtml(item.voiceAudio || "")}" oninput="currentConfig.timeline[${idx}].voiceAudio=this.value">
             <button class="btn-upload" onclick="triggerDirectUpload('tl_voice_${idx}', 'audio/*', (url)=>{ currentConfig.timeline[${idx}].voiceAudio=url; })">🎙️ 上传录音</button>
           </div>
         </div>
@@ -423,6 +429,7 @@ function deleteTimelineNode(idx) {
 
 function renderChecklist() {
   const container = document.getElementById("checklistItemsContainer");
+  if (!container) return;
   container.innerHTML = "";
   const list = currentConfig.checklist100 || [];
 
@@ -437,7 +444,7 @@ function renderChecklist() {
       <div class="form-grid">
         <div class="form-group" style="grid-column: 1 / 3;">
           <label>小事名称</label>
-          <input type="text" class="admin-input" value="${escapeHtml(item.title || "")}" onchange="currentConfig.checklist100[${idx}].title=this.value">
+          <input type="text" class="admin-input" value="${escapeHtml(item.title || "")}" oninput="currentConfig.checklist100[${idx}].title=this.value">
         </div>
         <div class="form-group">
           <label>所属阶段</label>
@@ -474,6 +481,7 @@ function deleteChecklistItem(idx) {
 
 function renderScratchCards() {
   const container = document.getElementById("scratchCardsContainer");
+  if (!container) return;
   container.innerHTML = "";
   const list = currentConfig.scratchCards || [];
 
@@ -488,11 +496,11 @@ function renderScratchCards() {
       <div class="form-grid">
         <div class="form-group">
           <label>卡券图标 (Emoji)</label>
-          <input type="text" class="admin-input" value="${escapeHtml(item.icon || "🎁")}" onchange="currentConfig.scratchCards[${idx}].icon=this.value">
+          <input type="text" class="admin-input" value="${escapeHtml(item.icon || "🎁")}" oninput="currentConfig.scratchCards[${idx}].icon=this.value">
         </div>
         <div class="form-group">
           <label>特权券名称</label>
-          <input type="text" class="admin-input" value="${escapeHtml(item.title || "")}" onchange="currentConfig.scratchCards[${idx}].title=this.value">
+          <input type="text" class="admin-input" value="${escapeHtml(item.title || "")}" oninput="currentConfig.scratchCards[${idx}].title=this.value">
         </div>
         <div class="form-group">
           <label>所属阶段</label>
@@ -504,7 +512,7 @@ function renderScratchCards() {
         </div>
         <div class="form-group" style="grid-column: 1 / -1;">
           <label>特权详细说明</label>
-          <textarea class="admin-textarea" rows="2" onchange="currentConfig.scratchCards[${idx}].content=this.value">${escapeHtml(item.content || "")}</textarea>
+          <textarea class="admin-textarea" rows="2" oninput="currentConfig.scratchCards[${idx}].content=this.value">${escapeHtml(item.content || "")}</textarea>
         </div>
       </div>
     `;
@@ -547,28 +555,36 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   const file = e.target.files[0];
   if (!file) return;
 
-  showToast("⏳ 正在流式上传到当前域名 R2 空间...");
+  showToast("⏳ 正在极速上传到空间里...");
   const formData = new FormData();
   formData.append("file", file);
 
   try {
     const res = await fetch("/api/love/upload", {
       method: "POST",
-      headers: { "x-admin-auth": currentAdminToken },
+      headers: { "x-admin-auth": getAuthToken() },
       body: formData
     });
     const data = await res.json();
 
     if (data.success && data.url) {
       if (activeUploadInputId) {
-        document.getElementById(activeUploadInputId).value = data.url;
+        const targetInput = document.getElementById(activeUploadInputId);
+        if (targetInput) {
+          targetInput.value = data.url;
+          targetInput.dispatchEvent(new Event("input"));
+        }
       }
       if (activeUploadCallback) {
         activeUploadCallback(data.url);
       }
-      showToast("✓ 上传成功并已填入直链");
+      if (activeUploadInputId === "theme_customBgUrl" && currentConfig) {
+        if (!currentConfig.theme) currentConfig.theme = {};
+        currentConfig.theme.customBgUrl = data.url;
+      }
+      showToast("✓ 上传成功！直链已自动填入，请记得点击右上角【💾 立即发布生效】保存");
     } else {
-      alert("❌ 上传失败: " + (data.error || "接口异常"));
+      alert("❌ 上传失败: " + (data.error || "未授权或接口异常"));
     }
   } catch (err) {
     alert("❌ 上传异常: " + err.message);
@@ -637,14 +653,36 @@ async function saveAllConfigToCloud() {
     customBgUrl: document.getElementById("theme_customBgUrl") ? document.getElementById("theme_customBgUrl").value.trim() : ""
   };
 
-  showToast("⏳ 正在发布到 R2 云端...");
+  // 严格从 DOM 同步时光轴照片与信息
+  const timelineNodes = currentConfig.timeline || [];
+  timelineNodes.forEach((node, idx) => {
+    const d = document.getElementById(`tl_date_${idx}`);
+    const t = document.getElementById(`tl_tag_${idx}`);
+    const tit = document.getElementById(`tl_title_${idx}`);
+    const loc = document.getElementById(`tl_loc_${idx}`);
+    const de = document.getElementById(`tl_desc_${idx}`);
+    const bk = document.getElementById(`tl_back_${idx}`);
+    const img = document.getElementById(`tl_img_${idx}`);
+    const voi = document.getElementById(`tl_voice_${idx}`);
+
+    if (d) node.date = d.value;
+    if (t) node.tag = t.value;
+    if (tit) node.title = tit.value;
+    if (loc) node.location = loc.value;
+    if (de) node.desc = de.value;
+    if (bk) node.backText = bk.value;
+    if (img) node.frontImg = img.value;
+    if (voi) node.voiceAudio = voi.value;
+  });
+
+  showToast("⏳ 正在发布到独立存储空间...");
 
   try {
     const res = await fetch("/api/love/config", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-admin-auth": currentAdminToken
+        "x-admin-auth": getAuthToken()
       },
       body: JSON.stringify({ config: currentConfig })
     });
@@ -653,7 +691,7 @@ async function saveAllConfigToCloud() {
     if (data.success) {
       currentAdminToken = customPwd || "521";
       localStorage.setItem("love_admin_token", currentAdminToken);
-      showToast("✨ 全部配置已成功发布！管理密码与内容即时生效");
+      showToast("✨ 全部配置与照片已成功持久化发布！");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
@@ -705,6 +743,9 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 document.addEventListener("DOMContentLoaded", () => {
   const cached = localStorage.getItem("love_admin_token");
   if (cached) {
-    document.getElementById("adminPwdInput").value = cached;
+    const input = document.getElementById("adminPwdInput");
+    if (input) input.value = cached;
+    currentAdminToken = cached;
+    verifyAdminLogin();
   }
 });
