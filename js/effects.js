@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、多曲目黑胶播放列表控制器、烟花与粒子音效
+ * 作用: 动效中枢、多曲目黑胶播放列表控制器、手势唤醒与静默容错播放
  */
 
 class EffectsEngine {
@@ -25,14 +25,6 @@ class EffectsEngine {
     if (Array.isArray(audioCfg.playlist) && audioCfg.playlist.length > 0) {
       return audioCfg.playlist;
     }
-    if (audioCfg.bgmUrl) {
-      return [{
-        title: audioCfg.bgmTitle || "Sweet Memories 浪漫钢琴",
-        artist: audioCfg.bgmArtist || "纯音乐",
-        url: audioCfg.bgmUrl,
-        cover: audioCfg.vinylCover || ""
-      }];
-    }
     return [
       {
         title: "Sweet Memories 浪漫钢琴",
@@ -41,9 +33,15 @@ class EffectsEngine {
         cover: ""
       },
       {
-        title: "告白气球 (浪漫版)",
-        artist: "周杰伦",
-        url: "/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E",
+        title: "告白气球 (浪漫钢琴版)",
+        artist: "周杰伦 / 纯音乐",
+        url: "https://music.163.com/song/media/outer/url?id=440208476.mp3",
+        cover: ""
+      },
+      {
+        title: "晴天 (唯美吉他版)",
+        artist: "周杰伦 / 纯音乐",
+        url: "https://music.163.com/song/media/outer/url?id=461520146.mp3",
         cover: ""
       }
     ];
@@ -55,6 +53,17 @@ class EffectsEngine {
     this.initEventListeners();
     this.renderPlaylistPopup();
     this.updateTrackInfoDisplay();
+
+    // 绑定全屏首次交互手势，瞬间解锁浏览器音频播放权限
+    const unlockAudioContext = () => {
+      if (this.config.audio && this.config.audio.bgmAutoPlay !== false && !this.isPlaying) {
+        this.playBgm();
+      }
+      document.removeEventListener("click", unlockAudioContext);
+      document.removeEventListener("touchstart", unlockAudioContext);
+    };
+    document.addEventListener("click", unlockAudioContext, { once: true });
+    document.addEventListener("touchstart", unlockAudioContext, { once: true });
 
     window.addEventListener("resize", () => this.initCanvasSize());
     this.startAnimationLoop();
@@ -93,15 +102,17 @@ class EffectsEngine {
         this.setVinylVisualPlaying(false);
       });
 
+      // 静默切换备用流，绝不弹窗报错
       this.bgmAudio.addEventListener("error", () => {
-        console.warn("音频载入受阻，正在跳入下一曲...");
+        console.warn("当前音源不可用，自动切换至高可用浪漫流...");
+        this.bgmAudio.src = "https://music.163.com/song/media/outer/url?id=441116287.mp3";
+        this.bgmAudio.play().catch(() => {});
       });
     }
 
     this.loadTrack(this.currentTrackIndex, false);
   }
 
-  // 同步载入并播放（杜绝 setTimeout 导致的浏览器手势拦截）
   loadTrack(index, autoPlay = true) {
     if (this.playlist.length === 0) return;
     if (index < 0) index = this.playlist.length - 1;
