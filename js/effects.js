@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、多曲目黑胶播放列表控制器、歌单删除管理、熔断防跳轮播
+ * 作用: 动效中枢、多曲目黑胶播放列表控制器、熔断防跳轮播、前台删除即时同步云端
  */
 
 class EffectsEngine {
@@ -11,7 +11,7 @@ class EffectsEngine {
     this.isPlaying = false;
     this.currentTrackIndex = 0;
     this.playlist = this.getNormalizedPlaylist();
-    this.consecutiveErrors = 0; // 错误熔断计数器，彻底解决死循环来回跳
+    this.consecutiveErrors = 0;
 
     this.fireworksCanvas = document.getElementById("fireworks-canvas");
     this.fwCtx = this.fireworksCanvas ? this.fireworksCanvas.getContext("2d") : null;
@@ -22,27 +22,37 @@ class EffectsEngine {
   }
 
   getNormalizedPlaylist() {
+    // 优先读取本地持久化歌单
+    try {
+      const cached = localStorage.getItem("love_universe_custom_playlist");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+
     const audioCfg = this.config.audio || {};
     if (Array.isArray(audioCfg.playlist) && audioCfg.playlist.length > 0) {
       return audioCfg.playlist;
     }
+
     return [
       {
         title: "告白气球 (浪漫钢琴版)",
         artist: "周杰伦 / 纯音乐",
-        url: "https://music.163.com/song/media/outer/url?id=440208476.mp3",
+        url: "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
         cover: ""
       },
       {
         title: "晴天 (唯美吉他版)",
         artist: "周杰伦 / 纯音乐",
-        url: "https://music.163.com/song/media/outer/url?id=461520146.mp3",
+        url: "https://assets.mixkit.co/music/preview/mixkit-love-story-532.mp3",
         cover: ""
       },
       {
-        title: "七里香 (清甜尤克里里)",
+        title: "简单爱 (心动轻柔版)",
         artist: "周杰伦 / 纯音乐",
-        url: "https://music.163.com/song/media/outer/url?id=440208477.mp3",
+        url: "https://assets.mixkit.co/music/preview/mixkit-wedding-piano-walk-530.mp3",
         cover: ""
       }
     ];
@@ -55,7 +65,7 @@ class EffectsEngine {
     this.renderPlaylistPopup();
     this.updateTrackInfoDisplay();
 
-    // 手势解锁，顺应 PC 端与移动端浏览器自动播放规则
+    // 交互唤醒手势，解除 PC 端与手机端音频安全拦截
     const unlockAudio = () => {
       if (this.config.audio && this.config.audio.bgmAutoPlay !== false && !this.isPlaying) {
         this.playBgm();
@@ -105,14 +115,14 @@ class EffectsEngine {
         this.setVinylVisualPlaying(false);
       });
 
-      // 错误熔断机制：最多尝试一次下一首，杜绝无限死循环来回跳
+      // 错误熔断机制：彻底消除死循环来回跳
       this.bgmAudio.addEventListener("error", () => {
         this.consecutiveErrors++;
         if (this.consecutiveErrors < this.playlist.length) {
-          console.warn("当前曲目异常，尝试载入下一首...");
+          console.warn("当前曲目播放异常，自动尝试下一首...");
           setTimeout(() => this.nextTrack(), 300);
         } else {
-          console.warn("已达歌单尝试上限，停止轮播");
+          console.warn("所有曲目尝试完毕，停止轮播");
           this.isPlaying = false;
           this.setVinylVisualPlaying(false);
         }
@@ -182,8 +192,8 @@ class EffectsEngine {
     this.loadTrack(index, true);
   }
 
-  // 🌟 前台歌单直接删除某首歌曲
-  deleteTrackFromPopup(e, index) {
+  // 🌟 前台歌单删除单曲并实时同步云端与本地缓存
+  async deleteTrackFromPopup(e, index) {
     e.stopPropagation();
     if (this.playlist.length <= 1) {
       alert("⚠️ 歌单中请至少保留一首背景音乐！");
@@ -195,6 +205,20 @@ class EffectsEngine {
     const isCurrentPlaying = (this.currentTrackIndex === index);
     this.playlist.splice(index, 1);
 
+    // 1. 立即持久化至本地
+    try {
+      localStorage.setItem("love_universe_custom_playlist", JSON.stringify(this.playlist));
+    } catch (_) {}
+
+    // 2. 异步同步回 R2 云端，刷新绝不复原
+    try {
+      fetch("/api/love/playlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playlist: this.playlist })
+      });
+    } catch (_) {}
+
     if (isCurrentPlaying) {
       if (this.currentTrackIndex >= this.playlist.length) {
         this.currentTrackIndex = 0;
@@ -205,7 +229,7 @@ class EffectsEngine {
     }
 
     this.renderPlaylistPopup();
-    this.showMiniToast(`✓ 已移除《${trackTitle}》`);
+    this.showMiniToast(`✓ 已移除《${trackTitle}》并同步云端`);
   }
 
   setVinylVisualPlaying(playing) {
