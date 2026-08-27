@@ -4,20 +4,27 @@
  * 作用: 多维物理引擎、12 套男女主题切换、双视角胶囊激活联动与独立背景图映射
  */
 
-class ThemeEngine {
+class ThemeEngineCore {
   constructor() {
-    this.canvas = document.getElementById("starry-canvas");
-    this.ctx = this.canvas ? this.canvas.getContext("2d") : null;
+    this.canvas = null;
+    this.ctx = null;
     this.particles = [];
     this.animationFrameId = null;
     this.currentPerspective = localStorage.getItem("love_user_perspective") || "boy";
     this.currentThemeId = "sunset-twilight";
-    this.presets = window.THEME_PRESETS || { boy: [], girl: [] };
   }
 
   init() {
+    this.canvas = document.getElementById("starry-canvas");
+    this.ctx = this.canvas ? this.canvas.getContext("2d") : null;
+
     this.resizeCanvas();
-    window.addEventListener("resize", () => this.resizeCanvas());
+    window.removeEventListener("resize", this.handleResize);
+    this.handleResize = () => this.resizeCanvas();
+    window.addEventListener("resize", this.handleResize);
+
+    // 绑定前台胶囊点击事件（原生监听保障 100% 触发）
+    this.bindCapsuleEvents();
     this.updateCapsuleUI();
 
     const config = window.LOVE_CONFIG || {};
@@ -34,15 +41,35 @@ class ThemeEngine {
     this.applyTheme(defaultTheme, customBg, false);
   }
 
-  resizeCanvas() {
-    if (!this.canvas) return;
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+  bindCapsuleEvents() {
+    const boyBtn = document.getElementById("btn-perspective-boy");
+    const girlBtn = document.getElementById("btn-perspective-girl");
+
+    if (boyBtn) {
+      boyBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.switchPerspective("boy");
+      };
+    }
+    if (girlBtn) {
+      girlBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.switchPerspective("girl");
+      };
+    }
   }
 
-  isLicensed() {
-    const cfg = window.LOVE_CONFIG || {};
-    return Boolean(cfg._license && cfg._license.unlocked);
+  resizeCanvas() {
+    if (!this.canvas) {
+      this.canvas = document.getElementById("starry-canvas");
+      this.ctx = this.canvas ? this.canvas.getContext("2d") : null;
+    }
+    if (this.canvas) {
+      this.canvas.width = window.innerWidth;
+      this.canvas.height = window.innerHeight;
+    }
   }
 
   // 切换男女视角
@@ -83,12 +110,12 @@ class ThemeEngine {
   applyTheme(themeId, customBgUrl = "", notify = false) {
     this.currentThemeId = themeId;
 
-    let themeMeta = null;
-    const allThemes = [...(this.presets.boy || []), ...(this.presets.girl || [])];
-    themeMeta = allThemes.find(t => t.id === themeId);
+    const presets = window.THEME_PRESETS || { boy: [], girl: [] };
+    const allThemes = [...(presets.boy || []), ...(presets.girl || [])];
+    let themeMeta = allThemes.find(t => t.id === themeId);
 
     if (!themeMeta) {
-      themeMeta = this.presets.boy[0] || { particleType: "meteor", themeType: "dark" };
+      themeMeta = (presets.boy && presets.boy[0]) ? presets.boy[0] : { particleType: "meteor", themeType: "dark" };
     }
 
     // 1. 设置 Body 类名与主题属性
@@ -104,20 +131,33 @@ class ThemeEngine {
       document.body.style.backgroundSize = "cover";
       document.body.style.backgroundPosition = "center";
       document.body.style.backgroundAttachment = "fixed";
-    } else {
-      document.body.style.backgroundImage = themeMeta.colors?.bg || "";
+    } else if (themeMeta && themeMeta.colors && themeMeta.colors.bg) {
+      document.body.style.backgroundImage = themeMeta.colors.bg;
+      document.body.style.backgroundSize = "cover";
+      document.body.style.backgroundPosition = "center";
+      document.body.style.backgroundAttachment = "fixed";
     }
 
     // 3. 启动物理粒子引擎
     this.initParticlePhysics(themeMeta.particleType || "meteor");
 
-    if (notify && typeof window.showToast === "function") {
-      window.showToast(`✨ 已切入【${themeMeta.name}】专属时空`);
+    if (notify) {
+      const msg = `✨ 已切入【${themeMeta.name}】专属时空`;
+      if (typeof window.showToast === "function") {
+        window.showToast(msg);
+      } else if (window.Effects && typeof window.Effects.showMiniToast === "function") {
+        window.Effects.showMiniToast(msg);
+      }
     }
   }
 
   initParticlePhysics(type) {
+    if (!this.canvas || !this.ctx) {
+      this.canvas = document.getElementById("starry-canvas");
+      this.ctx = this.canvas ? this.canvas.getContext("2d") : null;
+    }
     if (!this.ctx) return;
+
     if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
 
     this.particles = [];
@@ -139,8 +179,8 @@ class ThemeEngine {
   }
 
   createParticle(type) {
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.canvas.width || window.innerWidth;
+    const h = this.canvas.height || window.innerHeight;
 
     switch (type) {
       case "petals":
@@ -320,4 +360,11 @@ class ThemeEngine {
   }
 }
 
-window.ThemeEngine = new ThemeEngine();
+// 导出全局单例并挂载原生 DOM 事件监听
+window.ThemeEngine = new ThemeEngineCore();
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.ThemeEngine) {
+    window.ThemeEngine.init();
+  }
+});
