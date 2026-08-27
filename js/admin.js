@@ -131,10 +131,13 @@ function renderAllForms() {
   renderTimelineList();
   renderChecklist();
   renderScratchCards();
-  renderPlaylist();
 
   const audio = currentConfig.audio || {};
   document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay !== false);
+  document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "";
+  document.getElementById("audio_bgmArtist").value = audio.bgmArtist || "";
+  document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "";
+  document.getElementById("audio_vinylCover").value = audio.vinylCover || "";
 
   const eggs = currentConfig.easterEggs || [];
   document.getElementById("egg_1_message").value = eggs[0]?.message || "";
@@ -197,147 +200,6 @@ function resetToCodePresets() {
   } else {
     alert("❌ 未读取到本地 config.js 预设数据");
   }
-}
-
-// ================= 🎵 播放列表管理 (一键重置 + 独立删除 + 防重复) =================
-function resetOfficialPlaylist() {
-  if (!confirm("确定要一键清空并恢复为官方高保真精选歌单吗？")) return;
-  if (!currentConfig.audio) currentConfig.audio = {};
-
-  currentConfig.audio.playlist = [
-    {
-      title: "告白气球 (浪漫钢琴版)",
-      artist: "周杰伦 / 纯音乐",
-      url: "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
-      cover: ""
-    },
-    {
-      title: "晴天 (唯美吉他版)",
-      artist: "周杰伦 / 纯音乐",
-      url: "https://assets.mixkit.co/music/preview/mixkit-love-story-532.mp3",
-      cover: ""
-    },
-    {
-      title: "简单爱 (心动轻柔版)",
-      artist: "周杰伦 / 纯音乐",
-      url: "https://assets.mixkit.co/music/preview/mixkit-wedding-piano-walk-530.mp3",
-      cover: ""
-    }
-  ];
-
-  try {
-    localStorage.removeItem("love_universe_custom_playlist");
-  } catch (_) {}
-
-  renderPlaylist();
-  showToast("✓ 歌单已重置，请点击右上角【💾 立即发布生效】！");
-}
-
-function renderPlaylist() {
-  const container = document.getElementById("playlistContainer");
-  if (!container) return;
-  container.innerHTML = "";
-
-  if (!currentConfig.audio) currentConfig.audio = {};
-  if (!Array.isArray(currentConfig.audio.playlist) || currentConfig.audio.playlist.length === 0) {
-    currentConfig.audio.playlist = [
-      {
-        title: "告白气球 (浪漫钢琴版)",
-        artist: "周杰伦 / 纯音乐",
-        url: "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
-        cover: ""
-      },
-      {
-        title: "晴天 (唯美吉他版)",
-        artist: "周杰伦 / 纯音乐",
-        url: "https://assets.mixkit.co/music/preview/mixkit-love-story-532.mp3",
-        cover: ""
-      }
-    ];
-  }
-
-  currentConfig.audio.playlist.forEach((track, idx) => {
-    const card = document.createElement("div");
-    card.className = "item-card";
-    card.innerHTML = `
-      <div class="item-card-header">
-        <span class="item-card-title">🎵 曲目 #${idx + 1} - ${escapeHtml(track.title || "未命名歌曲")}</span>
-        <button class="btn-del" onclick="deletePlaylistItem(${idx})">🗑️ 删除该曲</button>
-      </div>
-      <div class="form-grid">
-        <div class="form-group"><label>歌曲名称</label><input type="text" class="admin-input" id="pl_title_${idx}" value="${escapeHtml(track.title || "")}" oninput="currentConfig.audio.playlist[${idx}].title=this.value"></div>
-        <div class="form-group"><label>演唱歌手 / 艺术家</label><input type="text" class="admin-input" id="pl_artist_${idx}" value="${escapeHtml(track.artist || "")}" oninput="currentConfig.audio.playlist[${idx}].artist=this.value"></div>
-        <div class="form-group" style="grid-column: 1 / -1;">
-          <label>音频直链地址</label>
-          <div class="upload-input-group">
-            <input type="text" class="admin-input" id="audio_track_url_${idx}" value="${escapeHtml(track.url || "")}" oninput="currentConfig.audio.playlist[${idx}].url=this.value">
-            <button class="btn-upload" onclick="triggerDirectUpload('audio_track_url_${idx}', 'audio/*', (url)=>{ currentConfig.audio.playlist[${idx}].url=url; })">📤 上传MP3</button>
-          </div>
-        </div>
-        <div class="form-group" style="grid-column: 1 / -1;">
-          <label>黑胶中心封面图片链接 (可选 · 留空显示 ❤️)</label>
-          <div class="upload-input-group">
-            <input type="text" class="admin-input" id="audio_track_cov_${idx}" value="${escapeHtml(track.cover || "")}" oninput="currentConfig.audio.playlist[${idx}].cover=this.value">
-            <button class="btn-upload" onclick="triggerDirectUpload('audio_track_cov_${idx}', 'image/*', (url)=>{ currentConfig.audio.playlist[${idx}].cover=url; })">🖼️ 上传封面</button>
-          </div>
-        </div>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-function addPlaylistItem() {
-  if (!currentConfig.audio) currentConfig.audio = {};
-  if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
-
-  currentConfig.audio.playlist.push({
-    title: "Sweet Memories 唯美之约",
-    artist: "经典浪漫 / 纯音乐",
-    url: "https://assets.mixkit.co/music/preview/mixkit-gentle-acoustics-54.mp3",
-    cover: ""
-  });
-  renderPlaylist();
-}
-
-function deletePlaylistItem(idx) {
-  if (currentConfig.audio.playlist.length <= 1) {
-    return alert("⚠️ 歌单中请至少保留一首背景音乐！");
-  }
-  const trackName = currentConfig.audio.playlist[idx]?.title || "该歌曲";
-  if (confirm(`确定从黑胶歌单中删除《${trackName}》吗？`)) {
-    currentConfig.audio.playlist.splice(idx, 1);
-    try {
-      localStorage.setItem("love_universe_custom_playlist", JSON.stringify(currentConfig.audio.playlist));
-    } catch (_) {}
-    renderPlaylist();
-    showToast(`✓ 已移除《${trackName}》，请点击右上角【💾 立即发布生效】！`);
-  }
-}
-
-function addSongToPlaylist(title, artist, url) {
-  if (!currentConfig.audio) currentConfig.audio = {};
-  if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
-
-  const isDuplicate = currentConfig.audio.playlist.some(item => item.title === title && item.url === url);
-  if (isDuplicate) {
-    showToast(`⚠️ 《${title}》已在当前播放列表中！`);
-    return;
-  }
-
-  currentConfig.audio.playlist.push({
-    title: title || "浪漫心动曲",
-    artist: artist || "群星",
-    url: url || "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
-    cover: ""
-  });
-
-  try {
-    localStorage.setItem("love_universe_custom_playlist", JSON.stringify(currentConfig.audio.playlist));
-  } catch (_) {}
-
-  renderPlaylist();
-  showToast(`✓ 已成功将《${title}》加入歌单，请点击右上角【💾 立即发布生效】！`);
 }
 
 function renderThemeShowroom() {
@@ -427,81 +289,6 @@ function selectGirlTheme(themeId) {
   currentConfig.theme.currentThemeGirl = themeId;
   renderThemeShowroom();
   showToast(`✓ 已选定女生视角主题【${themeId}】`);
-}
-
-function quickSearchTag(tagText) {
-  document.getElementById("musicSearchKeyword").value = tagText;
-  executeOnlineMusicSearch();
-}
-
-async function executeOnlineMusicSearch() {
-  const kw = document.getElementById("musicSearchKeyword").value.trim();
-  const listContainer = document.getElementById("onlineSearchResultList");
-  if (!kw) return alert("请输入要搜索的歌名或歌手！");
-
-  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索【${escapeHtml(kw)}】直连音频流...</div>`;
-
-  try {
-    const res = await fetch(`/api/love/music-search?keyword=${encodeURIComponent(kw)}`);
-    const data = await res.json();
-
-    if (data.success && Array.isArray(data.songs) && data.songs.length > 0) {
-      listContainer.innerHTML = data.songs.map((song, idx) => `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
-          <div style="flex:1; overflow:hidden; margin-right:10px;">
-            <div style="font-size:13.5px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(song.title)}</div>
-            <div style="font-size:11.5px; color:#94a3b8;">${escapeHtml(song.artist)}</div>
-          </div>
-          <div style="display:flex; gap:6px; flex-shrink:0;">
-            <button class="btn-tool preview-play-btn" id="prev_btn_${idx}" style="padding:5px 10px; font-size:11.5px;" onclick="testPreviewAudio('${song.url}', 'prev_btn_${idx}')">🎧 试听</button>
-            <button class="btn-tool" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; padding:5px 12px; font-size:11.5px;" onclick="addSongToPlaylist('${escapeHtml(song.title)}', '${escapeHtml(song.artist)}', '${song.url}')">➕ 加入歌单</button>
-          </div>
-        </div>
-      `).join("");
-    } else {
-      listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">🍃 未找到歌曲，请尝试更简短的关键词</div>`;
-    }
-  } catch (_) {
-    listContainer.innerHTML = `<div style="color:#fca5a5; font-size:12px; padding:10px; text-align:center;">❌ 检索超时，请检查网络后重试</div>`;
-  }
-}
-
-// 试听引擎（全平台同步直出，绝无 That Girl 兜底）
-let previewAudioObj = null;
-let currentPreviewBtnId = null;
-
-function testPreviewAudio(url, btnId) {
-  const currentBtn = document.getElementById(btnId);
-
-  if (previewAudioObj && currentPreviewBtnId === btnId && !previewAudioObj.paused) {
-    previewAudioObj.pause();
-    if (currentBtn) currentBtn.textContent = "🎧 试听";
-    showToast("⏸️ 已暂停试听");
-    return;
-  }
-
-  document.querySelectorAll(".preview-play-btn").forEach(b => b.textContent = "🎧 试听");
-
-  if (previewAudioObj) {
-    previewAudioObj.pause();
-    previewAudioObj = null;
-  }
-
-  currentPreviewBtnId = btnId;
-  if (currentBtn) currentBtn.textContent = "⏳ 播放中";
-
-  previewAudioObj = new Audio(url);
-  previewAudioObj.play().then(() => {
-    if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
-    showToast("🎵 正在流畅试听曲目...");
-  }).catch(() => {
-    if (currentBtn) currentBtn.textContent = "🎧 试听";
-    showToast("⚠️ 当前音源暂时无法播放，请尝试其他曲目");
-  });
-
-  previewAudioObj.onended = () => {
-    if (currentBtn) currentBtn.textContent = "🎧 试听";
-  };
 }
 
 async function cleanOrphanR2Cache() {
@@ -811,7 +598,10 @@ async function saveAllConfigToCloud() {
   currentConfig.audio = {
     ...(currentConfig.audio || {}),
     bgmAutoPlay: document.getElementById("audio_bgmAutoPlay").value === "true",
-    playlist: currentConfig.audio?.playlist || []
+    bgmTitle: document.getElementById("audio_bgmTitle") ? document.getElementById("audio_bgmTitle").value.trim() : "",
+    bgmArtist: document.getElementById("audio_bgmArtist") ? document.getElementById("audio_bgmArtist").value.trim() : "",
+    bgmUrl: document.getElementById("audio_bgmUrl") ? document.getElementById("audio_bgmUrl").value.trim() : "",
+    vinylCover: document.getElementById("audio_vinylCover") ? document.getElementById("audio_vinylCover").value.trim() : ""
   };
 
   currentConfig.easterEggs = [
@@ -848,19 +638,6 @@ async function saveAllConfigToCloud() {
     if (voi) node.voiceAudio = voi.value;
   });
 
-  const playlistTracks = currentConfig.audio.playlist || [];
-  playlistTracks.forEach((track, idx) => {
-    const pt = document.getElementById(`pl_title_${idx}`);
-    const pa = document.getElementById(`pl_artist_${idx}`);
-    const pu = document.getElementById(`audio_track_url_${idx}`);
-    const pc = document.getElementById(`audio_track_cov_${idx}`);
-
-    if (pt) track.title = pt.value;
-    if (pa) track.artist = pa.value;
-    if (pu) track.url = pu.value;
-    if (pc) track.cover = pc.value;
-  });
-
   showToast("⏳ 正在发布到独立存储空间...");
   const token = getAuthToken();
 
@@ -879,11 +656,7 @@ async function saveAllConfigToCloud() {
     if (data.success) {
       currentAdminToken = customPwd || "521";
       localStorage.setItem("love_admin_token", currentAdminToken);
-      // 清空旧本地歌单缓存，确保拉取最新 R2 干净配置
-      try {
-        localStorage.removeItem("love_universe_custom_playlist");
-      } catch (_) {}
-      showToast("✨ 全部配置、照片与黑胶歌单已成功持久化发布！");
+      showToast("✨ 全部配置与单曲 BGM 已成功发布！");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
