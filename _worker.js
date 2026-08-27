@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 架构: 单源多租户路由、酷狗/网易云高可用音乐中继代理、双轨管理鉴权、免密灵宠通道
+ * 架构: 单源多租户路由、单曲直链流转、双轨管理鉴权、免密灵宠通道、圣洁言语过滤、HMAC 授权验证
  */
 
 export default {
@@ -49,6 +49,9 @@ export default {
             const cfg = JSON.parse(await obj.text());
             if (cfg.adminSecurity && cfg.adminSecurity.password) {
               if (token === String(cfg.adminSecurity.password).trim()) return true;
+            }
+            if (cfg.gatekeeper && cfg.gatekeeper.correctAnswer) {
+              if (token.toLowerCase() === String(cfg.gatekeeper.correctAnswer).trim().toLowerCase()) return true;
             }
           }
         } catch (_) {}
@@ -170,32 +173,7 @@ export default {
         });
       }
 
-      // 3. 歌单持久化免密同步通道
-      if (url.pathname === "/api/love/playlist" && request.method === "POST") {
-        if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-
-        let reqData = {};
-        try { reqData = await request.json(); } catch (_) {}
-        const newPlaylist = reqData.playlist;
-        if (!Array.isArray(newPlaylist)) return jsonResponse({ success: false, error: "数据格式错误" }, 400);
-
-        let currentCfg = {};
-        try {
-          const obj = await bucket.get(CONFIG_KEY);
-          if (obj) currentCfg = JSON.parse(await obj.text());
-        } catch (_) {}
-
-        if (!currentCfg.audio) currentCfg.audio = {};
-        currentCfg.audio.playlist = newPlaylist;
-
-        await bucket.put(CONFIG_KEY, JSON.stringify(currentCfg), {
-          httpMetadata: { contentType: "application/json; charset=utf-8" }
-        });
-
-        return jsonResponse({ success: true, message: "播放列表已同步至云端" });
-      }
-
-      // 4. 上传多媒体附件
+      // 3. 上传多媒体附件
       if (url.pathname === "/api/love/upload" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
         
@@ -216,7 +194,7 @@ export default {
         return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
-      // 5. 恩典灵宠通道
+      // 4. 恩典灵宠通道
       if (url.pathname === "/api/love/pet") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -256,7 +234,7 @@ export default {
         }
       }
 
-      // 6. 门禁校验
+      // 5. 门禁校验
       if (url.pathname === "/api/love/verify-gatekeeper" && request.method === "POST") {
         let reqData = {};
         try { reqData = await request.json(); } catch (_) {}
@@ -289,7 +267,7 @@ export default {
         }
       }
 
-      // 7. 域名专属授权兑换
+      // 6. 域名专属授权兑换
       if (url.pathname === "/api/love/verify-license" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "存储服务不可用" }, 500);
 
@@ -337,7 +315,7 @@ export default {
         });
       }
 
-      // 8. 清理废弃文件
+      // 7. 清理废弃文件
       if (url.pathname === "/api/love/cleanup" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
         
@@ -378,135 +356,7 @@ export default {
         });
       }
 
-      // 🌟 9. 音乐在线检索 (聚合网易云 + 酷狗官方接口)
-      if (url.pathname === "/api/love/music-search" && request.method === "GET") {
-        const keyword = (url.searchParams.get("keyword") || "").trim();
-        const songs = [];
-        const seen = new Set();
-
-        if (keyword) {
-          // 通道 1: 酷狗搜索
-          try {
-            const kgRes = await fetch(
-              `https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=1&pagesize=8&filter=2&bitrate=0&isfp=0`,
-              { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } }
-            );
-            if (kgRes.ok) {
-              const kgData = await kgRes.json();
-              const kgList = kgData.data?.lists || [];
-              kgList.forEach(item => {
-                const sName = (item.SongName || "").replace(/<[^>]+>/g, "");
-                const sArtist = (item.SingerName || "").replace(/<[^>]+>/g, "");
-                const fHash = item.FileHash || item.HQFileHash;
-                if (sName && fHash && !seen.has(fHash)) {
-                  seen.add(fHash);
-                  songs.push({
-                    id: fHash,
-                    title: sName,
-                    artist: sArtist,
-                    url: `/api/love/music-stream?hash=${fHash}&album_id=${item.AlbumID || 0}`
-                  });
-                }
-              });
-            }
-          } catch (_) {}
-
-          // 通道 2: 网易云搜索
-          try {
-            const neRes = await fetch(
-              `https://music.163.com/api/search/get/web?csrf_token=&hlpretag=&hlposttag=&s=${encodeURIComponent(keyword)}&type=1&offset=0&total=true&limit=6`,
-              { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } }
-            );
-            if (neRes.ok) {
-              const neData = await neRes.json();
-              const neSongs = neData.result?.songs || [];
-              neSongs.forEach(item => {
-                if (item.id && item.name && !seen.has(`ne_${item.id}`)) {
-                  seen.add(`ne_${item.id}`);
-                  const artist = (item.artists && item.artists[0]) ? item.artists[0].name : "群星";
-                  songs.push({
-                    id: `ne_${item.id}`,
-                    title: item.name,
-                    artist: artist,
-                    url: `/api/love/music-stream?netease_id=${item.id}`
-                  });
-                }
-              });
-            }
-          } catch (_) {}
-        }
-
-        if (songs.length === 0) {
-          const PRESET = [
-            { title: "告白气球", artist: "周杰伦", url: "/api/love/music-stream?netease_id=411521" },
-            { title: "晴天", artist: "周杰伦", url: "/api/love/music-stream?netease_id=186016" },
-            { title: "简单爱", artist: "周杰伦", url: "/api/love/music-stream?netease_id=185928" },
-            { title: "Sweet Memories 浪漫钢琴", artist: "纯音乐", url: "/api/love/music-stream?netease_id=441116287" }
-          ];
-          PRESET.forEach(item => songs.push(item));
-        }
-
-        return jsonResponse({ success: true, songs });
-      }
-
-      // 🌟 10. 🎵 核心音乐流代理中继 (完美解决跨域、防盗链与That Girl陷阱)
-      if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
-        const hash = url.searchParams.get("hash");
-        const albumId = url.searchParams.get("album_id") || "0";
-        const neteaseId = url.searchParams.get("netease_id");
-        let playUrl = "";
-
-        if (neteaseId) {
-          playUrl = `https://music.163.com/song/media/outer/url?id=${neteaseId}.mp3`;
-        } else if (hash) {
-          try {
-            const kgRes = await fetch(`https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&album_id=${albumId}&dfid=-&mid=-&platid=4&_=${Date.now()}`, {
-              headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                "Cookie": "kg_mid=e8d0e74b68ef5c4c95f19067b5b5c935",
-                "Referer": "https://www.kugou.com/"
-              }
-            });
-            if (kgRes.ok) {
-              const data = await kgRes.json();
-              playUrl = data.data?.play_url || data.data?.play_backup_url || "";
-            }
-          } catch (_) {}
-        }
-
-        if (!playUrl || !playUrl.startsWith("http")) {
-          playUrl = "https://music.163.com/song/media/outer/url?id=441116287.mp3";
-        }
-
-        try {
-          const range = request.headers.get("Range");
-          const forwardHeaders = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-            "Referer": "https://www.kugou.com/"
-          };
-          if (range) forwardHeaders["Range"] = range;
-
-          const streamRes = await fetch(playUrl, { headers: forwardHeaders });
-          const responseHeaders = new Headers(corsHeaders);
-          responseHeaders.set("Content-Type", streamRes.headers.get("Content-Type") || "audio/mpeg");
-          responseHeaders.set("Accept-Ranges", "bytes");
-          if (streamRes.headers.get("Content-Length")) {
-            responseHeaders.set("Content-Length", streamRes.headers.get("Content-Length"));
-          }
-          if (streamRes.headers.get("Content-Range")) {
-            responseHeaders.set("Content-Range", streamRes.headers.get("Content-Range"));
-          }
-
-          return new Response(streamRes.body, {
-            status: streamRes.status,
-            headers: responseHeaders
-          });
-        } catch (_) {
-          return Response.redirect(playUrl, 302);
-        }
-      }
-
-      // 11. 静态文件流式输出
+      // 8. 静态文件流式输出
       if (url.pathname.startsWith("/raw/")) {
         if (!bucket) return new Response("Bucket Not Found", { status: 500 });
         const key = decodeURIComponent(url.pathname.replace(/^\/raw\//, ""));
