@@ -1,13 +1,12 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 架构: 单源多租户路由 (基于 Host 物理隔离)、双轨管理鉴权、免密灵宠情侣云端互通通道、圣洁言语过滤、HMAC 授权验证
+ * 架构: 单源多租户路由 (基于 Host 物理隔离)、三重通道双轨管理鉴权、多源音乐流中继、免密灵宠云端通道、圣洁言语过滤、HMAC 授权验证
  */
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-
     const bucket = env.R2 || env.BUCKET || env.PAN || env.MY_BUCKET || env.FILE_BUCKET;
 
     const corsHeaders = {
@@ -35,6 +34,7 @@ export default {
     const ADMIN_PASSWORD = String(env.ADMIN_PASSWORD || env.SECRET_PWD || env.ADMIN_PWD || "521").trim();
     const MASTER_LICENSE_SECRET = String(env.MASTER_LICENSE_SECRET || "SACRED_UNQUENCHABLE_LOVE_2026_KEY").trim();
 
+    // 三重通道管理员鉴权：支持【总控超级密码 521】与【租户独立管理密码】
     async function verifyAdminAuth(req) {
       const headerAuth = req.headers.get("x-admin-auth") || req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
       const queryAuth = url.searchParams.get("auth");
@@ -42,8 +42,10 @@ export default {
 
       if (!token) return false;
 
-      if (token === ADMIN_PASSWORD || token === "521") return true;
+      // 1. 开发者超级总控密码（永远直通）
+      if (token === ADMIN_PASSWORD || token === "521" || token.toLowerCase() === "521") return true;
 
+      // 2. 当前租户独立设置的管理密码
       if (bucket) {
         try {
           const obj = await bucket.get(CONFIG_KEY);
@@ -51,6 +53,11 @@ export default {
             const cfg = JSON.parse(await obj.text());
             if (cfg.adminSecurity && cfg.adminSecurity.password) {
               if (token === String(cfg.adminSecurity.password).trim()) {
+                return true;
+              }
+            }
+            if (cfg.gatekeeper && cfg.gatekeeper.correctAnswer) {
+              if (token.toLowerCase() === String(cfg.gatekeeper.correctAnswer).trim().toLowerCase()) {
                 return true;
               }
             }
@@ -99,13 +106,21 @@ export default {
     }
 
     try {
-      // 1. 获取全站配置
+      // 1. 获取全站配置 (严密鉴权状态回传)
       if (url.pathname === "/api/love/config" && request.method === "GET") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2 存储桶" }, 500);
 
         const isAdmin = await verifyAdminAuth(request);
-        let customConfig = null;
+        const headerAuth = request.headers.get("x-admin-auth");
+        const queryAuth = url.searchParams.get("auth");
+        const attemptedAuth = (headerAuth || queryAuth || "").trim();
 
+        // 若携带了密码但验证不通过，明确返回 401 拦截
+        if (attemptedAuth && !isAdmin) {
+          return jsonResponse({ success: false, error: "管理口令错误或未授权", isAdmin: false }, 401);
+        }
+
+        let customConfig = null;
         try {
           const obj = await bucket.get(CONFIG_KEY);
           if (obj) {
@@ -119,13 +134,6 @@ export default {
             if (customConfig.adminSecurity) delete customConfig.adminSecurity.password;
           }
           return jsonResponse({ success: true, custom: true, domain: rawHost, config: customConfig, isAdmin });
-        }
-
-        if (!isAdmin) {
-          const headerAuth = request.headers.get("x-admin-auth");
-          if (headerAuth && headerAuth !== ADMIN_PASSWORD && headerAuth !== "521") {
-            return jsonResponse({ success: false, error: "管理口令错误" }, 401);
-          }
         }
 
         return jsonResponse({ success: true, custom: false, domain: rawHost, config: null, isAdmin });
@@ -175,11 +183,32 @@ export default {
         return jsonResponse({
           success: true,
           domain: rawHost,
-          message: `配置已发布并永久同步至【${rawHost}】独立存储云端`
+          message: `配置已发布并永久同步至【${rawHost}】独立存储空间`
         });
       }
 
-      // 🌟 3. 恩典灵宠情侣免密跨端数据通道 (GET / POST)
+      // 3. 上传多媒体附件 (支持 URL query token 保证 100% 鉴权成功)
+      if (url.pathname === "/api/love/upload" && request.method === "POST") {
+        if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2 存储桶" }, 500);
+        
+        const isAuthed = await verifyAdminAuth(request);
+        if (!isAuthed) return jsonResponse({ success: false, error: "未授权或管理口令错误" }, 401);
+
+        const formData = await request.formData();
+        const file = formData.get("file");
+        if (!file) return jsonResponse({ success: false, error: "未接收到文件" }, 400);
+
+        const safeName = (file.name || "media.bin").replace(/[^a-zA-Z0-9.\-_]/g, "_");
+        const r2Key = `${tenantDir}/assets/${Date.now()}_${safeName}`;
+
+        await bucket.put(r2Key, file.stream(), {
+          httpMetadata: { contentType: file.type || "application/octet-stream" }
+        });
+
+        return jsonResponse({ success: true, url: `/raw/${r2Key}` });
+      }
+
+      // 4. 恩典灵宠情侣免密跨端数据通道
       if (url.pathname === "/api/love/pet") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2" }, 500);
 
@@ -219,27 +248,6 @@ export default {
 
           return jsonResponse({ success: true, message: "灵宠足迹已同步至云端" });
         }
-      }
-
-      // 4. 上传多媒体附件
-      if (url.pathname === "/api/love/upload" && request.method === "POST") {
-        if (!bucket) return jsonResponse({ success: false, error: "未绑定 R2 存储桶" }, 500);
-        
-        const isAuthed = await verifyAdminAuth(request);
-        if (!isAuthed) return jsonResponse({ success: false, error: "未授权" }, 401);
-
-        const formData = await request.formData();
-        const file = formData.get("file");
-        if (!file) return jsonResponse({ success: false, error: "未接收到文件" }, 400);
-
-        const safeName = (file.name || "media.bin").replace(/[^a-zA-Z0-9.\-_]/g, "_");
-        const r2Key = `${tenantDir}/assets/${Date.now()}_${safeName}`;
-
-        await bucket.put(r2Key, file.stream(), {
-          httpMetadata: { contentType: file.type || "application/octet-stream" }
-        });
-
-        return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
       // 5. 云端安全门禁校验
@@ -364,16 +372,41 @@ export default {
         });
       }
 
-      // 8. 云端音乐搜索
+      // 8. 🎵 云端音乐在线搜索 (网易云 + 酷狗双通道)
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim();
         const songs = [];
         const seen = new Set();
 
         if (keyword) {
+          // 引擎 1: 网易云音乐直连搜索
+          try {
+            const neRes = await fetch(
+              `https://music.163.com/api/search/get/web?csrf_token=&hlpretag=&hlposttag=&s=${encodeURIComponent(keyword)}&type=1&offset=0&total=true&limit=8`,
+              { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } }
+            );
+            if (neRes.ok) {
+              const neData = await neRes.json();
+              const neSongs = neData.result?.songs || [];
+              neSongs.forEach(item => {
+                if (item.id && item.name && !seen.has(`ne_${item.id}`)) {
+                  seen.add(`ne_${item.id}`);
+                  const artist = (item.artists && item.artists[0]) ? item.artists[0].name : "群星";
+                  songs.push({
+                    id: String(item.id),
+                    title: item.name,
+                    artist: artist,
+                    url: `https://music.163.com/song/media/outer/url?id=${item.id}.mp3`
+                  });
+                }
+              });
+            }
+          } catch (_) {}
+
+          // 引擎 2: 酷狗音乐搜索补充
           try {
             const kgRes = await fetch(
-              `https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=1&pagesize=10&filter=2&bitrate=0&isfp=0`,
+              `https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=1&pagesize=8&filter=2&bitrate=0&isfp=0`,
               { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } }
             );
             if (kgRes.ok) {
@@ -382,14 +415,13 @@ export default {
               kgList.forEach(item => {
                 const sName = (item.SongName || "").replace(/<[^>]+>/g, "");
                 const sArtist = (item.SingerName || "").replace(/<[^>]+>/g, "");
-                const fHash = item.FileHash || item.HQFileHash || item.SQFileHash;
+                const fHash = item.FileHash || item.HQFileHash;
                 if (sName && fHash && !seen.has(fHash)) {
                   seen.add(fHash);
                   songs.push({
                     id: fHash,
                     title: sName,
                     artist: sArtist,
-                    albumId: item.AlbumID || "0",
                     url: `/api/love/music-stream?hash=${fHash}&album_id=${item.AlbumID || 0}`
                   });
                 }
@@ -398,30 +430,24 @@ export default {
           } catch (_) {}
         }
 
+        // 兜底精选浪漫曲目列表
         if (songs.length === 0) {
           const PRESET_LIST = [
-            { title: "告白气球", artist: "周杰伦", hash: "E3A199727B40A5B73C4CE15CEE5FA41E", albumId: "1794711" },
-            { title: "晴天", artist: "周杰伦", hash: "A0A164B62580DA8E5BCEBDEB4F69B829", albumId: "960395" },
-            { title: "简单爱", artist: "周杰伦", hash: "8078BA5188E67E7DE28D08F086ED3FDE", albumId: "959958" }
+            { title: "Sweet Memories 浪漫钢琴", artist: "松田圣子 / 纯音乐", url: "https://music.163.com/song/media/outer/url?id=441116287.mp3" },
+            { title: "告白气球", artist: "周杰伦", url: "https://music.163.com/song/media/outer/url?id=436514312.mp3" },
+            { title: "晴天", artist: "周杰伦", url: "https://music.163.com/song/media/outer/url?id=186016.mp3" },
+            { title: "简单爱", artist: "周杰伦", url: "https://music.163.com/song/media/outer/url?id=185928.mp3" },
+            { title: "七里香", artist: "周杰伦", url: "https://music.163.com/song/media/outer/url?id=185701.mp3" }
           ];
-          PRESET_LIST.forEach(item => {
-            songs.push({
-              id: item.hash,
-              title: item.title,
-              artist: item.artist,
-              albumId: item.albumId,
-              url: `/api/love/music-stream?hash=${item.hash}&album_id=${item.albumId}`
-            });
-          });
+          PRESET_LIST.forEach(item => songs.push(item));
         }
 
         return jsonResponse({ success: true, songs });
       }
 
-      // 9. 音频流实时中继与解析
+      // 9. 音频流实时中继
       if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
         const hash = url.searchParams.get("hash");
-        const albumId = url.searchParams.get("album_id") || "0";
 
         if (hash) {
           try {
@@ -436,7 +462,7 @@ export default {
             }
           } catch (_) {}
         }
-        return Response.redirect("https://music.163.com/song/media/outer/url?id=436514312.mp3", 302);
+        return Response.redirect("https://music.163.com/song/media/outer/url?id=441116287.mp3", 302);
       }
 
       // 10. 静态文件流式输出
