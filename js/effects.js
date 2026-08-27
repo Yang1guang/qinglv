@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、黑胶播放列表防跳引擎、强制清洗旧缓存、多曲顺畅轮播
+ * 作用: 动效中枢、多曲目黑胶播放列表控制器、网易云/酷狗中继流适配
  */
 
 class EffectsEngine {
@@ -11,7 +11,6 @@ class EffectsEngine {
     this.isPlaying = false;
     this.currentTrackIndex = 0;
     this.playlist = this.getNormalizedPlaylist();
-    this.isManualSwitch = false; // 用户手动切歌标志，杜绝自动乱跳
 
     this.fireworksCanvas = document.getElementById("fireworks-canvas");
     this.fwCtx = this.fireworksCanvas ? this.fireworksCanvas.getContext("2d") : null;
@@ -22,46 +21,36 @@ class EffectsEngine {
   }
 
   getNormalizedPlaylist() {
-    // 1. 强制清洗并抛弃旧的失效缓存结构
     try {
       const cached = localStorage.getItem("love_universe_custom_playlist");
       if (cached) {
         const parsed = JSON.parse(cached);
-        // 校验缓存中是否包含旧的失效外链或That Girl，若有则直接作废
-        const hasBadLink = parsed.some(item => !item.url || item.url.includes("441116287") || item.url.includes("That_Girl"));
-        if (hasBadLink) {
-          localStorage.removeItem("love_universe_custom_playlist");
-        } else if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (_) {}
 
     const audioCfg = this.config.audio || {};
     if (Array.isArray(audioCfg.playlist) && audioCfg.playlist.length > 0) {
-      // 过滤云端配置中可能残留的不健康外链
-      const safeList = audioCfg.playlist.filter(item => item.url && !item.url.includes("441116287"));
-      if (safeList.length > 0) return safeList;
+      return audioCfg.playlist;
     }
 
-    // 默认高保真直连歌单
     return [
       {
-        title: "告白气球 (浪漫钢琴版)",
-        artist: "周杰伦 / 纯音乐",
-        url: "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
+        title: "告白气球",
+        artist: "周杰伦",
+        url: "/api/love/music-stream?netease_id=411521",
         cover: ""
       },
       {
-        title: "晴天 (唯美吉他版)",
-        artist: "周杰伦 / 纯音乐",
-        url: "https://assets.mixkit.co/music/preview/mixkit-love-story-532.mp3",
+        title: "晴天",
+        artist: "周杰伦",
+        url: "/api/love/music-stream?netease_id=186016",
         cover: ""
       },
       {
-        title: "简单爱 (心动轻柔版)",
-        artist: "周杰伦 / 纯音乐",
-        url: "https://assets.mixkit.co/music/preview/mixkit-wedding-piano-walk-530.mp3",
+        title: "简单爱",
+        artist: "周杰伦",
+        url: "/api/love/music-stream?netease_id=185928",
         cover: ""
       }
     ];
@@ -74,7 +63,7 @@ class EffectsEngine {
     this.renderPlaylistPopup();
     this.updateTrackInfoDisplay();
 
-    // 手势解锁，顺应 PC 端与移动端浏览器自动播放规则
+    // 交互唤醒手势
     const unlockAudio = () => {
       if (this.config.audio && this.config.audio.bgmAutoPlay !== false && !this.isPlaying) {
         this.playBgm();
@@ -122,12 +111,9 @@ class EffectsEngine {
         this.setVinylVisualPlaying(false);
       });
 
-      // 严格防跳错处理：当某一首加载失败时，仅提示一次并安全暂停，绝不无限循环乱跳
-      this.bgmAudio.addEventListener("error", (e) => {
-        console.warn("音频流加载受阻:", e);
-        this.isPlaying = false;
-        this.setVinylVisualPlaying(false);
-        this.showMiniToast("⚠️ 当前曲目加载失败，请尝试切换下一首");
+      this.bgmAudio.addEventListener("error", () => {
+        console.warn("当前曲目音频流异常，平滑跳入下一首...");
+        setTimeout(() => this.nextTrack(), 500);
       });
     }
 
@@ -157,9 +143,8 @@ class EffectsEngine {
       this.isPlaying = true;
       this.setVinylVisualPlaying(true);
       const track = this.playlist[this.currentTrackIndex];
-      this.showMiniToast(`🎶 正在播放: ${track.title}`);
-    }).catch((err) => {
-      console.warn("播放被浏览器安全策略拦截:", err);
+      this.showMiniToast(`🎶 正在播放: ${track.title} - ${track.artist}`);
+    }).catch(() => {
       this.isPlaying = false;
       this.setVinylVisualPlaying(false);
     });
@@ -191,11 +176,9 @@ class EffectsEngine {
   }
 
   selectTrack(index) {
-    this.isManualSwitch = true;
     this.loadTrack(index, true);
   }
 
-  // 前台歌单删除单曲并实时同步本地与云端
   async deleteTrackFromPopup(e, index) {
     e.stopPropagation();
     if (this.playlist.length <= 1) {
