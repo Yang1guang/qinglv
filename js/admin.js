@@ -198,59 +198,94 @@ function resetToCodePresets() {
   }
 }
 
+// ================= 🎨 9. 双视角 12 款主题渲染 =================
 function renderThemeShowroom() {
-  const container = document.getElementById("themeShowroomContainer");
-  if (!container) return;
+  const boyBox = document.getElementById("boyThemesContainer");
+  const girlBox = document.getElementById("girlThemesContainer");
+  const presets = window.THEME_PRESETS || { boy: [], girl: [] };
 
-  const currentSelected = currentConfig.theme?.currentTheme || "sunset-twilight";
-  const defaultThemes = {
-    "sunset-twilight": { id: "sunset-twilight", name: "🌌 暮色星河", tag: "浪漫 / 温暖", desc: "落日余晖与闪烁星空交织，带尾迹的流星雨穿梭" },
-    "sakura-romance": { id: "sakura-romance", name: "🌸 初雪樱花", tag: "温柔 / 唯美", desc: "3D 翻转花瓣受微风吹拂徐徐飘落，触碰指尖随风舞动" },
-    "cyber-space": { id: "cyber-space", name: "⚡ 赛博漫游", tag: "科技 / 帅气", desc: "霓虹光束与全息矩阵粒子穿梭，极具未来科幻质感" },
-    "firefly-forest": { id: "firefly-forest", name: "🌲 萤火森林", tag: "治愈 / 深邃", desc: "幽绿森林夜空中的发光萤火虫，忽明忽暗灵动飞舞" },
-    "warm-ember": { id: "warm-ember", name: "🔥 炽热余烬", tag: "热情 / 爱意", desc: "如壁炉般缓缓升腾的火星余烬，温暖深沉而热烈" },
-    "sweet-dream": { id: "sweet-dream", name: "🍬 奶油甜梦", tag: "可爱 / 治愈", desc: "梦幻半透明糖果气泡缓缓升起，伴随微光折射动效" }
-  };
+  const curBoy = currentConfig.theme?.currentThemeBoy || currentConfig.theme?.currentTheme || "sunset-twilight";
+  const curGirl = currentConfig.theme?.currentThemeGirl || "french-cream";
 
-  const themes = (window.ThemeEngine && window.ThemeEngine.registry) ? window.ThemeEngine.registry : defaultThemes;
-
-  container.innerHTML = Object.keys(themes).map(key => {
-    const item = themes[key];
-    const isSelected = item.id === currentSelected;
-    return `
-      <div 
-        class="theme-card ${isSelected ? 'theme-card--selected' : ''}" 
-        onclick="selectThemeCard('${item.id}')"
-        style="
-          background: ${isSelected ? 'rgba(244, 63, 94, 0.18)' : 'rgba(3, 7, 18, 0.6)'};
-          border: 1.5px solid ${isSelected ? '#f43f5e' : 'rgba(255,255,255,0.1)'};
-          box-shadow: ${isSelected ? '0 0 20px rgba(244, 63, 94, 0.3)' : 'none'};
-          border-radius: 16px; padding: 16px; cursor: pointer; transition: all 0.2s;
-          display: flex; flex-direction: column; justify-content: space-between;
-        "
-      >
-        <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-size:15px; font-weight:900; color:#fff;">${item.name}</span>
-            <span style="font-size:10.5px; font-weight:800; background:rgba(255,255,255,0.1); color:#fde68a; padding:2px 8px; border-radius:12px;">${item.tag}</span>
+  if (boyBox) {
+    boyBox.innerHTML = presets.boy.map(item => {
+      const isSel = item.id === curBoy;
+      return `
+        <div 
+          class="theme-card ${isSel ? 'theme-card--selected' : ''}" 
+          onclick="selectBoyTheme('${item.id}')"
+          style="
+            background: ${isSel ? 'rgba(56, 189, 248, 0.22)' : 'rgba(3, 7, 18, 0.6)'};
+            border: 1.5px solid ${isSel ? '#38bdf8' : 'rgba(255,255,255,0.1)'};
+            box-shadow: ${isSel ? '0 0 16px rgba(56, 189, 248, 0.35)' : 'none'};
+            border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s;
+            display: flex; flex-direction: column; justify-content: space-between;
+          "
+        >
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:14px; font-weight:900; color:#fff;">${item.name}</span>
+              <span style="font-size:10px; font-weight:800; background:rgba(255,255,255,0.1); color:#7dd3fc; padding:2px 6px; border-radius:10px;">${item.tag}</span>
+            </div>
+            <p style="font-size:11.5px; color:#94a3b8; line-height:1.4; margin-bottom:10px;">${item.desc}</p>
           </div>
-          <p style="font-size:12px; color:#94a3b8; line-height:1.5; margin-bottom:12px;">${item.desc}</p>
+          <div style="font-size:11.5px; font-weight:800; color:${isSel ? '#38bdf8' : '#64748b'}; text-align:right;">
+            ${isSel ? '✓ 当前选定' : '点击选定'}
+          </div>
         </div>
-        <div style="font-size:12px; font-weight:800; color:${isSelected ? '#f43f5e' : '#64748b'}; text-align:right;">
-          ${isSelected ? '✓ 当前应用中' : '点击切换'}
-        </div>
-      </div>
-    `;
-  }).join("");
+      `;
+    }).join("");
+  }
 
-  document.getElementById("theme_customBgUrl").value = currentConfig.theme?.customBgUrl || "";
+  if (girlBox) {
+    girlBox.innerHTML = presets.girl.map(item => {
+      const isSel = item.id === curGirl;
+      return `
+        <div 
+          class="theme-card ${isSel ? 'theme-card--selected' : ''}" 
+          onclick="selectGirlTheme('${item.id}')"
+          style="
+            background: ${isSel ? 'rgba(244, 114, 182, 0.22)' : 'rgba(3, 7, 18, 0.6)'};
+            border: 1.5px solid ${isSel ? '#f472b6' : 'rgba(255,255,255,0.1)'};
+            box-shadow: ${isSel ? '0 0 16px rgba(244, 114, 182, 0.35)' : 'none'};
+            border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s;
+            display: flex; flex-direction: column; justify-content: space-between;
+          "
+        >
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:14px; font-weight:900; color:#fff;">${item.name}</span>
+              <span style="font-size:10px; font-weight:800; background:rgba(255,255,255,0.1); color:#fbcfe8; padding:2px 6px; border-radius:10px;">${item.tag}</span>
+            </div>
+            <p style="font-size:11.5px; color:#94a3b8; line-height:1.4; margin-bottom:10px;">${item.desc}</p>
+          </div>
+          <div style="font-size:11.5px; font-weight:800; color:${isSel ? '#f472b6' : '#64748b'}; text-align:right;">
+            ${isSel ? '✓ 当前选定' : '点击选定'}
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  const bgBoyInput = document.getElementById("theme_customBgUrlBoy");
+  const bgGirlInput = document.getElementById("theme_customBgUrlGirl");
+  if (bgBoyInput) bgBoyInput.value = currentConfig.theme?.customBgUrlBoy || currentConfig.theme?.customBgUrl || "";
+  if (bgGirlInput) bgGirlInput.value = currentConfig.theme?.customBgUrlGirl || "";
 }
 
-function selectThemeCard(themeId) {
+function selectBoyTheme(themeId) {
   if (!currentConfig.theme) currentConfig.theme = {};
+  currentConfig.theme.currentThemeBoy = themeId;
   currentConfig.theme.currentTheme = themeId;
   renderThemeShowroom();
-  showToast(`✓ 已选择主题【${themeId}】，请点击右上角【💾 立即发布生效】！`);
+  showToast(`✓ 已选定男生视角主题【${themeId}】`);
+}
+
+function selectGirlTheme(themeId) {
+  if (!currentConfig.theme) currentConfig.theme = {};
+  currentConfig.theme.currentThemeGirl = themeId;
+  renderThemeShowroom();
+  showToast(`✓ 已选定女生视角主题【${themeId}】`);
 }
 
 function quickSearchTag(tagText) {
@@ -578,9 +613,13 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
       if (activeUploadCallback) {
         activeUploadCallback(data.url);
       }
-      if (activeUploadInputId === "theme_customBgUrl" && currentConfig) {
+      if (activeUploadInputId === "theme_customBgUrlBoy" && currentConfig) {
         if (!currentConfig.theme) currentConfig.theme = {};
-        currentConfig.theme.customBgUrl = data.url;
+        currentConfig.theme.customBgUrlBoy = data.url;
+      }
+      if (activeUploadInputId === "theme_customBgUrlGirl" && currentConfig) {
+        if (!currentConfig.theme) currentConfig.theme = {};
+        currentConfig.theme.customBgUrlGirl = data.url;
       }
       showToast("✓ 上传成功！直链已自动填入，请记得点击右上角【💾 立即发布生效】保存");
     } else {
@@ -649,11 +688,13 @@ async function saveAllConfigToCloud() {
   ];
 
   currentConfig.theme = {
-    currentTheme: currentConfig.theme?.currentTheme || "sunset-twilight",
-    customBgUrl: document.getElementById("theme_customBgUrl") ? document.getElementById("theme_customBgUrl").value.trim() : ""
+    ...(currentConfig.theme || {}),
+    currentThemeBoy: currentConfig.theme?.currentThemeBoy || currentConfig.theme?.currentTheme || "sunset-twilight",
+    currentThemeGirl: currentConfig.theme?.currentThemeGirl || "french-cream",
+    customBgUrlBoy: document.getElementById("theme_customBgUrlBoy") ? document.getElementById("theme_customBgUrlBoy").value.trim() : "",
+    customBgUrlGirl: document.getElementById("theme_customBgUrlGirl") ? document.getElementById("theme_customBgUrlGirl").value.trim() : ""
   };
 
-  // 严格从 DOM 同步时光轴照片与信息
   const timelineNodes = currentConfig.timeline || [];
   timelineNodes.forEach((node, idx) => {
     const d = document.getElementById(`tl_date_${idx}`);
