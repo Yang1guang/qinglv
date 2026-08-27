@@ -7,7 +7,7 @@
 window.LOVE_CONFIG = {
   // ================= 0. 情感生命周期与视觉配置 =================
   lifecycle: {
-    currentPhase: "dating" // 默认起始阶段: dating(恋爱期) / engaged(订婚期) / married(结婚期)
+    currentPhase: "dating"
   },
   theme: {
     currentTheme: "sunset-twilight",
@@ -32,6 +32,7 @@ window.LOVE_CONFIG = {
     question: "输入我们第一次确认关系的纪念日 (6位数字)：",
     hint: "提示：2024年5月20日 ➔ 240520",
     correctAnswer: "240520",
+    voiceVows: "众水不能熄灭, 我愿一生包容你, 永远爱你, 240520",
     errorTips: [
       "没关系，慢慢想，我一直都在这里等你。",
       "记忆偶尔会迷路，但我们的爱永远是归途。",
