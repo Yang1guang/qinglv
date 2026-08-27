@@ -8,7 +8,7 @@ let currentAdminToken = "";
 let currentDomainHost = "";
 
 function getAuthToken() {
-  return currentAdminToken || localStorage.getItem("love_admin_token") || "521";
+  return (currentAdminToken || localStorage.getItem("love_admin_token") || "521").trim();
 }
 
 function showToast(msg) {
@@ -41,34 +41,41 @@ function mergeWithDefaultConfig(cloudCfg) {
   };
 }
 
+// 登录验证 (严格要求服务端返回 isAdmin: true)
 async function verifyAdminLogin() {
   const pwdInput = document.getElementById("adminPwdInput");
   const pwd = pwdInput ? pwdInput.value.trim() : "";
   const tokenToVerify = pwd || getAuthToken();
 
   currentAdminToken = tokenToVerify;
-  localStorage.setItem("love_admin_token", tokenToVerify);
 
-  const success = await fetchConfigFromCloud();
+  const success = await fetchConfigFromCloud(tokenToVerify);
   if (success) {
+    localStorage.setItem("love_admin_token", tokenToVerify);
     const modal = document.getElementById("authModal");
     const layout = document.getElementById("adminLayout");
     if (modal) modal.style.display = "none";
     if (layout) layout.style.display = "block";
     showToast("✓ 验证成功，已连接独立云端存储");
   } else {
-    alert("❌ 口令错误或无法连接云端！");
+    localStorage.removeItem("love_admin_token");
+    alert("❌ 口令错误或未授权！请输入正确的管理员密码 (默认 521)");
   }
 }
 
-async function fetchConfigFromCloud() {
+async function fetchConfigFromCloud(tokenOverride) {
+  const token = (tokenOverride || getAuthToken()).trim();
   try {
-    const res = await fetch("/api/love/config", {
-      headers: { "x-admin-auth": getAuthToken() }
+    const res = await fetch(`/api/love/config?auth=${encodeURIComponent(token)}`, {
+      headers: {
+        "x-admin-auth": token,
+        "Authorization": `Bearer ${token}`
+      }
     });
+    if (!res.ok) return false;
     const data = await res.json();
 
-    if (data.success) {
+    if (data.success && data.isAdmin) {
       currentDomainHost = data.domain || window.location.hostname;
       const domainBadge = document.getElementById("adminDomainBadge");
       if (domainBadge) domainBadge.textContent = `当前租户节点: ${currentDomainHost}`;
@@ -83,9 +90,7 @@ async function fetchConfigFromCloud() {
     }
     return false;
   } catch (_) {
-    currentConfig = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
-    renderAllForms();
-    return true;
+    return false;
   }
 }
 
@@ -202,12 +207,12 @@ function renderPlaylist() {
   container.innerHTML = "";
 
   if (!currentConfig.audio) currentConfig.audio = {};
-  if (!Array.isArray(currentConfig.audio.playlist)) {
+  if (!Array.isArray(currentConfig.audio.playlist) || currentConfig.audio.playlist.length === 0) {
     currentConfig.audio.playlist = [{
-      title: currentConfig.audio.bgmTitle || "告白气球",
-      artist: currentConfig.audio.bgmArtist || "周杰伦",
-      url: currentConfig.audio.bgmUrl || "https://music.163.com/song/media/outer/url?id=436514312.mp3",
-      cover: currentConfig.audio.vinylCover || ""
+      title: "Sweet Memories 浪漫钢琴",
+      artist: "松田圣子 / 纯音乐",
+      url: "https://music.163.com/song/media/outer/url?id=441116287.mp3",
+      cover: ""
     }];
   }
 
@@ -220,8 +225,8 @@ function renderPlaylist() {
         <button class="btn-del" onclick="deletePlaylistItem(${idx})">🗑️ 删除</button>
       </div>
       <div class="form-grid">
-        <div class="form-group"><label>歌曲名称</label><input type="text" class="admin-input" value="${escapeHtml(track.title || "")}" oninput="currentConfig.audio.playlist[${idx}].title=this.value"></div>
-        <div class="form-group"><label>演唱歌手 / 艺术家</label><input type="text" class="admin-input" value="${escapeHtml(track.artist || "")}" oninput="currentConfig.audio.playlist[${idx}].artist=this.value"></div>
+        <div class="form-group"><label>歌曲名称</label><input type="text" class="admin-input" id="pl_title_${idx}" value="${escapeHtml(track.title || "")}" oninput="currentConfig.audio.playlist[${idx}].title=this.value"></div>
+        <div class="form-group"><label>演唱歌手 / 艺术家</label><input type="text" class="admin-input" id="pl_artist_${idx}" value="${escapeHtml(track.artist || "")}" oninput="currentConfig.audio.playlist[${idx}].artist=this.value"></div>
         <div class="form-group" style="grid-column: 1 / -1;">
           <label>音频直链地址</label>
           <div class="upload-input-group">
@@ -265,15 +270,14 @@ function deletePlaylistItem(idx) {
   }
 }
 
-// 快速加入歌单
 function addSongToPlaylist(title, artist, url) {
   if (!currentConfig.audio) currentConfig.audio = {};
   if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
 
   currentConfig.audio.playlist.push({
-    title,
-    artist,
-    url,
+    title: title || "浪漫心动曲",
+    artist: artist || "群星",
+    url: url || "https://music.163.com/song/media/outer/url?id=436514312.mp3",
     cover: ""
   });
   renderPlaylist();
@@ -407,6 +411,7 @@ async function executeOnlineMusicSearch() {
   }
 }
 
+// 试听引擎 (带容错与备用流支持)
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
@@ -427,9 +432,11 @@ function testPreviewAudio(url, btnId) {
     previewAudioObj = null;
   }
 
-  previewAudioObj = new Audio(url);
   currentPreviewBtnId = btnId;
   if (currentBtn) currentBtn.textContent = "⏳ 缓冲中...";
+
+  previewAudioObj = new Audio();
+  previewAudioObj.src = url;
 
   previewAudioObj.play()
     .then(() => {
@@ -437,8 +444,15 @@ function testPreviewAudio(url, btnId) {
       showToast("🎵 正在流畅试听曲目...");
     })
     .catch(() => {
-      if (currentBtn) currentBtn.textContent = "🎧 试听";
-      showToast("⚠️ 正在调取备用音频流...");
+      // 备用音源无缝兜底
+      previewAudioObj.src = "https://music.163.com/song/media/outer/url?id=441116287.mp3";
+      previewAudioObj.play().then(() => {
+        if (currentBtn) currentBtn.textContent = "⏸️ 暂停";
+        showToast("🎵 正在播放浪漫钢琴曲试听");
+      }).catch(() => {
+        if (currentBtn) currentBtn.textContent = "🎧 试听";
+        alert("⚠️ 试听受浏览器交互限制，请再次点击试听按钮。");
+      });
     });
 
   previewAudioObj.onended = () => {
@@ -450,10 +464,14 @@ async function cleanOrphanR2Cache() {
   if (!confirm("⚠️ 确定要清理当前站点存储中未引用的废弃照片与音频吗？")) return;
   showToast("⏳ 正在扫描并清理当前域名孤立文件...");
 
+  const token = getAuthToken();
   try {
-    const res = await fetch("/api/love/cleanup", {
+    const res = await fetch(`/api/love/cleanup?auth=${encodeURIComponent(token)}`, {
       method: "POST",
-      headers: { "x-admin-auth": getAuthToken() }
+      headers: {
+        "x-admin-auth": token,
+        "Authorization": `Bearer ${token}`
+      }
     });
     const data = await res.json();
     if (data.success) {
@@ -654,6 +672,7 @@ function triggerDirectUpload(targetInputId, acceptType, callback) {
   uploader.click();
 }
 
+// 统一极速上传 (附带 URL auth 参数兜底保证 100% 鉴权成功)
 document.getElementById("globalUploader").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -662,10 +681,15 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   const formData = new FormData();
   formData.append("file", file);
 
+  const token = getAuthToken();
+
   try {
-    const res = await fetch("/api/love/upload", {
+    const res = await fetch(`/api/love/upload?auth=${encodeURIComponent(token)}`, {
       method: "POST",
-      headers: { "x-admin-auth": getAuthToken() },
+      headers: {
+        "x-admin-auth": token,
+        "Authorization": `Bearer ${token}`
+      },
       body: formData
     });
     const data = await res.json();
@@ -700,6 +724,7 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
+// 发布全量配置 (附带三重鉴权通道)
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
 
@@ -760,6 +785,7 @@ async function saveAllConfigToCloud() {
     customBgUrlGirl: document.getElementById("theme_customBgUrlGirl") ? document.getElementById("theme_customBgUrlGirl").value.trim() : ""
   };
 
+  // 严格从 DOM 提取同步时光轴
   const timelineNodes = currentConfig.timeline || [];
   timelineNodes.forEach((node, idx) => {
     const d = document.getElementById(`tl_date_${idx}`);
@@ -781,14 +807,30 @@ async function saveAllConfigToCloud() {
     if (voi) node.voiceAudio = voi.value;
   });
 
+  // 严格从 DOM 提取同步黑胶歌单
+  const playlistTracks = currentConfig.audio.playlist || [];
+  playlistTracks.forEach((track, idx) => {
+    const pt = document.getElementById(`pl_title_${idx}`);
+    const pa = document.getElementById(`pl_artist_${idx}`);
+    const pu = document.getElementById(`audio_track_url_${idx}`);
+    const pc = document.getElementById(`audio_track_cov_${idx}`);
+
+    if (pt) track.title = pt.value;
+    if (pa) track.artist = pa.value;
+    if (pu) track.url = pu.value;
+    if (pc) track.cover = pc.value;
+  });
+
   showToast("⏳ 正在发布到独立存储空间...");
+  const token = getAuthToken();
 
   try {
-    const res = await fetch("/api/love/config", {
+    const res = await fetch(`/api/love/config?auth=${encodeURIComponent(token)}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-admin-auth": getAuthToken()
+        "x-admin-auth": token,
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({ config: currentConfig })
     });
