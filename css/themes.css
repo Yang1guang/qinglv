@@ -1,147 +1,144 @@
 /**
- * 恋爱时光轴 & 漫游宇宙 (Love Universe)
+ * 众水不灭 · 雅歌之印
  * 文件名: css/themes.css
- * 作用: 全局多维主题色彩、高斯模糊底板与发光滤镜系统
+ * 作用: 12 款男女高奢主题变量定义与浅色系/深色系自适应对比度
  */
 
-/* 1. 默认：暮色星河 (Sunset Twilight) */
-body[data-theme="sunset-twilight"], body:not([data-theme]) {
-  --theme-bg: radial-gradient(circle at 50% -10%, rgba(244, 63, 94, 0.22) 0%, transparent 60%),
-              radial-gradient(circle at 85% 25%, rgba(245, 158, 11, 0.14) 0%, transparent 50%),
-              linear-gradient(180deg, #14172a 0%, #090c19 50%, #050711 100%);
-  --theme-primary: #f43f5e;
-  --theme-primary-hover: #e11d48;
-  --theme-accent: #fb7185;
-  --theme-glow: rgba(244, 63, 94, 0.35);
-  --theme-gold: #f59e0b;
-  --theme-gold-glow: rgba(245, 158, 11, 0.35);
-  --theme-card-bg: rgba(20, 20, 38, 0.72);
-  --theme-glass-border: rgba(255, 255, 255, 0.14);
-  --theme-text-title: linear-gradient(135deg, #ffffff 0%, #fde68a 50%, #fb7185 100%);
+/* ================= 👦 男生 6 套深色主题 ================= */
+body.theme-sunset-twilight {
+  --bg-primary: #090d16;
+  --bg-card: rgba(19, 26, 41, 0.75);
+  --border-card: rgba(245, 158, 11, 0.3);
+  --text-main: #ffffff;
+  --text-sub: #94a3b8;
+  --accent-gold: #f59e0b;
 }
 
-/* 2. 温柔/浪漫：初雪樱花 (Sakura Romance) */
-body[data-theme="sakura-romance"] {
-  --theme-bg: radial-gradient(circle at 50% 0%, rgba(251, 182, 206, 0.35) 0%, transparent 70%),
-              radial-gradient(circle at 10% 40%, rgba(244, 114, 182, 0.2) 0%, transparent 50%),
-              linear-gradient(180deg, #2a1525 0%, #170a16 50%, #0d040c 100%);
-  --theme-primary: #ec4899;
-  --theme-primary-hover: #db2777;
-  --theme-accent: #fbcfe8;
-  --theme-glow: rgba(236, 72, 153, 0.4);
-  --theme-gold: #f472b6;
-  --theme-gold-glow: rgba(244, 114, 182, 0.4);
-  --theme-card-bg: rgba(45, 21, 40, 0.75);
-  --theme-glass-border: rgba(251, 207, 232, 0.2);
-  --theme-text-title: linear-gradient(135deg, #ffffff 0%, #fce7f3 50%, #f472b6 100%);
+body.theme-cyber-space {
+  --bg-primary: #030712;
+  --bg-card: rgba(6, 78, 59, 0.35);
+  --border-card: rgba(52, 211, 153, 0.4);
+  --text-main: #ecfdf5;
+  --text-sub: #6ee7b7;
+  --accent-gold: #10b981;
 }
 
-/* 3. 科技/帅气：赛博漫游 (Cyber Space) */
-body[data-theme="cyber-space"] {
-  --theme-bg: radial-gradient(circle at 50% 10%, rgba(6, 182, 212, 0.2) 0%, transparent 60%),
-              radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.2) 0%, transparent 50%),
-              linear-gradient(180deg, #050c1a 0%, #03060f 60%, #010206 100%);
-  --theme-primary: #06b6d4;
-  --theme-primary-hover: #0891b2;
-  --theme-accent: #38bdf8;
-  --theme-glow: rgba(6, 182, 212, 0.45);
-  --theme-gold: #a855f7;
-  --theme-gold-glow: rgba(168, 85, 247, 0.4);
-  --theme-card-bg: rgba(7, 18, 38, 0.78);
-  --theme-glass-border: rgba(6, 182, 212, 0.25);
-  --theme-text-title: linear-gradient(135deg, #ffffff 0%, #a5f3fc 50%, #38bdf8 100%);
+body.theme-firefly-forest {
+  --bg-primary: #020617;
+  --bg-card: rgba(6, 78, 59, 0.4);
+  --border-card: rgba(110, 231, 183, 0.35);
+  --text-main: #f0fdf4;
+  --text-sub: #86efac;
+  --accent-gold: #22c55e;
 }
 
-/* 4. 治愈/自然：萤火森林 (Firefly Forest) */
-body[data-theme="firefly-forest"] {
-  --theme-bg: radial-gradient(circle at 30% 20%, rgba(52, 211, 153, 0.2) 0%, transparent 60%),
-              radial-gradient(circle at 70% 80%, rgba(251, 191, 36, 0.15) 0%, transparent 50%),
-              linear-gradient(180deg, #081c15 0%, #04100c 50%, #020806 100%);
-  --theme-primary: #10b981;
-  --theme-primary-hover: #059669;
-  --theme-accent: #6ee7b7;
-  --theme-glow: rgba(16, 185, 129, 0.4);
-  --theme-gold: #facc15;
-  --theme-gold-glow: rgba(250, 204, 21, 0.4);
-  --theme-card-bg: rgba(6, 30, 22, 0.78);
-  --theme-glass-border: rgba(110, 231, 183, 0.22);
-  --theme-text-title: linear-gradient(135deg, #ffffff 0%, #d1fae5 50%, #34d399 100%);
+body.theme-warm-ember {
+  --bg-primary: #050101;
+  --bg-card: rgba(69, 10, 10, 0.45);
+  --border-card: rgba(248, 113, 113, 0.35);
+  --text-main: #fef2f2;
+  --text-sub: #fca5a5;
+  --accent-gold: #ef4444;
 }
 
-/* 5. 热情/真挚：炽热余烬 (Warm Ember) */
-body[data-theme="warm-ember"] {
-  --theme-bg: radial-gradient(circle at 50% 20%, rgba(239, 68, 68, 0.25) 0%, transparent 60%),
-              radial-gradient(circle at 80% 90%, rgba(249, 115, 22, 0.2) 0%, transparent 50%),
-              linear-gradient(180deg, #240a0a 0%, #150505 50%, #090202 100%);
-  --theme-primary: #ea580c;
-  --theme-primary-hover: #c2410c;
-  --theme-accent: #fb923c;
-  --theme-glow: rgba(234, 88, 12, 0.45);
-  --theme-gold: #f59e0b;
-  --theme-gold-glow: rgba(245, 158, 11, 0.4);
-  --theme-card-bg: rgba(40, 12, 12, 0.8);
-  --theme-glass-border: rgba(251, 146, 60, 0.22);
-  --theme-text-title: linear-gradient(135deg, #ffffff 0%, #fed7aa 50%, #f97316 100%);
+body.theme-deep-ocean {
+  --bg-primary: #020617;
+  --bg-card: rgba(8, 47, 73, 0.45);
+  --border-card: rgba(56, 189, 248, 0.35);
+  --text-main: #f0f9ff;
+  --text-sub: #7dd3fc;
+  --accent-gold: #0ea5e9;
 }
 
-/* 6. 可爱/治愈：奶油甜梦 (Sweet Dream) */
-body[data-theme="sweet-dream"] {
-  --theme-bg: radial-gradient(circle at 20% 20%, rgba(253, 224, 71, 0.2) 0%, transparent 50%),
-              radial-gradient(circle at 80% 30%, rgba(244, 114, 182, 0.25) 0%, transparent 60%),
-              linear-gradient(180deg, #281932 0%, #170d1e 50%, #0c0611 100%);
-  --theme-primary: #f472b6;
-  --theme-primary-hover: #ec4899;
-  --theme-accent: #fef08a;
-  --theme-glow: rgba(244, 114, 182, 0.4);
-  --theme-gold: #fde047;
-  --theme-gold-glow: rgba(253, 224, 71, 0.4);
-  --theme-card-bg: rgba(42, 22, 54, 0.78);
-  --theme-glass-border: rgba(254, 240, 138, 0.22);
-  --theme-text-title: linear-gradient(135deg, #ffffff 0%, #fef08a 50%, #f472b6 100%);
+body.theme-aurora-night {
+  --bg-primary: #090d16;
+  --bg-card: rgba(59, 7, 100, 0.35);
+  --border-card: rgba(192, 132, 252, 0.35);
+  --text-main: #faf5ff;
+  --text-sub: #d8b4fe;
+  --accent-gold: #a855f7;
 }
 
-/* 动态应用变量至全站核心结构 */
-.universe-body {
-  background: var(--theme-bg) !important;
-  transition: background 0.8s ease;
+/* ================= 👧 女生 6 套浅色唯美主题 ================= */
+body.theme-french-cream {
+  --bg-primary: #f5ebe1;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --border-card: rgba(120, 83, 56, 0.25);
+  --text-main: #3e2723;
+  --text-sub: #795548;
+  --accent-gold: #b45309;
 }
 
-.love-timer, .checklist-card, .gatekeeper__dialog, .egg-modal__dialog, .poster-modal__dialog {
-  background: var(--theme-card-bg) !important;
-  border-color: var(--theme-glass-border) !important;
-  transition: background 0.5s ease, border-color 0.5s ease;
+body.theme-sakura-romance {
+  --bg-primary: #fce7f3;
+  --bg-card: rgba(255, 255, 255, 0.88);
+  --border-card: rgba(244, 63, 94, 0.3);
+  --text-main: #831843;
+  --text-sub: #be185d;
+  --accent-gold: #e11d48;
 }
 
-.section-title__text, .hero-section__names {
-  background: var(--theme-text-title) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
+body.theme-monet-garden {
+  --bg-primary: #dcfce7;
+  --bg-card: rgba(255, 255, 255, 0.88);
+  --border-card: rgba(22, 101, 52, 0.3);
+  --text-main: #14532d;
+  --text-sub: #166534;
+  --accent-gold: #15803d;
 }
 
-.btn-universe--primary {
-  background: linear-gradient(135deg, var(--theme-primary) 0%, #991b1b 100%) !important;
-  box-shadow: 0 6px 20px var(--theme-glow) !important;
+body.theme-morning-dew {
+  --bg-primary: #f1f5f9;
+  --bg-card: rgba(255, 255, 255, 0.92);
+  --border-card: rgba(148, 163, 184, 0.4);
+  --text-main: #0f172a;
+  --text-sub: #475569;
+  --accent-gold: #d97706;
 }
 
-.love-timer__num {
-  color: var(--theme-gold) !important;
-  text-shadow: 0 0 12px var(--theme-gold-glow) !important;
+body.theme-sunset-blush {
+  --bg-primary: #f3e8ff;
+  --bg-card: rgba(255, 255, 255, 0.88);
+  --border-card: rgba(168, 85, 247, 0.3);
+  --text-main: #581c87;
+  --text-sub: #7e22ce;
+  --accent-gold: #9333ea;
 }
 
-/* 自定义高清背景图层 */
-.custom-theme-bg-layer {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0;
-  z-index: 0;
-  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
+body.theme-orange-sea {
+  --bg-primary: #ffedd5;
+  --bg-card: rgba(255, 255, 255, 0.88);
+  --border-card: rgba(234, 88, 12, 0.3);
+  --text-main: #7c2d12;
+  --text-sub: #9a3412;
+  --accent-gold: #ea580c;
 }
-.custom-theme-bg-layer--active {
-  opacity: 0.38;
+
+/* 浅色主题通用文字与卡片反转保护 */
+body[data-theme-type="light"] .hero-section__names {
+  color: var(--text-main) !important;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+body[data-theme-type="light"] .confession-card {
+  background: var(--bg-card) !important;
+  border-color: var(--border-card) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06) !important;
+}
+
+body[data-theme-type="light"] .confession-card__title {
+  color: var(--text-main) !important;
+}
+
+body[data-theme-type="light"] .confession-card__text {
+  color: var(--text-sub) !important;
+}
+
+body[data-theme-type="light"] .checklist-card {
+  background: var(--bg-card) !important;
+  border-color: var(--border-card) !important;
+}
+
+body[data-theme-type="light"] .checklist-item__text {
+  color: var(--text-main) !important;
 }
