@@ -83,7 +83,6 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     }
 
-    // 声纹语音誓言识别
     if (dom.voiceUnlockBtn) {
       dom.voiceUnlockBtn.onclick = (e) => {
         e.preventDefault();
@@ -92,16 +91,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 语音识别主逻辑
   function startVoiceRecognition() {
-    // 💎 1. 兑换码专属授权拦截
     const isLicensed = Boolean(config._license && config._license.unlocked);
     if (!isLicensed) {
       alert("💎 【声纹誓言语音解锁】为星河契约专属版高级特权！\n请长按网页底部版权文字或在后台激活专属授权码解锁此特权。");
       return;
     }
 
-    // 2. 检查浏览器内核支持情况
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("当前浏览器内核暂不支持语音接口，请在手机端使用 Safari / Chrome，或直接在输入框输入口令。");
@@ -111,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const recognition = new SpeechRecognition();
     recognition.lang = "zh-CN";
     recognition.continuous = false;
-    recognition.interimResults = true; // 开启实时拾音反馈
+    recognition.interimResults = true;
 
     if (dom.gatekeeperHint) {
       dom.gatekeeperHint.textContent = "🎙️ 正在聆听您的誓言，请清晰念出...";
@@ -180,15 +176,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 校验语音识别出的文本与预设誓言
   function verifyVoiceVow(spokenText) {
     const cleanSpoken = spokenText.replace(/[，。！？\s]/g, "").toLowerCase();
-    
-    // 获取后台配置的多条语音誓言密码
     const rawVows = config.gatekeeper?.voiceVows || "众水不能熄灭, 我愿一生包容你, 永远爱你, 240520";
     const vowList = rawVows.split(/[,，|]/).map(s => s.replace(/[，。！？\s]/g, "").toLowerCase()).filter(Boolean);
 
-    // 默认兜底放行关键词与正确数字密码
     vowList.push("众水不能熄灭");
     vowList.push("包容");
     vowList.push("接纳");
@@ -295,7 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       if (dom.gatekeeperBtn) {
         dom.gatekeeperBtn.disabled = false;
-        dom.gatekeeperBtn.querySelector("span").textContent = "解密进入圣所";
+        dom.gatekeeperBtn.querySelector("span").textContent = "开启专属时空";
       }
     }
   }
