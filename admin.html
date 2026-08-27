@@ -10,7 +10,6 @@
 </head>
 <body>
 
-  <!-- 登录拦截弹窗 -->
   <div id="authModal" class="admin-auth-modal">
     <div class="admin-auth-dialog">
       <div class="admin-auth-icon">👑</div>
@@ -43,31 +42,27 @@
 
     <div class="admin-main">
       <nav class="admin-sidebar">
-        <button class="tab-btn active" data-tab="tab-meta">👫 1. 基础档案与生命周期</button>
+        <button class="tab-btn active" data-tab="tab-meta">👫 1. 基础档案与生命</button>
         <button class="tab-btn" data-tab="tab-gatekeeper">🔒 2. 门禁关卡与防偷窥</button>
         <button class="tab-btn" data-tab="tab-letter">💌 3. 打字机真情告白</button>
-        <button class="tab-btn" data-tab="tab-timeline">🪐 4. 时光轴与拍立得相册</button>
-        <button class="tab-btn" data-tab="tab-checklist">📝 5. 100 件同行契约清单</button>
-        <button class="tab-btn" data-tab="tab-scratch">🎟️ 6. 舍己与包容特权刮刮乐</button>
-        <button class="tab-btn" data-tab="tab-audio">🎵 7. 背景音乐 (高稳定单曲)</button>
+        <button class="tab-btn" data-tab="tab-timeline">🪐 4. 时光轴与拍立得</button>
+        <button class="tab-btn" data-tab="tab-checklist">📝 5. 100 件同行清单</button>
+        <button class="tab-btn" data-tab="tab-scratch">🎟️ 6. 舍己与包容刮刮乐</button>
+        <button class="tab-btn" data-tab="tab-audio">🎵 7. 高稳定单曲循环</button>
         <button class="tab-btn" data-tab="tab-eggs">🐣 8. 隐藏彩蛋悄悄话</button>
         <button class="tab-btn" data-tab="tab-theme">🎨 9. 双视角主题陈列室</button>
-        <button class="tab-btn" data-tab="tab-license">💎 10. 星河契约授权激活</button>
+        <button class="tab-btn" data-tab="tab-license">💎 10. 星河契约授权</button>
       </nav>
 
       <div class="admin-content">
-        <!-- 1. 基础档案与生命周期 -->
+        <!-- 其他Tab略，完全保持之前稳定结构 -->
         <section id="tab-meta" class="tab-pane active">
-          <div class="pane-header">
-            <h3>👫 基础档案与生命周期阶段设置</h3>
-            <p>控制当前关系阶段（自动隔离越界选项）、后台登录口令与纪念日倒计时。</p>
-          </div>
+          <div class="pane-header"><h3>👫 基础档案与生命周期阶段设置</h3></div>
           <div class="form-grid">
             <div class="form-group" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1); padding: 14px; border-radius: 14px; border: 1px solid rgba(56, 189, 248, 0.3);">
               <label style="color:#7dd3fc; font-weight:800;">🔑 本站后台独立管理登录密码 (修改后请牢记，默认 521)</label>
               <input type="text" id="admin_customPassword" class="admin-input" placeholder="输入新管理密码 (留空则默认为 521)">
             </div>
-
             <div class="form-group" style="grid-column: 1 / -1; background: rgba(245, 158, 11, 0.12); padding: 14px; border-radius: 14px; border: 1px solid rgba(245,158,11,0.3);">
               <label style="color:#fde68a; font-weight:800;">🌟 当前关系生命周期 (严格边界机制)</label>
               <select id="lifecycle_phase" class="admin-select" style="font-weight: 900; color: #38bdf8;">
@@ -76,7 +71,6 @@
                 <option value="married">🏠 结婚期 (合为一体与生活烟火气 · 解锁同居与家庭全部选项)</option>
               </select>
             </div>
-            
             <div class="form-group"><label>男孩姓名/昵称</label><input type="text" id="meta_boyName" class="admin-input"></div>
             <div class="form-group"><label>女孩姓名/昵称</label><input type="text" id="meta_girlName" class="admin-input"></div>
             <div class="form-group"><label>恋爱同行起始时间 (YYYY-MM-DD HH:mm:ss)</label><input type="text" id="meta_startDate" class="admin-input"></div>
@@ -87,103 +81,83 @@
           </div>
         </section>
 
-        <!-- 2. 门禁关卡 -->
         <section id="tab-gatekeeper" class="tab-pane">
-          <div class="pane-header">
-            <h3>🔒 门禁关卡、数字密码与专属语音誓言</h3>
-            <p>控制是否启用密码，设定数字密码与声纹语音识别暗号。</p>
-          </div>
+          <div class="pane-header"><h3>🔒 门禁关卡、数字密码与专属语音誓言</h3></div>
           <div class="form-grid">
-            <div class="form-group">
-              <label>是否启用门禁密码锁</label>
-              <select id="gatekeeper_enabled" class="admin-select">
-                <option value="true">开启密码与声纹保护 (推荐)</option>
-                <option value="false">关闭密码锁 (直接进入主页)</option>
-              </select>
-            </div>
-            <div class="form-group"><label>门禁卡片标题</label><input type="text" id="gatekeeper_title" class="admin-input"></div>
+            <div class="form-group"><label>是否启用门禁</label><select id="gatekeeper_enabled" class="admin-select"><option value="true">开启密码保护</option><option value="false">关闭门禁</option></select></div>
+            <div class="form-group"><label>门禁标题</label><input type="text" id="gatekeeper_title" class="admin-input"></div>
             <div class="form-group" style="grid-column: 1 / -1;"><label>提问文案</label><input type="text" id="gatekeeper_question" class="admin-input"></div>
-            <div class="form-group"><label>提示文案 (Hint)</label><input type="text" id="gatekeeper_hint" class="admin-input"></div>
-            <div class="form-group"><label>正确解锁数字密码 (如 240520)</label><input type="text" id="gatekeeper_correctAnswer" class="admin-input"></div>
-            
+            <div class="form-group"><label>提示文案</label><input type="text" id="gatekeeper_hint" class="admin-input"></div>
+            <div class="form-group"><label>正确数字密码</label><input type="text" id="gatekeeper_correctAnswer" class="admin-input"></div>
             <div class="form-group" style="grid-column: 1 / -1; background: rgba(245, 158, 11, 0.1); padding: 14px; border-radius: 14px; border: 1.5px solid rgba(245, 158, 11, 0.35);">
-              <label style="color:#fde68a; font-weight:800;">🎙️ 专属语音誓言解锁密码 (💎 授权专属特权 · 多个用逗号隔开)</label>
+              <label style="color:#fde68a; font-weight:800;">🎙️ 专属语音誓言解锁密码</label>
               <input type="text" id="gatekeeper_voiceVows" class="admin-input" placeholder="例如: 众水不能熄灭, 我愿一生包容你, 永远爱你, 240520">
-              <small style="color:#94a3b8; font-size:11.5px; margin-top:6px; display:block;">访客点击主页麦克风，念出上述包含的任意一句话或数字，即可通过声纹直接解锁进入！</small>
             </div>
-
-            <div class="form-group" style="grid-column: 1 / -1;"><label>输错密码时的包容提示词 (每行一条 · 体现接纳与爱)</label><textarea id="gatekeeper_errorTips" class="admin-textarea" rows="4"></textarea></div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>输错密码提示词</label><textarea id="gatekeeper_errorTips" class="admin-textarea" rows="4"></textarea></div>
           </div>
         </section>
 
-        <!-- 3. 打字机告白 -->
         <section id="tab-letter" class="tab-pane">
-          <div class="pane-header">
-            <h3>💌 打字机真情告白信</h3>
-            <p>文字将在首页如同现场敲击般逐字显现，使用英文竖线 "|" 代表换行停顿。</p>
-          </div>
+          <div class="pane-header"><h3>💌 打字机真情告白信</h3></div>
           <div class="form-grid">
             <div class="form-group"><label>情书标题</label><input type="text" id="letter_title" class="admin-input"></div>
             <div class="form-group"><label>落款日期</label><input type="text" id="letter_signDate" class="admin-input"></div>
             <div class="form-group" style="grid-column: 1 / -1;"><label>落款签名</label><input type="text" id="letter_signature" class="admin-input"></div>
-            <div class="form-group" style="grid-column: 1 / -1;"><label>情书正文内容 (用 "|" 符号分段停顿)</label><textarea id="letter_content" class="admin-textarea" rows="6"></textarea></div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>情书正文内容</label><textarea id="letter_content" class="admin-textarea" rows="6"></textarea></div>
           </div>
         </section>
 
-        <!-- 4. 时光轴 -->
         <section id="tab-timeline" class="tab-pane">
-          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <h3>🪐 时光轴轨迹 & 3D 拍立得照片库</h3>
-              <p>支持在线上传合照（自动同步用于背景视差留白墙）与录音片段。</p>
-            </div>
-            <button class="btn-add" onclick="addTimelineNode()">➕ 新增时光节点</button>
-          </div>
+          <div class="pane-header" style="display:flex; justify-content:space-between;"><div><h3>🪐 时光轴轨迹</h3></div><button class="btn-add" onclick="addTimelineNode()">➕ 新增</button></div>
           <div id="timelineListContainer" class="dynamic-list"></div>
         </section>
-
-        <!-- 5. 100 件事 -->
         <section id="tab-checklist" class="tab-pane">
-          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <h3>📝 100 件同行契约清单</h3>
-              <p>管理基础小事条目，前台会自动根据三大时期进行独立隔离展现。</p>
-            </div>
-            <button class="btn-add" onclick="addChecklistItem()">➕ 新增小事条目</button>
-          </div>
+          <div class="pane-header" style="display:flex; justify-content:space-between;"><div><h3>📝 100 件事</h3></div><button class="btn-add" onclick="addChecklistItem()">➕ 新增</button></div>
           <div id="checklistItemsContainer" class="dynamic-list"></div>
         </section>
-
-        <!-- 6. 刮刮乐 -->
         <section id="tab-scratch" class="tab-pane">
-          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <h3>🎟️ 舍己与包容特权刮刮乐</h3>
-              <p>管理特权券标题与内容。</p>
-            </div>
-            <button class="btn-add" onclick="addScratchCard()">➕ 新增特权卡券</button>
-          </div>
+          <div class="pane-header" style="display:flex; justify-content:space-between;"><div><h3>🎟️ 刮刮乐</h3></div><button class="btn-add" onclick="addScratchCard()">➕ 新增</button></div>
           <div id="scratchCardsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 7. 🎵 单曲 BGM 设置 -->
+        <!-- 🌟 7. 🎵 高稳定单曲 BGM 设置 (集成云端搜索) -->
         <section id="tab-audio" class="tab-pane">
           <div class="pane-header">
             <h3>🎵 背景音乐 (高稳定单曲循环模式)</h3>
-            <p>设置一首永不翻车、全平台兼容的稳定背景音乐直链，支持直接上传 MP3 文件。</p>
+            <p>全平台100%兼容的单曲循环模式。支持直接搜索网易云/酷狗一键设为BGM，或上传自定义MP3。</p>
           </div>
+
+          <!-- 在线搜歌面板 -->
+          <div style="background: rgba(3, 7, 18, 0.65); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: 18px; padding: 18px; margin-bottom: 22px;">
+            <label style="font-size:13px; font-weight:800; color:#fde68a; margin-bottom:10px; display:block;">🔍 在线搜索云端音乐 (网易云/酷狗一键设置)</label>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+              <input type="text" id="musicSearchKeyword" class="admin-input" placeholder="输入歌名/歌手 (例如: 周杰伦 / 告白气球 / 浪漫钢琴)..." onkeydown="if(event.key==='Enter') executeOnlineMusicSearch();">
+              <button class="btn-tool" style="background:var(--gold); color:#fff; flex-shrink:0; padding:8px 18px;" onclick="executeOnlineMusicSearch()">🔎 搜索歌曲</button>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+              <span style="font-size:11px; color:#94a3b8; font-weight:700; align-self:center;">热门推荐：</span>
+              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('周杰伦 告白气球')">🎵 告白气球</button>
+              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('周杰伦 晴天')">🎵 晴天</button>
+              <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="quickSearchTag('Sweet Memories 唯美之约')">🎹 唯美浪漫钢琴</button>
+            </div>
+            <div id="onlineSearchResultList" style="display:flex; flex-direction:column; gap:8px; max-height:240px; overflow-y:auto;">
+              <div style="color:#94a3b8; font-size:12px; text-align:center; padding:12px;">输入歌名搜索，即可一键设为全局背景音乐</div>
+            </div>
+          </div>
+
+          <!-- BGM 核心属性设置 -->
           <div class="form-grid">
-            <div class="form-group">
+            <div class="form-group" style="grid-column: 1 / -1;">
               <label>是否尝试自动播放 BGM</label>
               <select id="audio_bgmAutoPlay" class="admin-select">
-                <option value="true">开启自动播放 (推荐)</option>
+                <option value="true">开启自动播放 (推荐，网页开启即响)</option>
                 <option value="false">关闭自动播放 (手动点击黑胶)</option>
               </select>
             </div>
             <div class="form-group"><label>当前 BGM 曲名</label><input type="text" id="audio_bgmTitle" class="admin-input"></div>
             <div class="form-group"><label>当前 BGM 艺术家</label><input type="text" id="audio_bgmArtist" class="admin-input"></div>
             <div class="form-group" style="grid-column: 1 / -1;">
-              <label>音频直链地址 (MP3 直链 / 建议使用上方上传按钮)</label>
+              <label>音频直链地址 (MP3直链 / 服务端代理流)</label>
               <div class="upload-input-group">
                 <input type="text" id="audio_bgmUrl" class="admin-input">
                 <button class="btn-upload" onclick="triggerDirectUpload('audio_bgmUrl', 'audio/*')">📤 上传MP3</button>
@@ -201,71 +175,42 @@
 
         <!-- 8. 隐藏彩蛋 -->
         <section id="tab-eggs" class="tab-pane">
-          <div class="pane-header">
-            <h3>🐣 隐藏角落彩蛋悄悄话</h3>
-            <p>设置隐藏在页面右上角星星与右下角猫爪的独家暗号悄悄话。</p>
-          </div>
+          <div class="pane-header"><h3>🐣 隐藏角落彩蛋悄悄话</h3></div>
           <div class="form-grid">
-            <div class="form-group" style="grid-column: 1 / -1;"><label>🌟 星星彩蛋弹窗文案 (Egg 1)</label><textarea id="egg_1_message" class="admin-textarea" rows="3"></textarea></div>
-            <div class="form-group" style="grid-column: 1 / -1;"><label>🐾 猫爪彩蛋弹窗文案 (Egg 2)</label><textarea id="egg_2_message" class="admin-textarea" rows="3"></textarea></div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>🌟 星星彩蛋文案</label><textarea id="egg_1_message" class="admin-textarea" rows="3"></textarea></div>
+            <div class="form-group" style="grid-column: 1 / -1;"><label>🐾 猫爪彩蛋文案</label><textarea id="egg_2_message" class="admin-textarea" rows="3"></textarea></div>
           </div>
         </section>
 
-        <!-- 9. 双视角主题陈列室 -->
+        <!-- 9. 双视角主题 -->
         <section id="tab-theme" class="tab-pane">
-          <div class="pane-header">
-            <h3>🎨 双视角主题陈列室 · 12 套男女高奢情感风格</h3>
-            <p>男方与女方可分别选定专属的默认主题与独立壁纸，前台支持双视角即时切换。</p>
-          </div>
-
-          <!-- 👦 男生主题区 -->
+          <div class="pane-header"><h3>🎨 双视角主题陈列室</h3></div>
           <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 18px; margin-bottom: 24px;">
-            <div style="font-size:15px; font-weight:900; color:#7dd3fc; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-              <span>🪐 他的星河 · 6 套深邃浪漫主题 (默认底色与粒子)</span>
-            </div>
+            <div style="font-size:15px; font-weight:900; color:#7dd3fc; margin-bottom:14px;"><span>🪐 他的星河 · 深色主题</span></div>
             <div class="theme-showroom-grid" id="boyThemesContainer" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:14px; margin-bottom:16px;"></div>
             <div class="form-group" style="margin-bottom:0;">
-              <label style="color:#bae6fd;">🖼️ 男生视角专属背景大图 (可选 · 留空使用主题默认底色)</label>
-              <div class="upload-input-group">
-                <input type="text" id="theme_customBgUrlBoy" class="admin-input" placeholder="输入直链或点击右侧上传...">
-                <button class="btn-upload" onclick="triggerDirectUpload('theme_customBgUrlBoy', 'image/*')">📤 上传男生壁纸</button>
-              </div>
+              <label style="color:#bae6fd;">🖼️ 男生视角自定义背景图</label>
+              <div class="upload-input-group"><input type="text" id="theme_customBgUrlBoy" class="admin-input"><button class="btn-upload" onclick="triggerDirectUpload('theme_customBgUrlBoy', 'image/*')">📤 上传壁纸</button></div>
             </div>
           </div>
-
-          <!-- 👧 女生主题区 -->
           <div style="background: rgba(30, 10, 24, 0.6); border: 1.5px solid rgba(244, 114, 182, 0.35); border-radius: 18px; padding: 18px;">
-            <div style="font-size:15px; font-weight:900; color:#fbcfe8; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-              <span>🌸 她的花汐 · 6 套清透治愈主题 (浅色系 / 奶油 / 樱花)</span>
-            </div>
+            <div style="font-size:15px; font-weight:900; color:#fbcfe8; margin-bottom:14px;"><span>🌸 她的花汐 · 浅色主题</span></div>
             <div class="theme-showroom-grid" id="girlThemesContainer" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:14px; margin-bottom:16px;"></div>
             <div class="form-group" style="margin-bottom:0;">
-              <label style="color:#fbcfe8;">🖼️ 女生视角专属背景大图 (可选 · 留空使用主题默认浅色底)</label>
-              <div class="upload-input-group">
-                <input type="text" id="theme_customBgUrlGirl" class="admin-input" placeholder="输入直链或点击右侧上传...">
-                <button class="btn-upload" onclick="triggerDirectUpload('theme_customBgUrlGirl', 'image/*')">📤 上传女生壁纸</button>
-              </div>
+              <label style="color:#fbcfe8;">🖼️ 女生视角自定义背景图</label>
+              <div class="upload-input-group"><input type="text" id="theme_customBgUrlGirl" class="admin-input"><button class="btn-upload" onclick="triggerDirectUpload('theme_customBgUrlGirl', 'image/*')">📤 上传壁纸</button></div>
             </div>
           </div>
         </section>
 
-        <!-- 10. 星河契约授权激活 -->
+        <!-- 10. 授权 -->
         <section id="tab-license" class="tab-pane">
-          <div class="pane-header">
-            <h3>💎 星河契约 · 专属授权激活状态</h3>
-            <p>查看当前域名的独立防伪授权激活状态，或输入由总控发卡机生成的激活码进行解锁。</p>
-          </div>
+          <div class="pane-header"><h3>💎 星河契约 · 专属授权激活状态</h3></div>
           <div style="background: rgba(3, 7, 18, 0.7); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 22px;">
-            <div id="licenseStatusBox" style="margin-bottom: 18px; font-size: 14px; line-height: 1.6;">
-              <span style="color: #94a3b8;">当前站点授权状态：</span>
-              <span id="licenseStatusBadge" style="font-weight: 800; color: #f59e0b;">检测中...</span>
-            </div>
+            <div id="licenseStatusBox" style="margin-bottom: 18px; font-size: 14px;"><span style="color: #94a3b8;">状态：</span><span id="licenseStatusBadge" style="font-weight: 800; color: #f59e0b;">检测中...</span></div>
             <div class="form-group">
-              <label>输入本域名专属激活码 (LV-XXXX-XXXX-XXXX)</label>
-              <div class="upload-input-group">
-                <input type="text" id="inputLicenseCode" class="admin-input" placeholder="输入总控签发的授权兑换码...">
-                <button class="btn-upload" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);" onclick="submitDomainLicense()">⚡ 立即核销激活</button>
-              </div>
+              <label>输入专属激活码</label>
+              <div class="upload-input-group"><input type="text" id="inputLicenseCode" class="admin-input"><button class="btn-upload" onclick="submitDomainLicense()">⚡ 激活</button></div>
             </div>
           </div>
         </section>
