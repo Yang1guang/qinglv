@@ -1,441 +1,403 @@
 /**
- * 恋爱时光轴 & 漫游宇宙 (Love Universe)
+ * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 全屏星空流星、烟花彩带粒子、音乐播放与黑胶唱片总控
+ * 作用: 动效中枢、多曲目黑胶播放列表控制器、烟花与粒子音效
  */
 
-class EffectsManager {
+class EffectsEngine {
   constructor(config) {
     this.config = config || window.LOVE_CONFIG || {};
-    this.audioCtx = null;
-    this.bgm = null;
-    this.isPlayingBgm = false;
-    this.fallbackMusic = "https://music.163.com/song/media/outer/url?id=1827600686.mp3";
+    this.bgmAudio = null;
+    this.isPlaying = false;
+    this.currentTrackIndex = 0;
+    this.playlist = this.getNormalizedPlaylist();
+
+    this.fireworksCanvas = document.getElementById("fireworks-canvas");
+    this.fwCtx = this.fireworksCanvas ? this.fireworksCanvas.getContext("2d") : null;
+    this.fireworks = [];
+    this.confettiParticles = [];
+
+    this.init();
+  }
+
+  getNormalizedPlaylist() {
+    const audioCfg = this.config.audio || {};
+    if (Array.isArray(audioCfg.playlist) && audioCfg.playlist.length > 0) {
+      return audioCfg.playlist;
+    }
+    // 兼容旧单曲配置
+    if (audioCfg.bgmUrl) {
+      return [{
+        title: audioCfg.bgmTitle || "告白气球",
+        artist: audioCfg.bgmArtist || "周杰伦",
+        url: audioCfg.bgmUrl,
+        cover: audioCfg.vinylCover || ""
+      }];
+    }
+    return [{
+      title: "告白气球",
+      artist: "周杰伦",
+      url: "https://music.163.com/song/media/outer/url?id=436514312.mp3",
+      cover: ""
+    }];
   }
 
   init() {
-    this.initStarrySky();
-    this.initFireworksCanvas();
-    this.initAudioSystem();
+    this.initAudioPlayer();
+    this.initCanvasSize();
+    this.initEventListeners();
+    this.renderPlaylistPopup();
+    this.updateTrackInfoDisplay();
+
+    window.addEventListener("resize", () => this.initCanvasSize());
+    this.startAnimationLoop();
   }
 
   updateConfig(newConfig) {
-    this.config = newConfig;
-    if (this.bgm) {
-      this.bgm.pause();
-      this.isPlayingBgm = false;
-      this.updateVinylUI(false);
+    this.config = newConfig || {};
+    this.playlist = this.getNormalizedPlaylist();
+    this.renderPlaylistPopup();
+    this.updateTrackInfoDisplay();
+  }
+
+  initCanvasSize() {
+    if (this.fireworksCanvas) {
+      this.fireworksCanvas.width = window.innerWidth;
+      this.fireworksCanvas.height = window.innerHeight;
     }
-    this.initBgmInstance();
-    if (newConfig.audio?.bgmAutoPlay) {
+  }
+
+  // ================= 🎵 播放器与多曲目轮播控制 =================
+  initAudioPlayer() {
+    if (!this.bgmAudio) {
+      this.bgmAudio = new Audio();
+      this.bgmAudio.preload = "auto";
+
+      // 歌曲自然播完后，自动切入下一首 (自动循环整张歌单)
+      this.bgmAudio.addEventListener("ended", () => {
+        this.nextTrack(true);
+      });
+
+      this.bgmAudio.addEventListener("play", () => {
+        this.isPlaying = true;
+        this.setVinylVisualPlaying(true);
+      });
+
+      this.bgmAudio.addEventListener("pause", () => {
+        this.isPlaying = false;
+        this.setVinylVisualPlaying(false);
+      });
+
+      this.bgmAudio.addEventListener("error", () => {
+        // 音频加载异常时尝试自动跳至下一首
+        console.warn("当前音频加载受阻，正在尝试载入备用曲目...");
+      });
+    }
+
+    this.loadTrack(this.currentTrackIndex, false);
+  }
+
+  loadTrack(index, autoPlay = true) {
+    if (this.playlist.length === 0) return;
+    if (index < 0) index = this.playlist.length - 1;
+    if (index >= this.playlist.length) index = 0;
+
+    this.currentTrackIndex = index;
+    const track = this.playlist[this.currentTrackIndex];
+
+    this.bgmAudio.src = track.url;
+    this.updateTrackInfoDisplay();
+    this.highlightActivePlaylistItem();
+
+    if (autoPlay) {
       this.playBgm();
     }
   }
 
-  ensureAudioContext() {
-    if (!this.audioCtx) {
-      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtxClass) this.audioCtx = new AudioCtxClass();
-    }
-    if (this.audioCtx && this.audioCtx.state === "suspended") {
-      this.audioCtx.resume();
-    }
+  playBgm() {
+    if (!this.bgmAudio) return;
+    this.bgmAudio.play().then(() => {
+      this.isPlaying = true;
+      this.setVinylVisualPlaying(true);
+      const track = this.playlist[this.currentTrackIndex];
+      this.showMiniToast(`🎶 正在播放: ${track.title} - ${track.artist}`);
+    }).catch(() => {
+      // 浏览器未交互前拦截自动播放属于正常安全机制
+      this.isPlaying = false;
+      this.setVinylVisualPlaying(false);
+    });
   }
 
-  /* ================= 音乐播放与黑胶唱片联动 ================= */
-  initAudioSystem() {
-    this.initBgmInstance();
-
-    const toggleBtn = document.getElementById("audio-toggle-btn");
-    const vinylDisc = document.getElementById("vinyl-disc");
-
-    if (toggleBtn) {
-      toggleBtn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.ensureAudioContext();
-        this.toggleBgm();
-      };
-    }
-
-    if (vinylDisc) {
-      vinylDisc.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.ensureAudioContext();
-        this.toggleBgm();
-      };
-    }
-
-    // 监听任意手势与按键，唤醒并自动起播
-    const gestureAutoPlay = () => {
-      this.ensureAudioContext();
-      if (this.config.audio?.bgmAutoPlay !== false && !this.isPlayingBgm) {
-        this.playBgm();
-      }
-      window.removeEventListener("click", gestureAutoPlay);
-      window.removeEventListener("touchstart", gestureAutoPlay);
-      window.removeEventListener("keydown", gestureAutoPlay);
-    };
-
-    window.addEventListener("click", gestureAutoPlay, { passive: true });
-    window.addEventListener("touchstart", gestureAutoPlay, { passive: true });
-    window.addEventListener("keydown", gestureAutoPlay, { passive: true });
-
-    // 初始化时直接尝试自动播放
-    if (this.config.audio?.bgmAutoPlay !== false) {
-      setTimeout(() => { this.playBgm(); }, 500);
-    }
-  }
-
-  initBgmInstance() {
-    const audioCfg = this.config.audio || {};
-    const coverEl = document.getElementById("vinyl-cover");
-
-    if (coverEl) {
-      if (audioCfg.vinylCover && audioCfg.vinylCover.trim()) {
-        coverEl.src = audioCfg.vinylCover;
-        coverEl.style.display = "block";
-      } else {
-        coverEl.style.display = "none";
-      }
-    }
-
-    let targetUrl = (audioCfg.bgmUrl || "").trim();
-    if (!targetUrl || targetUrl.startsWith("assets/")) {
-      targetUrl = this.fallbackMusic;
-    }
-
-    if (!this.bgm) {
-      this.bgm = new Audio();
-      this.bgm.loop = true;
-      this.bgm.preload = "auto";
-    }
-    this.bgm.src = targetUrl;
+  pauseBgm() {
+    if (!this.bgmAudio) return;
+    this.bgmAudio.pause();
+    this.isPlaying = false;
+    this.setVinylVisualPlaying(false);
   }
 
   toggleBgm() {
-    if (this.isPlayingBgm) {
+    if (this.isPlaying) {
       this.pauseBgm();
     } else {
       this.playBgm();
     }
   }
 
-  playBgm() {
-    if (!this.bgm) this.initBgmInstance();
-
-    const doPlay = () => {
-      return this.bgm.play().then(() => {
-        this.isPlayingBgm = true;
-        this.updateVinylUI(true);
-      });
-    };
-
-    doPlay().catch(() => {
-      // 切换至备用流重试
-      if (this.bgm.src !== this.fallbackMusic) {
-        this.bgm.src = this.fallbackMusic;
-        doPlay().catch(() => {
-          this.isPlayingBgm = false;
-          this.updateVinylUI(false);
-        });
-      } else {
-        this.isPlayingBgm = false;
-        this.updateVinylUI(false);
-      }
-    });
+  nextTrack(isAuto = false) {
+    const nextIdx = (this.currentTrackIndex + 1) % this.playlist.length;
+    this.setNeedleState(false);
+    setTimeout(() => {
+      this.loadTrack(nextIdx, true);
+    }, 250);
   }
 
-  pauseBgm() {
-    if (!this.bgm) return;
-    this.bgm.pause();
-    this.isPlayingBgm = false;
-    this.updateVinylUI(false);
+  prevTrack() {
+    const prevIdx = (this.currentTrackIndex - 1 + this.playlist.length) % this.playlist.length;
+    this.setNeedleState(false);
+    setTimeout(() => {
+      this.loadTrack(prevIdx, true);
+    }, 250);
   }
 
-  updateVinylUI(isPlaying) {
+  selectTrack(index) {
+    this.setNeedleState(false);
+    setTimeout(() => {
+      this.loadTrack(index, true);
+    }, 200);
+  }
+
+  // 黑胶唱针与旋转视觉联动
+  setVinylVisualPlaying(playing) {
     const disc = document.getElementById("vinyl-disc");
-    const needle = document.getElementById("vinyl-needle");
-    const btn = document.getElementById("audio-toggle-btn");
+    const toggleBtn = document.getElementById("audio-toggle-btn");
 
-    if (disc) disc.classList.toggle("vinyl-player__disc--spinning", isPlaying);
-    if (needle) needle.classList.toggle("vinyl-player__needle--play", isPlaying);
-    if (btn) btn.textContent = isPlaying ? "⏸️" : "🎵";
-  }
-
-  /* ================= 物理合成音效 ================= */
-  playAudio(soundType) {
-    try {
-      this.ensureAudioContext();
-      if (!this.audioCtx) return;
-      const ctx = this.audioCtx;
-      const now = ctx.currentTime;
-
-      if (soundType === "gatekeeperPass") {
-        [523.25, 659.25, 783.99, 987.77, 1174.66].forEach((freq, i) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = "triangle";
-          osc.frequency.setValueAtTime(freq, now + i * 0.06);
-          gain.gain.setValueAtTime(0, now + i * 0.06);
-          gain.gain.linearRampToValueAtTime(0.12, now + i * 0.06 + 0.04);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.8);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(now + i * 0.06);
-          osc.stop(now + i * 0.06 + 0.85);
-        });
-      } else if (soundType === "gatekeeperError") {
-        [220, 180].forEach((freq, i) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = "sawtooth";
-          osc.frequency.setValueAtTime(freq, now + i * 0.12);
-          gain.gain.setValueAtTime(0.1, now + i * 0.12);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.18);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(now + i * 0.12);
-          osc.stop(now + i * 0.12 + 0.2);
-        });
-      } else if (soundType === "stamp") {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.exponentialRampToValueAtTime(30, now + 0.16);
-        gain.gain.setValueAtTime(0.35, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.22);
-      } else if (soundType === "scratch" || soundType === "flip") {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(800 + Math.random() * 400, now);
-        gain.gain.setValueAtTime(0.03, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.06);
-      }
-    } catch (_) {}
-  }
-
-  /* ================= 星空与烟花 ================= */
-  initStarrySky() {
-    const canvas = document.getElementById("starry-canvas");
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-
-    window.addEventListener("resize", () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      createStars();
-    });
-
-    const stars = [];
-    const starCount = Math.floor((width * height) / 6500);
-
-    const createStars = () => {
-      stars.length = 0;
-      for (let i = 0; i < starCount; i++) {
-        stars.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          radius: Math.random() * 1.5 + 0.3,
-          alpha: Math.random(),
-          speed: Math.random() * 0.02 + 0.005,
-          increasing: Math.random() > 0.5,
-        });
-      }
-    };
-    createStars();
-
-    const meteors = [];
-    const spawnMeteor = () => {
-      if (meteors.length < 2 && Math.random() < 0.035) {
-        meteors.push({
-          x: Math.random() * width + width * 0.2,
-          y: Math.random() * (height * 0.4),
-          len: Math.random() * 80 + 110,
-          speed: Math.random() * 8 + 6,
-          angle: (Math.PI / 4) * (1 + (Math.random() * 0.2 - 0.1)),
-          alpha: 1,
-        });
-      }
-    };
-
-    const render = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      stars.forEach((star) => {
-        if (star.increasing) {
-          star.alpha += star.speed;
-          if (star.alpha >= 1) star.increasing = false;
-        } else {
-          star.alpha -= star.speed;
-          if (star.alpha <= 0.1) star.increasing = true;
-        }
-        ctx.fillStyle = `rgba(255, 240, 245, ${star.alpha})`;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      spawnMeteor();
-      for (let i = meteors.length - 1; i >= 0; i--) {
-        const m = meteors[i];
-        const tailX = m.x - Math.cos(m.angle) * m.len;
-        const tailY = m.y - Math.sin(m.angle) * m.len;
-
-        const grad = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
-        grad.addColorStop(0, `rgba(255, 255, 255, ${m.alpha})`);
-        grad.addColorStop(1, `rgba(251, 113, 133, 0)`);
-
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 1.6;
-        ctx.beginPath();
-        ctx.moveTo(m.x, m.y);
-        ctx.lineTo(tailX, tailY);
-        ctx.stroke();
-
-        m.x += Math.cos(m.angle) * m.speed;
-        m.y += Math.sin(m.angle) * m.speed;
-        m.alpha -= 0.012;
-
-        if (m.alpha <= 0 || m.x < 0 || m.y > height) {
-          meteors.splice(i, 1);
-        }
-      }
-
-      requestAnimationFrame(render);
-    };
-
-    render();
-  }
-
-  initFireworksCanvas() {
-    this.fwCanvas = document.getElementById("fireworks-canvas");
-    if (!this.fwCanvas) return;
-    this.fwCtx = this.fwCanvas.getContext("2d");
-    this.fwCanvas.width = window.innerWidth;
-    this.fwCanvas.height = window.innerHeight;
-
-    window.addEventListener("resize", () => {
-      if (this.fwCanvas) {
-        this.fwCanvas.width = window.innerWidth;
-        this.fwCanvas.height = window.innerHeight;
-      }
-    });
-
-    this.particles = [];
-    this.isFwRunning = false;
-  }
-
-  fireConfetti() {
-    if (!this.fwCanvas) return;
-    const colors = ["#f43f5e", "#fb7185", "#f59e0b", "#38bdf8", "#a855f7", "#34d399"];
-    for (let i = 0; i < 110; i++) {
-      this.particles.push({
-        x: window.innerWidth / 2,
-        y: window.innerHeight * 0.6,
-        vx: (Math.random() - 0.5) * 18,
-        vy: (Math.random() - 0.8) * 20,
-        size: Math.random() * 8 + 6,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        rotation: Math.random() * 360,
-        rotSpeed: (Math.random() - 0.5) * 12,
-        alpha: 1,
-        gravity: 0.35,
-        type: "rect",
-      });
-    }
-    if (!this.isFwRunning) this.runParticleLoop();
-  }
-
-  fireFireworks() {
-    if (!this.fwCanvas) return;
-    const colors = ["#ffedd5", "#fde047", "#f43f5e", "#67e8f9", "#c084fc", "#ffffff"];
-    const originX = Math.random() * (window.innerWidth * 0.6) + window.innerWidth * 0.2;
-    const originY = Math.random() * (window.innerHeight * 0.4) + window.innerHeight * 0.2;
-
-    for (let i = 0; i < 130; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 9 + 2;
-      this.particles.push({
-        x: originX,
-        y: originY,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        size: Math.random() * 3.5 + 2,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        rotation: 0,
-        rotSpeed: 0,
-        alpha: 1,
-        gravity: 0.1,
-        type: "circle",
-      });
-    }
-    if (!this.isFwRunning) this.runParticleLoop();
-  }
-
-  runParticleLoop() {
-    this.isFwRunning = true;
-    const ctx = this.fwCtx;
-    const canvas = this.fwCanvas;
-
-    const loop = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (let i = this.particles.length - 1; i >= 0; i--) {
-        const p = this.particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += p.gravity;
-        p.rotation += p.rotSpeed;
-        p.alpha -= 0.012;
-
-        if (p.alpha <= 0) {
-          this.particles.splice(i, 1);
-          continue;
-        }
-
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate((p.rotation * Math.PI) / 180);
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = p.color;
-
-        if (p.type === "rect") {
-          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-        } else {
-          ctx.beginPath();
-          ctx.arc(0, 0, p.size, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.restore();
-      }
-
-      if (this.particles.length > 0) {
-        requestAnimationFrame(loop);
+    if (disc) {
+      if (playing) {
+        disc.classList.add("vinyl-disc--playing");
       } else {
-        this.isFwRunning = false;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        disc.classList.remove("vinyl-disc--playing");
       }
+    }
+    if (toggleBtn) {
+      toggleBtn.textContent = playing ? "⏸️" : "🎵";
+    }
+    this.setNeedleState(playing);
+  }
+
+  setNeedleState(onDisc) {
+    const needle = document.getElementById("vinyl-needle");
+    if (needle) {
+      if (onDisc) {
+        needle.classList.add("vinyl-needle--play");
+      } else {
+        needle.classList.remove("vinyl-needle--play");
+      }
+    }
+  }
+
+  updateTrackInfoDisplay() {
+    if (this.playlist.length === 0) return;
+    const track = this.playlist[this.currentTrackIndex];
+    const coverImg = document.getElementById("vinyl-cover");
+    const defaultHeart = document.querySelector(".vinyl-player__default-heart");
+
+    if (coverImg) {
+      if (track.cover) {
+        coverImg.src = track.cover;
+        coverImg.style.display = "block";
+        if (defaultHeart) defaultHeart.style.display = "none";
+      } else {
+        coverImg.style.display = "none";
+        if (defaultHeart) defaultHeart.style.display = "block";
+      }
+    }
+  }
+
+  renderPlaylistPopup() {
+    const container = document.getElementById("vinyl-playlist-items");
+    if (!container) return;
+
+    container.innerHTML = this.playlist.map((track, idx) => `
+      <div class="vinyl-playlist-item ${idx === this.currentTrackIndex ? 'active' : ''}" onclick="window.Effects.selectTrack(${idx})">
+        <div class="vinyl-playlist-item-idx">${idx + 1}</div>
+        <div class="vinyl-playlist-item-info">
+          <div class="vinyl-playlist-item-title">${this.escape(track.title)}</div>
+          <div class="vinyl-playlist-item-artist">${this.escape(track.artist)}</div>
+        </div>
+        <div class="vinyl-playlist-item-status">${idx === this.currentTrackIndex ? '▶' : ''}</div>
+      </div>
+    `).join("");
+  }
+
+  highlightActivePlaylistItem() {
+    document.querySelectorAll(".vinyl-playlist-item").forEach((el, idx) => {
+      if (idx === this.currentTrackIndex) {
+        el.classList.add("active");
+        const status = el.querySelector(".vinyl-playlist-item-status");
+        if (status) status.textContent = "▶";
+      } else {
+        el.classList.remove("active");
+        const status = el.querySelector(".vinyl-playlist-item-status");
+        if (status) status.textContent = "";
+      }
+    });
+  }
+
+  togglePlaylistPopup() {
+    const popup = document.getElementById("vinyl-playlist-popup");
+    if (!popup) return;
+    const isVisible = popup.style.display === "block";
+    popup.style.display = isVisible ? "none" : "block";
+  }
+
+  showMiniToast(text) {
+    const toast = document.getElementById("toast") || document.createElement("div");
+    toast.className = "admin-toast show";
+    toast.textContent = text;
+    if (!document.body.contains(toast)) document.body.appendChild(toast);
+    setTimeout(() => toast.classList.remove("show"), 2800);
+  }
+
+  // ================= 事件与动效 =================
+  initEventListeners() {
+    const disc = document.getElementById("vinyl-disc");
+    const toggleBtn = document.getElementById("audio-toggle-btn");
+    const prevBtn = document.getElementById("audio-prev-btn");
+    const nextBtn = document.getElementById("audio-next-btn");
+    const playlistBtn = document.getElementById("audio-playlist-btn");
+    const playlistClose = document.getElementById("vinyl-playlist-close");
+
+    if (disc) disc.onclick = () => this.toggleBgm();
+    if (toggleBtn) toggleBtn.onclick = () => this.toggleBgm();
+    if (prevBtn) prevBtn.onclick = (e) => { e.stopPropagation(); this.prevTrack(); };
+    if (nextBtn) nextBtn.onclick = (e) => { e.stopPropagation(); this.nextTrack(); };
+    if (playlistBtn) playlistBtn.onclick = (e) => { e.stopPropagation(); this.togglePlaylistPopup(); };
+    if (playlistClose) playlistClose.onclick = () => {
+      const popup = document.getElementById("vinyl-playlist-popup");
+      if (popup) popup.style.display = "none";
+    };
+  }
+
+  // 音效触发
+  playAudio(soundName) {
+    const soundMap = {
+      gatekeeperPass: "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3",
+      gatekeeperError: "https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3",
+      stamp: "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3",
+      scratch: "https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3",
+      flip: "https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3"
     };
 
+    const url = soundMap[soundName];
+    if (url) {
+      try {
+        const snd = new Audio(url);
+        snd.volume = 0.6;
+        snd.play().catch(() => {});
+      } catch (_) {}
+    }
+  }
+
+  // 浪漫烟花粒子
+  fireFireworks() {
+    if (!this.fwCtx) return;
+    const colors = ["#f43f5e", "#f59e0b", "#38bdf8", "#a855f7", "#ec4899", "#ffffff"];
+    for (let f = 0; f < 5; f++) {
+      setTimeout(() => {
+        const x = window.innerWidth * (0.2 + Math.random() * 0.6);
+        const y = window.innerHeight * (0.2 + Math.random() * 0.4);
+        for (let i = 0; i < 45; i++) {
+          const angle = (Math.PI * 2 * i) / 45;
+          const speed = Math.random() * 5 + 2;
+          this.fireworks.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            alpha: 1,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            radius: Math.random() * 2.5 + 1.2
+          });
+        }
+      }, f * 180);
+    }
+  }
+
+  // 彩带喷洒
+  fireConfetti() {
+    if (!this.fwCtx) return;
+    const colors = ["#fb7185", "#fde68a", "#a7f3d0", "#bae6fd", "#fbcfe8"];
+    for (let i = 0; i < 70; i++) {
+      this.confettiParticles.push({
+        x: Math.random() * window.innerWidth,
+        y: -10,
+        vx: (Math.random() - 0.5) * 4,
+        vy: Math.random() * 4 + 3,
+        size: Math.random() * 8 + 4,
+        rotation: Math.random() * 360,
+        rotSpeed: (Math.random() - 0.5) * 10,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        alpha: 1
+      });
+    }
+  }
+
+  startAnimationLoop() {
+    const loop = () => {
+      if (this.fwCtx) {
+        this.fwCtx.clearRect(0, 0, this.fireworksCanvas.width, this.fireworksCanvas.height);
+
+        // 更新烟花
+        for (let i = this.fireworks.length - 1; i >= 0; i--) {
+          const p = this.fireworks[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.05; // 重力
+          p.alpha -= 0.015;
+
+          if (p.alpha <= 0) {
+            this.fireworks.splice(i, 1);
+          } else {
+            this.fwCtx.beginPath();
+            this.fwCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            this.fwCtx.fillStyle = p.color;
+            this.fwCtx.globalAlpha = p.alpha;
+            this.fwCtx.shadowColor = p.color;
+            this.fwCtx.shadowBlur = 8;
+            this.fwCtx.fill();
+            this.fwCtx.shadowBlur = 0;
+          }
+        }
+
+        // 更新彩带
+        for (let i = this.confettiParticles.length - 1; i >= 0; i--) {
+          const c = this.confettiParticles[i];
+          c.x += c.vx;
+          c.y += c.vy;
+          c.rotation += c.rotSpeed;
+          c.alpha -= 0.008;
+
+          if (c.y > window.innerHeight || c.alpha <= 0) {
+            this.confettiParticles.splice(i, 1);
+          } else {
+            this.fwCtx.save();
+            this.fwCtx.translate(c.x, c.y);
+            this.fwCtx.rotate((c.rotation * Math.PI) / 180);
+            this.fwCtx.fillStyle = c.color;
+            this.fwCtx.globalAlpha = c.alpha;
+            this.fwCtx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size * 0.6);
+            this.fwCtx.restore();
+          }
+        }
+        this.fwCtx.globalAlpha = 1;
+      }
+      requestAnimationFrame(loop);
+    };
     loop();
+  }
+
+  escape(s) {
+    return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 }
 
-window.Effects = new EffectsManager(window.LOVE_CONFIG);
-document.addEventListener("DOMContentLoaded", () => {
-  window.Effects.init();
-});
+window.Effects = new EffectsEngine();
