@@ -5,94 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   
-  <meta property="og:title" content="💌 我们的漫游宇宙 · 纪念档案">
-  <meta property="og:description" content="记录同行轨迹与专属特权">
+  <meta property="og:title" content="💌 我们的雅歌之印 · 恒久印记">
+  <meta property="og:description" content="众水不能熄灭爱情，大水不能淹没">
   <meta property="og:image" content="assets/images/share-cover.jpg">
 
-  <title>我们的漫游宇宙 · 恋爱时光轴</title>
+  <title>众水不灭 · 我们的恒久印记</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23f43f5e'/><text x='50' y='64' font-size='38' text-anchor='middle' fill='%23ffffff' font-family='sans-serif' font-weight='bold'>❤️</text></svg>">
 
-  <!-- 全局样式体系引入 -->
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/photo-wall.css">
 </head>
 <body class="universe-body">
+
+  <!-- 全局视差照片墙背景层 -->
+  <div id="parallax-photo-wall" class="parallax-photo-wall"></div>
 
   <!-- 全局动态背景画布 -->
   <canvas id="starry-canvas" class="universe-canvas"></canvas>
   <canvas id="fireworks-canvas" class="fireworks-canvas"></canvas>
 
-  <!-- ================= 1. 密码解锁门禁层 (#gatekeeper-screen) ================= -->
+  <!-- ================= 1. 声纹与密码门禁层 ================= -->
   <section id="gatekeeper-screen" class="gatekeeper">
     <div class="gatekeeper__dialog">
       <div class="gatekeeper__header">
-        <div class="gatekeeper__badge">SECURE ARCHIVE</div>
-        <h2 class="gatekeeper__title" id="gatekeeper-title">🔒 验证默契档案</h2>
+        <div class="gatekeeper__badge">SACRED ARCHIVE</div>
+        <h2 class="gatekeeper__title" id="gatekeeper-title">🔒 验证恒久契约</h2>
       </div>
 
       <div class="gatekeeper__content">
-        <p class="gatekeeper__question" id="gatekeeper-question">请输入纪念日专属口令：</p>
-        <div class="gatekeeper__input-wrap">
+        <p class="gatekeeper__question" id="gatekeeper-question">请输入纪念日口令，或点击麦克风念出誓言：</p>
+        <div class="gatekeeper__input-group" style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
           <input 
             type="password" 
             id="gatekeeper-input" 
             class="gatekeeper__input" 
-            placeholder="输入口令..." 
+            placeholder="输入6位口令..." 
             maxlength="20" 
             autocomplete="off"
-            autofocus
+            style="flex: 1;"
           >
+          <button id="voice-unlock-btn" class="btn-universe btn-universe--secondary" title="点击念出誓言语音解锁" style="padding: 12px 16px; border-radius: 14px;">
+            🎙️
+          </button>
         </div>
-        <p class="gatekeeper__hint" id="gatekeeper-hint">提示信息正在加载...</p>
+        <p class="gatekeeper__hint" id="gatekeeper-hint">提示：包容与接纳，爱是永不止息</p>
       </div>
 
       <div class="gatekeeper__footer">
         <button id="gatekeeper-btn" class="btn-universe btn-universe--primary gatekeeper__btn">
-          <span>解密进入</span>
+          <span>解密进入圣所</span>
           <span class="gatekeeper__btn-icon">➔</span>
         </button>
       </div>
     </div>
   </section>
 
-  <!-- ================= 2. 主内容视窗 (#main-container) ================= -->
+  <!-- ================= 2. 主内容视窗 ================= -->
   <main id="main-container" class="main-container main-container--hidden">
     
-    <!-- 头部视差区: 标题与实时计时器 -->
+    <!-- 头部视差区 -->
     <header class="hero-section">
-      <div class="hero-section__badge">PRIVATE MEMORIAL HUB</div>
+      <div class="hero-section__badge">THE ETERNAL SEAL</div>
       <h1 class="hero-section__names" id="hero-names">张小阳 & 李小光</h1>
-      <p class="hero-section__subtitle" id="hero-subtitle">山水一程，三生有幸 · 属于我们的数字博物馆</p>
+      <p class="hero-section__subtitle" id="hero-subtitle">众水不能熄灭爱情，大水不能淹没 · 一生一世的契约</p>
 
       <!-- 核心同行计时器 -->
       <div class="love-timer">
-        <div class="love-timer__title">我们已经一起走过了</div>
+        <div class="love-timer__title">我们已经同行并守护了</div>
         <div class="love-timer__grid" id="timer-grid">
-          <div class="love-timer__unit">
-            <span class="love-timer__num" id="timer-years">0</span>
-            <span class="love-timer__label">年</span>
-          </div>
-          <div class="love-timer__unit">
-            <span class="love-timer__num" id="timer-days">000</span>
-            <span class="love-timer__label">天</span>
-          </div>
-          <div class="love-timer__unit">
-            <span class="love-timer__num" id="timer-hours">00</span>
-            <span class="love-timer__label">时</span>
-          </div>
-          <div class="love-timer__unit">
-            <span class="love-timer__num" id="timer-minutes">00</span>
-            <span class="love-timer__label">分</span>
-          </div>
-          <div class="love-timer__unit">
-            <span class="love-timer__num" id="timer-seconds">00</span>
-            <span class="love-timer__label">秒</span>
-          </div>
+          <div class="love-timer__unit"><span class="love-timer__num" id="timer-years">0</span><span class="love-timer__label">年</span></div>
+          <div class="love-timer__unit"><span class="love-timer__num" id="timer-days">000</span><span class="love-timer__label">天</span></div>
+          <div class="love-timer__unit"><span class="love-timer__num" id="timer-hours">00</span><span class="love-timer__label">时</span></div>
+          <div class="love-timer__unit"><span class="love-timer__num" id="timer-minutes">00</span><span class="love-timer__label">分</span></div>
+          <div class="love-timer__unit"><span class="love-timer__num" id="timer-seconds">00</span><span class="love-timer__label">秒</span></div>
         </div>
         <div class="love-timer__milestone" id="timer-milestone">
-          距离下一次纪念日还有 <span class="love-timer__milestone-days" id="milestone-days">--</span> 天
+          距离下一次契约纪念日还有 <span class="love-timer__milestone-days" id="milestone-days">--</span> 天
         </div>
       </div>
     </header>
@@ -100,7 +91,7 @@
     <!-- 打字机真情告白舱 -->
     <section class="confession-section">
       <div class="confession-card">
-        <h3 class="confession-card__title" id="letter-title">致最珍贵的你</h3>
+        <h3 class="confession-card__title" id="letter-title">致我生命中的唯一</h3>
         <div class="confession-card__body">
           <p id="typewriter-text" class="confession-card__text"></p>
           <span class="typewriter-cursor">|</span>
@@ -112,59 +103,59 @@
       </div>
     </section>
 
-    <!-- 时光轴 & 3D 拍立得翻转相册 -->
+    <!-- 时光轴 & 拍立得相册 -->
     <section class="timeline-section">
       <div class="section-title">
         <span class="section-title__icon">🪐</span>
-        <h2 class="section-title__text">时光轨迹 · 拍立得相册</h2>
-        <span class="section-title__desc">点击卡片可 3D 翻转查看独家留言与语音</span>
+        <h2 class="section-title__text">时光轨迹 · 雅歌印记</h2>
+        <span class="section-title__desc">点击卡片可 3D 翻转查看独家私语与圣洁承诺</span>
       </div>
       <div class="timeline-flow" id="timeline-flow"></div>
     </section>
 
-    <!-- 恋爱 100 件小事清单 -->
+    <!-- 恋爱 100 件小事清单 (由生命周期引擎动态渲染) -->
     <section class="checklist-section">
       <div class="section-title">
         <span class="section-title__icon">📝</span>
-        <h2 class="section-title__text">恋爱 100 件小事清单</h2>
-        <span class="section-title__desc">点滴兑现，每勾选一项触发心愿彩带</span>
+        <h2 class="section-title__text" id="checklist-section-title">同行契约清单</h2>
+        <span class="section-title__desc" id="checklist-section-desc">点滴践行，每勾选一项触发心愿彩带</span>
       </div>
       <div class="checklist-card">
         <div class="checklist-card__progress-bar">
           <div class="checklist-card__progress-fill" id="checklist-progress-fill"></div>
         </div>
-        <div class="checklist-card__stats" id="checklist-stats">
-          已完成 0 / 0 项
-        </div>
+        <div class="checklist-card__stats" id="checklist-stats">已达成 0 / 0 项</div>
         <div class="checklist-grid" id="checklist-container"></div>
       </div>
     </section>
 
-    <!-- 恋爱特权刮刮乐兑换券 -->
+    <!-- 恋爱特权刮刮乐兑换券 (由生命周期引擎动态渲染) -->
     <section class="scratch-section">
       <div class="section-title">
         <span class="section-title__icon">🎟️</span>
-        <h2 class="section-title__text">恋爱特权刮刮乐</h2>
-        <span class="section-title__desc">手指/鼠标真实刮开涂层 · 点击核销印章锁定</span>
+        <h2 class="section-title__text">舍己与包容特权券</h2>
+        <span class="section-title__desc">真实刮开涂层 · 点击核销印章锁定承诺</span>
       </div>
       <div class="scratch-grid" id="scratch-container"></div>
     </section>
 
-    <!-- 一键生成 300DPI 拍立得纪念海报区 -->
+    <!-- 海报与离线永存打包区 -->
     <section class="poster-section">
-      <div class="poster-card">
+      <div class="poster-card" style="display:flex; flex-direction:column; gap:14px;">
         <div class="poster-card__info">
           <h3 class="poster-card__title">📸 导出专属拍立得壁纸</h3>
-          <p class="poster-card__desc">基于当前恋爱天数与合照，一键渲染超高清纪念图，方便发圈分享</p>
+          <p class="poster-card__desc">基于当前同行天数与合照，一键渲染超高清纪念图</p>
         </div>
-        <button id="generate-poster-btn" class="btn-universe btn-universe--accent">
-          <span>✨ 一键生成海报</span>
-        </button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button id="generate-poster-btn" class="btn-universe btn-universe--accent" style="flex:1;">
+            <span>✨ 一键生成海报</span>
+          </button>
+        </div>
       </div>
     </section>
 
     <footer class="universe-footer">
-      <p class="universe-footer__text">✨ 宇宙辽阔，唯你是归途 · 属于我们的漫游宇宙 ✨</p>
+      <p class="universe-footer__text">✨ 爱情坚强如死，众水不能熄灭 · 雅歌之印 ✨</p>
     </footer>
   </main>
 
@@ -203,9 +194,11 @@
     </div>
   </div>
 
-  <!-- 依赖脚本顺序加载 -->
+  <!-- 依赖脚本模块化加载 -->
   <script src="js/config.js"></script>
   <script src="js/theme-engine.js"></script>
+  <script src="js/lifecycle.js"></script>
+  <script src="js/photo-wall.js"></script>
   <script src="js/effects.js"></script>
   <script src="js/timeline.js"></script>
   <script src="js/scratch.js"></script>
