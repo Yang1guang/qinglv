@@ -11,7 +11,6 @@
 
   <title>众水不灭 · 我们的恒久印记</title>
   
-  <!-- 全平台安装图标与 PWA 配置 -->
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-192.png">
   <link rel="manifest" href="manifest.json">
@@ -27,6 +26,37 @@
   <link rel="stylesheet" href="css/pet.css">
   <link rel="stylesheet" href="css/scratch-card.css">
   <style>
+    /* 双视角切换胶囊 */
+    .perspective-capsule {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 95;
+      display: flex;
+      background: rgba(3, 7, 18, 0.65);
+      border: 1.5px solid rgba(245, 158, 11, 0.35);
+      border-radius: 24px;
+      padding: 3px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+    .perspective-btn {
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .perspective-btn.active {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+    }
+
     .phase-switch-bar {
       display: flex;
       justify-content: center;
@@ -60,6 +90,12 @@
   </style>
 </head>
 <body class="universe-body">
+
+  <!-- 右上角男女双视角切换胶囊 -->
+  <div class="perspective-capsule" id="perspective-capsule">
+    <button class="perspective-btn active" id="btn-perspective-boy" onclick="ThemeEngine.switchPerspective('boy')">👦 他的视角</button>
+    <button class="perspective-btn" id="btn-perspective-girl" onclick="ThemeEngine.switchPerspective('girl')">👧 她的视角</button>
+  </div>
 
   <div id="parallax-photo-wall" class="parallax-photo-wall"></div>
 
@@ -148,14 +184,12 @@
       <div class="timeline-flow" id="timeline-flow"></div>
     </section>
 
-    <!-- 阶段切换控制条 -->
     <div class="phase-switch-bar">
       <button class="phase-tab-btn active" data-phase="dating">🌿 恋爱期</button>
       <button class="phase-tab-btn" data-phase="engaged">💍 订婚期</button>
       <button class="phase-tab-btn" data-phase="married">🏠 结婚期</button>
     </div>
 
-    <!-- 待办清单 -->
     <section class="checklist-section">
       <div class="section-title">
         <span class="section-title__icon">📝</span>
@@ -171,7 +205,6 @@
       </div>
     </section>
 
-    <!-- 舍己与包容特权刮刮乐 -->
     <section class="scratch-section">
       <div class="section-title">
         <span class="section-title__icon">🎟️</span>
@@ -181,7 +214,6 @@
       <div class="scratch-grid" id="scratch-container"></div>
     </section>
 
-    <!-- 海报与数字永生 -->
     <section class="poster-section">
       <div class="poster-card" style="display:flex; flex-direction:column; gap:14px;">
         <div class="poster-card__info">
@@ -241,6 +273,7 @@
 
   <!-- 脚本加载 -->
   <script src="js/config.js"></script>
+  <script src="js/theme-presets.js"></script>
   <script src="js/stage-content.js"></script>
   <script src="js/theme-engine.js"></script>
   <script src="js/lifecycle.js"></script>
@@ -252,6 +285,11 @@
   <script src="js/core.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+      // 初始化物理主题引擎
+      if (window.ThemeEngine) {
+        window.ThemeEngine.init();
+      }
+      // 初始化恩典灵宠
       if (window.GracePetManager) {
         const petMgr = new window.GracePetManager(window.LOVE_CONFIG);
         petMgr.init();
