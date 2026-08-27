@@ -11,7 +11,7 @@ class EffectsEngine {
     this.isPlaying = false;
     this.currentTrackIndex = 0;
     this.playlist = this.getNormalizedPlaylist();
-    this.consecutiveErrors = 0;
+    this.consecutiveErrors = 0; // 错误熔断计数器，彻底解决死循环来回跳
 
     this.fireworksCanvas = document.getElementById("fireworks-canvas");
     this.fwCtx = this.fireworksCanvas ? this.fireworksCanvas.getContext("2d") : null;
@@ -65,7 +65,7 @@ class EffectsEngine {
     this.renderPlaylistPopup();
     this.updateTrackInfoDisplay();
 
-    // 交互唤醒手势，解除 PC 端与手机端音频安全拦截
+    // 手势解锁，顺应 PC 端与移动端浏览器自动播放规则
     const unlockAudio = () => {
       if (this.config.audio && this.config.audio.bgmAutoPlay !== false && !this.isPlaying) {
         this.playBgm();
@@ -192,7 +192,7 @@ class EffectsEngine {
     this.loadTrack(index, true);
   }
 
-  // 🌟 前台歌单删除单曲并实时同步云端与本地缓存
+  // 前台歌单删除单曲并实时同步云端与本地缓存
   async deleteTrackFromPopup(e, index) {
     e.stopPropagation();
     if (this.playlist.length <= 1) {
