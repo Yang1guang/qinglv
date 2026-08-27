@@ -51,7 +51,7 @@
         <button class="tab-btn" data-tab="tab-scratch">🎟️ 6. 舍己与包容特权刮刮乐</button>
         <button class="tab-btn" data-tab="tab-audio">🎵 7. 音乐与多媒体中枢</button>
         <button class="tab-btn" data-tab="tab-eggs">🐣 8. 隐藏彩蛋悄悄话</button>
-        <button class="tab-btn" data-tab="tab-theme">🎨 9. 主题陈列室 (风格换肤)</button>
+        <button class="tab-btn" data-tab="tab-theme">🎨 9. 双视角主题陈列室</button>
         <button class="tab-btn" data-tab="tab-license">💎 10. 星河契约授权激活</button>
       </nav>
 
@@ -106,7 +106,6 @@
             <div class="form-group"><label>提示文案 (Hint)</label><input type="text" id="gatekeeper_hint" class="admin-input"></div>
             <div class="form-group"><label>正确解锁数字密码 (如 240520)</label><input type="text" id="gatekeeper_correctAnswer" class="admin-input"></div>
             
-            <!-- 专属语音密码设定 -->
             <div class="form-group" style="grid-column: 1 / -1; background: rgba(245, 158, 11, 0.1); padding: 14px; border-radius: 14px; border: 1.5px solid rgba(245, 158, 11, 0.35);">
               <label style="color:#fde68a; font-weight:800;">🎙️ 专属语音誓言解锁密码 (💎 授权专属特权 · 多个用逗号隔开)</label>
               <input type="text" id="gatekeeper_voiceVows" class="admin-input" placeholder="例如: 众水不能熄灭, 我愿一生包容你, 永远爱你, 240520">
@@ -235,18 +234,40 @@
           </div>
         </section>
 
-        <!-- 9. 主题陈列室 -->
+        <!-- 9. 🎨 双视角主题陈列室 (12 套高奢主题) -->
         <section id="tab-theme" class="tab-pane">
           <div class="pane-header">
-            <h3>🎨 主题陈列室 · 多维情感视觉风格</h3>
-            <p>点击选择不同风格，系统将自动切换粒子物理引擎与色彩光效；亦可上传专属高清大图打底。</p>
+            <h3>🎨 双视角主题陈列室 · 12 套男女高奢情感风格</h3>
+            <p>男方与女方可分别选定专属的默认主题与独立壁纸，前台支持双视角即时切换。</p>
           </div>
-          <div class="theme-showroom-grid" id="themeShowroomContainer" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;"></div>
-          <div style="background: rgba(3, 7, 18, 0.65); border: 1.5px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px;">
-            <label style="font-size:13px; font-weight:800; color:#fde68a; margin-bottom:8px; display:block;">🖼️ 自定义高清背景大图 (可选 · 叠加在主题粒子下方)</label>
-            <div class="upload-input-group">
-              <input type="text" id="theme_customBgUrl" class="admin-input" placeholder="留空则使用主题默认质感背景，支持输入直链或上传...">
-              <button class="btn-upload" onclick="triggerDirectUpload('theme_customBgUrl', 'image/*')">📤 上传高清背景</button>
+
+          <!-- 👦 男生主题区 -->
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 18px; margin-bottom: 24px;">
+            <div style="font-size:15px; font-weight:900; color:#7dd3fc; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+              <span>👦 男生视角 · 6 套深邃浪漫主题 (默认底色与粒子)</span>
+            </div>
+            <div class="theme-showroom-grid" id="boyThemesContainer" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:14px; margin-bottom:16px;"></div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="color:#bae6fd;">🖼️ 男生视角专属背景大图 (可选 · 留空使用主题默认底色)</label>
+              <div class="upload-input-group">
+                <input type="text" id="theme_customBgUrlBoy" class="admin-input" placeholder="输入直链或点击右侧上传...">
+                <button class="btn-upload" onclick="triggerDirectUpload('theme_customBgUrlBoy', 'image/*')">📤 上传男生壁纸</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 👧 女生主题区 -->
+          <div style="background: rgba(30, 10, 24, 0.6); border: 1.5px solid rgba(244, 114, 182, 0.35); border-radius: 18px; padding: 18px;">
+            <div style="font-size:15px; font-weight:900; color:#fbcfe8; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+              <span>👧 女生视角 · 6 套清透治愈主题 (浅色系 / 奶油 / 樱花)</span>
+            </div>
+            <div class="theme-showroom-grid" id="girlThemesContainer" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:14px; margin-bottom:16px;"></div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="color:#fbcfe8;">🖼️ 女生视角专属背景大图 (可选 · 留空使用主题默认浅色底)</label>
+              <div class="upload-input-group">
+                <input type="text" id="theme_customBgUrlGirl" class="admin-input" placeholder="输入直链或点击右侧上传...">
+                <button class="btn-upload" onclick="triggerDirectUpload('theme_customBgUrlGirl', 'image/*')">📤 上传女生壁纸</button>
+              </div>
             </div>
           </div>
         </section>
@@ -279,7 +300,7 @@
   <div id="toast" class="admin-toast">✓ 操作成功</div>
 
   <script src="js/config.js"></script>
-  <script src="js/theme-engine.js"></script>
+  <script src="js/theme-presets.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>
