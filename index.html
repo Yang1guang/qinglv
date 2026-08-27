@@ -10,7 +10,14 @@
   <meta property="og:image" content="assets/images/share-cover.jpg">
 
   <title>众水不灭 · 我们的恒久印记</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23f43f5e'/><text x='50' y='64' font-size='38' text-anchor='middle' fill='%23ffffff' font-family='sans-serif' font-weight='bold'>❤️</text></svg>">
+  
+  <!-- 全平台安装图标与 PWA 配置 -->
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="雅歌之印">
 
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
@@ -20,7 +27,6 @@
   <link rel="stylesheet" href="css/pet.css">
   <link rel="stylesheet" href="css/scratch-card.css">
   <style>
-    /* 阶段专属导航切换器样式 */
     .phase-switch-bar {
       display: flex;
       justify-content: center;
@@ -55,10 +61,8 @@
 </head>
 <body class="universe-body">
 
-  <!-- 全局视差照片墙背景层 -->
   <div id="parallax-photo-wall" class="parallax-photo-wall"></div>
 
-  <!-- 全局动态背景画布 -->
   <canvas id="starry-canvas" class="universe-canvas"></canvas>
   <canvas id="fireworks-canvas" class="fireworks-canvas"></canvas>
 
@@ -91,7 +95,7 @@
 
       <div class="gatekeeper__footer">
         <button id="gatekeeper-btn" class="btn-universe btn-universe--primary gatekeeper__btn">
-          <span>解密进入圣所</span>
+          <span>开启专属时空</span>
           <span class="gatekeeper__btn-icon">➔</span>
         </button>
       </div>
@@ -101,13 +105,11 @@
   <!-- ================= 2. 主内容视窗 ================= -->
   <main id="main-container" class="main-container main-container--hidden">
     
-    <!-- 头部视差区 -->
     <header class="hero-section">
       <div class="hero-section__badge">THE ETERNAL SEAL</div>
       <h1 class="hero-section__names" id="hero-names">张小阳 & 李小光</h1>
       <p class="hero-section__subtitle" id="hero-subtitle">众水不能熄灭爱情，大水不能淹没 · 一生一世的契约</p>
 
-      <!-- 核心同行计时器 -->
       <div class="love-timer">
         <div class="love-timer__title">我们已经同行并守护了</div>
         <div class="love-timer__grid" id="timer-grid">
@@ -123,7 +125,6 @@
       </div>
     </header>
 
-    <!-- 打字机真情告白舱 -->
     <section class="confession-section">
       <div class="confession-card">
         <h3 class="confession-card__title" id="letter-title">致我生命中的唯一</h3>
@@ -138,7 +139,6 @@
       </div>
     </section>
 
-    <!-- 时光轴 & 拍立得相册 -->
     <section class="timeline-section">
       <div class="section-title">
         <span class="section-title__icon">🪐</span>
@@ -148,14 +148,14 @@
       <div class="timeline-flow" id="timeline-flow"></div>
     </section>
 
-    <!-- 🌟 阶段专属控制中枢 (3 大时期独立按钮) 🌟 -->
+    <!-- 阶段切换控制条 -->
     <div class="phase-switch-bar">
       <button class="phase-tab-btn active" data-phase="dating">🌿 恋爱期</button>
       <button class="phase-tab-btn" data-phase="engaged">💍 订婚期</button>
       <button class="phase-tab-btn" data-phase="married">🏠 结婚期</button>
     </div>
 
-    <!-- 待办清单 (由阶段引擎完全独立联动渲染) -->
+    <!-- 待办清单 -->
     <section class="checklist-section">
       <div class="section-title">
         <span class="section-title__icon">📝</span>
@@ -171,7 +171,7 @@
       </div>
     </section>
 
-    <!-- 舍己与包容特权刮刮乐 (由阶段引擎完全独立联动渲染) -->
+    <!-- 舍己与包容特权刮刮乐 -->
     <section class="scratch-section">
       <div class="section-title">
         <span class="section-title__icon">🎟️</span>
@@ -181,7 +181,7 @@
       <div class="scratch-grid" id="scratch-container"></div>
     </section>
 
-    <!-- 300DPI 海报与离线永存打包区 -->
+    <!-- 海报与数字永生 -->
     <section class="poster-section">
       <div class="poster-card" style="display:flex; flex-direction:column; gap:14px;">
         <div class="poster-card__info">
@@ -204,7 +204,7 @@
     </footer>
   </main>
 
-  <!-- ================= 3. 全局悬浮与彩蛋组件 ================= -->
+  <!-- ================= 3. 悬浮组件与唱片 ================= -->
   <aside class="vinyl-player" id="vinyl-player">
     <div class="vinyl-player__needle" id="vinyl-needle"></div>
     <div class="vinyl-player__disc" id="vinyl-disc" title="点击播放/暂停音乐">
@@ -239,7 +239,7 @@
     </div>
   </div>
 
-  <!-- 依赖脚本加载 (严密依赖链) -->
+  <!-- 脚本加载 -->
   <script src="js/config.js"></script>
   <script src="js/stage-content.js"></script>
   <script src="js/theme-engine.js"></script>
