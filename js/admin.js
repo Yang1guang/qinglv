@@ -15,7 +15,6 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove("show"), 2500);
 }
 
-// 辅助函数：深度合并本地与云端配置
 function mergeWithDefaultConfig(cloudCfg) {
   const base = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
   if (!cloudCfg || typeof cloudCfg !== "object") return base;
@@ -38,7 +37,6 @@ function mergeWithDefaultConfig(cloudCfg) {
   };
 }
 
-// 1. 验证管理员口令
 async function verifyAdminLogin() {
   const pwdInput = document.getElementById("adminPwdInput");
   const pwd = pwdInput.value.trim();
@@ -57,7 +55,6 @@ async function verifyAdminLogin() {
   }
 }
 
-// 2. 从 R2 拉取配置
 async function fetchConfigFromCloud() {
   try {
     const res = await fetch("/api/love/config", {
@@ -86,7 +83,6 @@ async function fetchConfigFromCloud() {
   }
 }
 
-// 3. 渲染所有表单
 function renderAllForms() {
   if (!currentConfig) return;
 
@@ -107,12 +103,14 @@ function renderAllForms() {
   document.getElementById("meta_siteTitle").value = meta.siteTitle || "";
   document.getElementById("meta_siteSubtitle").value = meta.siteSubtitle || "";
 
+  // 门禁与专属语音密码
   const gate = currentConfig.gatekeeper || {};
   document.getElementById("gatekeeper_enabled").value = String(gate.enabled !== false);
   document.getElementById("gatekeeper_title").value = gate.title || "";
   document.getElementById("gatekeeper_question").value = gate.question || "";
   document.getElementById("gatekeeper_hint").value = gate.hint || "";
   document.getElementById("gatekeeper_correctAnswer").value = gate.correctAnswer || "";
+  document.getElementById("gatekeeper_voiceVows").value = gate.voiceVows || "众水不能熄灭, 我愿一生包容你, 永远爱你, 240520";
   document.getElementById("gatekeeper_errorTips").value = (gate.errorTips || []).join("\n");
 
   const letter = currentConfig.letter || {};
@@ -579,7 +577,6 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
-// ================= 保存全量配置 =================
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
 
@@ -610,6 +607,7 @@ async function saveAllConfigToCloud() {
     question: document.getElementById("gatekeeper_question").value.trim(),
     hint: document.getElementById("gatekeeper_hint").value.trim(),
     correctAnswer: document.getElementById("gatekeeper_correctAnswer").value.trim(),
+    voiceVows: document.getElementById("gatekeeper_voiceVows").value.trim() || "众水不能熄灭, 我愿一生包容你, 永远爱你, 240520",
     errorTips: errorTipsRaw.length > 0 ? errorTipsRaw : ["没关系，慢慢想，我一直都在这里等你。"]
   };
 
