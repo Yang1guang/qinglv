@@ -345,14 +345,14 @@ function renderPlaylist() {
         <div class="form-group" style="grid-column: 1 / -1;">
           <label>音频直链地址</label>
           <div class="upload-input-group">
-            <input type="text" class="admin-input" id="pl_url_${idx}" value="${escapeHtml(song.url || "")}" oninput="currentConfig.audio.playlist[${idx}].url=this.value">
+            <input type="text" id="pl_url_${idx}" value="${escapeHtml(song.url || "")}" oninput="currentConfig.audio.playlist[${idx}].url=this.value">
             <button class="btn-upload" onclick="triggerDirectUploadSongItem(${idx})">📤 上传MP3</button>
           </div>
         </div>
         <div class="form-group" style="grid-column: 1 / -1;">
           <label>专属黑胶中心封面 (可选)</label>
           <div class="upload-input-group">
-            <input type="text" class="admin-input" id="pl_cover_${idx}" value="${escapeHtml(song.cover || "")}" oninput="currentConfig.audio.playlist[${idx}].cover=this.value">
+            <input type="text" id="pl_cover_${idx}" value="${escapeHtml(song.cover || "")}" oninput="currentConfig.audio.playlist[${idx}].cover=this.value">
             <button class="btn-upload" onclick="triggerDirectUpload('pl_cover_${idx}', 'image/*', (url)=>{ currentConfig.audio.playlist[${idx}].cover=url; })">🖼️ 上传封面</button>
           </div>
         </div>
@@ -447,6 +447,25 @@ function triggerDirectUploadSingleBgm() {
     if (artistInput) artistInput.value = meta.artist;
     showToast(`✓ 主打歌音频已上传，自动解析为《${meta.title}》`);
   });
+}
+
+// 一键清除自定义壁纸，恢复系统自带主题渐变
+function clearCustomBg(gender) {
+  if (!currentConfig) return;
+  if (!currentConfig.theme) currentConfig.theme = {};
+
+  if (gender === 'boy') {
+    const input = document.getElementById("theme_customBgUrlBoy");
+    if (input) input.value = "";
+    currentConfig.theme.customBgUrlBoy = "";
+    currentConfig.theme.customBgUrl = "";
+    showToast("✓ 已清除男生视角自定义壁纸，恢复自带主题！");
+  } else if (gender === 'girl') {
+    const input = document.getElementById("theme_customBgUrlGirl");
+    if (input) input.value = "";
+    currentConfig.theme.customBgUrlGirl = "";
+    showToast("✓ 已清除女生视角自定义壁纸，恢复自带主题！");
+  }
 }
 
 // 删除播放列表歌曲
