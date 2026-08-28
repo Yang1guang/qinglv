@@ -4,11 +4,57 @@
  * 作用: 12 款男女高奢主题变量定义与浅色系/深色系高保真自适应对比度
  */
 
+/* ================= 🌌 基础语义变量定义 (默认深色星河基线) ================= */
+:root {
+  --bg-primary: #090d16;
+  --bg-card: rgba(15, 23, 42, 0.75);
+  --border-card: rgba(245, 158, 11, 0.35);
+  --card-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  
+  --text-hero: #ffffff;
+  --text-hero-gradient: linear-gradient(135deg, #ffffff 0%, #fecdd3 50%, #fb7185 100%);
+  --text-hero-shadow: 0 0 30px rgba(251, 113, 133, 0.4), 0 2px 8px rgba(0, 0, 0, 0.8);
+  --text-subtitle: #cbd5e1;
+  --text-main: #f8fafc;
+  --text-sub: #94a3b8;
+  --text-muted: #64748b;
+  --accent-gold: #f59e0b;
+  --accent-gold-glow: rgba(245, 158, 11, 0.4);
+
+  --badge-bg: rgba(245, 158, 11, 0.12);
+  --badge-border: rgba(245, 158, 11, 0.35);
+  --badge-text: #fde68a;
+
+  --timer-unit-bg: rgba(3, 7, 18, 0.75);
+  --timer-unit-border: rgba(255, 255, 255, 0.1);
+  --timer-num-color: #fde68a;
+  --timer-label-color: #94a3b8;
+  --timer-milestone-bg: rgba(251, 113, 133, 0.12);
+  --timer-milestone-border: rgba(251, 113, 133, 0.35);
+  --timer-milestone-text: #fb7185;
+
+  --confession-bg: rgba(255, 253, 245, 0.96);
+  --confession-border: rgba(254, 205, 211, 0.6);
+  --confession-title: #9f1239;
+  --confession-text: #374151;
+  --confession-footer: #881337;
+
+  --drawer-bg: rgba(15, 23, 42, 0.94);
+  --drawer-border: rgba(245, 158, 11, 0.4);
+  --drawer-item-bg: rgba(255, 255, 255, 0.05);
+  --drawer-item-border: rgba(255, 255, 255, 0.08);
+  --drawer-item-title: #ffffff;
+  --drawer-item-artist: #94a3b8;
+  --drawer-active-bg: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(217, 119, 6, 0.2) 100%);
+  --drawer-active-border: #f59e0b;
+  --drawer-active-title: #fde68a;
+}
+
 /* ================= 👦 男生 6 套深色主题 ================= */
 body.theme-sunset-twilight {
   --bg-primary: #090d16;
-  --bg-card: rgba(19, 26, 41, 0.75);
-  --border-card: rgba(245, 158, 11, 0.3);
+  --bg-card: rgba(19, 26, 41, 0.8);
+  --border-card: rgba(245, 158, 11, 0.35);
   --text-main: #ffffff;
   --text-sub: #94a3b8;
   --accent-gold: #f59e0b;
@@ -16,8 +62,8 @@ body.theme-sunset-twilight {
 
 body.theme-cyber-space {
   --bg-primary: #030712;
-  --bg-card: rgba(6, 78, 59, 0.35);
-  --border-card: rgba(52, 211, 153, 0.4);
+  --bg-card: rgba(6, 78, 59, 0.45);
+  --border-card: rgba(52, 211, 153, 0.45);
   --text-main: #ecfdf5;
   --text-sub: #6ee7b7;
   --accent-gold: #10b981;
@@ -25,8 +71,8 @@ body.theme-cyber-space {
 
 body.theme-firefly-forest {
   --bg-primary: #020617;
-  --bg-card: rgba(6, 78, 59, 0.4);
-  --border-card: rgba(110, 231, 183, 0.35);
+  --bg-card: rgba(6, 78, 59, 0.5);
+  --border-card: rgba(110, 231, 183, 0.4);
   --text-main: #f0fdf4;
   --text-sub: #86efac;
   --accent-gold: #22c55e;
@@ -34,8 +80,8 @@ body.theme-firefly-forest {
 
 body.theme-warm-ember {
   --bg-primary: #050101;
-  --bg-card: rgba(69, 10, 10, 0.45);
-  --border-card: rgba(248, 113, 113, 0.35);
+  --bg-card: rgba(69, 10, 10, 0.55);
+  --border-card: rgba(248, 113, 113, 0.4);
   --text-main: #fef2f2;
   --text-sub: #fca5a5;
   --accent-gold: #ef4444;
@@ -43,8 +89,8 @@ body.theme-warm-ember {
 
 body.theme-deep-ocean {
   --bg-primary: #020617;
-  --bg-card: rgba(8, 47, 73, 0.45);
-  --border-card: rgba(56, 189, 248, 0.35);
+  --bg-card: rgba(8, 47, 73, 0.55);
+  --border-card: rgba(56, 189, 248, 0.4);
   --text-main: #f0f9ff;
   --text-sub: #7dd3fc;
   --accent-gold: #0ea5e9;
@@ -52,120 +98,228 @@ body.theme-deep-ocean {
 
 body.theme-aurora-night {
   --bg-primary: #090d16;
-  --bg-card: rgba(59, 7, 100, 0.35);
-  --border-card: rgba(192, 132, 252, 0.35);
+  --bg-card: rgba(59, 7, 100, 0.45);
+  --border-card: rgba(192, 132, 252, 0.4);
   --text-main: #faf5ff;
   --text-sub: #d8b4fe;
   --accent-gold: #a855f7;
 }
 
-/* ================= 👧 女生 6 套浅色唯美主题 ================= */
+/* ================= 👧 女生 6 套浅色唯美高对比度主题 ================= */
 body.theme-french-cream {
   --bg-primary: #f5ebe1;
-  --bg-card: rgba(255, 255, 255, 0.88);
-  --border-card: rgba(120, 83, 56, 0.28);
+  --bg-card: rgba(255, 255, 255, 0.92);
+  --border-card: rgba(180, 83, 9, 0.35);
+  --card-shadow: 0 16px 36px rgba(120, 53, 15, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --text-hero: #451a03;
+  --text-hero-gradient: linear-gradient(135deg, #451a03 0%, #78350f 50%, #9a3412 100%);
+  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.9), 0 0 16px rgba(255, 255, 255, 0.8);
+  --text-subtitle: #5c2406;
   --text-main: #451a03;
   --text-sub: #78350f;
+  --text-muted: #92400e;
   --accent-gold: #b45309;
+  --timer-unit-bg: rgba(254, 243, 199, 0.85);
+  --timer-unit-border: rgba(217, 119, 6, 0.35);
+  --timer-num-color: #78350f;
+  --timer-label-color: #92400e;
+  --badge-bg: rgba(180, 83, 9, 0.15);
+  --badge-border: rgba(180, 83, 9, 0.35);
+  --badge-text: #78350f;
 }
 
 body.theme-sakura-romance {
   --bg-primary: #fce7f3;
-  --bg-card: rgba(255, 255, 255, 0.9);
-  --border-card: rgba(244, 63, 94, 0.35);
+  --bg-card: rgba(255, 255, 255, 0.94);
+  --border-card: rgba(244, 63, 94, 0.38);
+  --card-shadow: 0 16px 36px rgba(159, 18, 57, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --text-hero: #4c0519;
+  --text-hero-gradient: linear-gradient(135deg, #4c0519 0%, #881337 50%, #be123c 100%);
+  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 255, 255, 0.85);
+  --text-subtitle: #831843;
   --text-main: #881337;
   --text-sub: #9f1239;
+  --text-muted: #be123c;
   --accent-gold: #e11d48;
+  --timer-unit-bg: rgba(255, 228, 230, 0.85);
+  --timer-unit-border: rgba(244, 63, 94, 0.35);
+  --timer-num-color: #881337;
+  --timer-label-color: #9f1239;
+  --badge-bg: rgba(225, 29, 72, 0.12);
+  --badge-border: rgba(225, 29, 72, 0.35);
+  --badge-text: #9f1239;
 }
 
 body.theme-monet-garden {
   --bg-primary: #dcfce7;
-  --bg-card: rgba(255, 255, 255, 0.9);
-  --border-card: rgba(22, 101, 52, 0.35);
+  --bg-card: rgba(255, 255, 255, 0.94);
+  --border-card: rgba(22, 101, 52, 0.38);
+  --card-shadow: 0 16px 36px rgba(20, 83, 45, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --text-hero: #052e16;
+  --text-hero-gradient: linear-gradient(135deg, #052e16 0%, #14532d 50%, #15803d 100%);
+  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 255, 255, 0.85);
+  --text-subtitle: #14532d;
   --text-main: #14532d;
   --text-sub: #166534;
+  --text-muted: #15803d;
   --accent-gold: #15803d;
+  --timer-unit-bg: rgba(220, 252, 231, 0.85);
+  --timer-unit-border: rgba(34, 197, 94, 0.35);
+  --timer-num-color: #14532d;
+  --timer-label-color: #166534;
+  --badge-bg: rgba(21, 128, 61, 0.12);
+  --badge-border: rgba(21, 128, 61, 0.35);
+  --badge-text: #14532d;
 }
 
 body.theme-morning-dew {
   --bg-primary: #f1f5f9;
-  --bg-card: rgba(255, 255, 255, 0.92);
-  --border-card: rgba(148, 163, 184, 0.45);
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --border-card: rgba(71, 85, 105, 0.38);
+  --card-shadow: 0 16px 36px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --text-hero: #0f172a;
+  --text-hero-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 255, 255, 0.85);
+  --text-subtitle: #334155;
   --text-main: #0f172a;
   --text-sub: #334155;
+  --text-muted: #475569;
   --accent-gold: #d97706;
+  --timer-unit-bg: rgba(241, 245, 249, 0.9);
+  --timer-unit-border: rgba(148, 163, 184, 0.4);
+  --timer-num-color: #0f172a;
+  --timer-label-color: #334155;
+  --badge-bg: rgba(15, 23, 42, 0.08);
+  --badge-border: rgba(15, 23, 42, 0.25);
+  --badge-text: #0f172a;
 }
 
 body.theme-sunset-blush {
   --bg-primary: #f3e8ff;
-  --bg-card: rgba(255, 255, 255, 0.9);
-  --border-card: rgba(168, 85, 247, 0.35);
+  --bg-card: rgba(255, 255, 255, 0.94);
+  --border-card: rgba(168, 85, 247, 0.38);
+  --card-shadow: 0 16px 36px rgba(88, 28, 135, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --text-hero: #3b0764;
+  --text-hero-gradient: linear-gradient(135deg, #3b0764 0%, #581c87 50%, #7e22ce 100%);
+  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 255, 255, 0.85);
+  --text-subtitle: #581c87;
   --text-main: #581c87;
   --text-sub: #6b21a8;
+  --text-muted: #7e22ce;
   --accent-gold: #9333ea;
+  --timer-unit-bg: rgba(243, 232, 255, 0.9);
+  --timer-unit-border: rgba(192, 132, 252, 0.4);
+  --timer-num-color: #581c87;
+  --timer-label-color: #6b21a8;
+  --badge-bg: rgba(147, 51, 234, 0.12);
+  --badge-border: rgba(147, 51, 234, 0.35);
+  --badge-text: #581c87;
 }
 
 body.theme-orange-sea {
   --bg-primary: #ffedd5;
-  --bg-card: rgba(255, 255, 255, 0.9);
-  --border-card: rgba(234, 88, 12, 0.35);
+  --bg-card: rgba(255, 255, 255, 0.94);
+  --border-card: rgba(234, 88, 12, 0.38);
+  --card-shadow: 0 16px 36px rgba(124, 45, 18, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --text-hero: #431407;
+  --text-hero-gradient: linear-gradient(135deg, #431407 0%, #7c2d12 50%, #c2410c 100%);
+  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 255, 255, 0.85);
+  --text-subtitle: #7c2d12;
   --text-main: #7c2d12;
   --text-sub: #9a3412;
+  --text-muted: #c2410c;
   --accent-gold: #ea580c;
+  --timer-unit-bg: rgba(255, 237, 213, 0.9);
+  --timer-unit-border: rgba(251, 146, 60, 0.4);
+  --timer-num-color: #7c2d12;
+  --timer-label-color: #9a3412;
+  --badge-bg: rgba(234, 88, 12, 0.12);
+  --badge-border: rgba(234, 88, 12, 0.35);
+  --badge-text: #7c2d12;
 }
 
-/* ================= 🌟 浅色主题全组件文字对比度保护 ================= */
+/* ================= 🌟 浅色主题全局无障碍对比度适配层 ================= */
+body[data-theme-type="light"] {
+  --drawer-bg: rgba(255, 255, 255, 0.95);
+  --drawer-border: rgba(244, 63, 94, 0.35);
+  --drawer-item-bg: rgba(0, 0, 0, 0.03);
+  --drawer-item-border: rgba(0, 0, 0, 0.06);
+  --drawer-item-title: var(--text-main);
+  --drawer-item-artist: var(--text-sub);
+  --drawer-active-bg: linear-gradient(135deg, rgba(254, 205, 211, 0.6) 0%, rgba(253, 230, 138, 0.5) 100%);
+  --drawer-active-border: #f43f5e;
+  --drawer-active-title: #881337;
+}
+
 body[data-theme-type="light"] .section-title__text {
-  background: linear-gradient(135deg, #881337 0%, #be123c 50%, #9f1239 100%) !important;
+  background: var(--text-hero-gradient) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
-  filter: drop-shadow(0 2px 8px rgba(244, 63, 94, 0.15)) !important;
+  filter: drop-shadow(0 1px 3px rgba(255, 255, 255, 0.9)) !important;
 }
 
 body[data-theme-type="light"] .section-title__desc {
   color: var(--text-sub) !important;
   font-weight: 700 !important;
-  opacity: 0.9 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9) !important;
 }
 
 body[data-theme-type="light"] .hero-section__names {
-  color: var(--text-main) !important;
-  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important;
+  background: var(--text-hero-gradient) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: var(--text-hero-shadow) !important;
 }
 
 body[data-theme-type="light"] .hero-section__subtitle {
-  color: var(--text-sub) !important;
-  font-weight: 600 !important;
+  color: var(--text-subtitle) !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 4px rgba(255, 255, 255, 0.95), 0 0 10px rgba(255, 255, 255, 0.85) !important;
 }
 
 body[data-theme-type="light"] .hero-section__badge {
-  background: rgba(244, 63, 94, 0.12) !important;
-  border-color: rgba(244, 63, 94, 0.35) !important;
-  color: #be123c !important;
+  background: var(--badge-bg) !important;
+  border-color: var(--badge-border) !important;
+  color: var(--badge-text) !important;
 }
 
 body[data-theme-type="light"] .love-timer {
   background: var(--bg-card) !important;
   border-color: var(--border-card) !important;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: var(--card-shadow) !important;
 }
 
 body[data-theme-type="light"] .love-timer__title {
   color: var(--text-sub) !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
+}
+
+body[data-theme-type="light"] .love-timer__unit {
+  background: var(--timer-unit-bg) !important;
+  border-color: var(--timer-unit-border) !important;
+}
+
+body[data-theme-type="light"] .love-timer__num {
+  color: var(--timer-num-color) !important;
+  text-shadow: none !important;
+}
+
+body[data-theme-type="light"] .love-timer__label {
+  color: var(--timer-label-color) !important;
+  font-weight: 800 !important;
 }
 
 body[data-theme-type="light"] .love-timer__milestone {
-  background: rgba(244, 63, 94, 0.08) !important;
-  border-color: rgba(244, 63, 94, 0.25) !important;
+  background: var(--badge-bg) !important;
+  border-color: var(--badge-border) !important;
   color: var(--text-main) !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
 }
 
 body[data-theme-type="light"] .confession-card {
   background: var(--bg-card) !important;
   border-color: var(--border-card) !important;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: var(--card-shadow) !important;
 }
 
 body[data-theme-type="light"] .confession-card__title {
@@ -188,6 +342,7 @@ body[data-theme-type="light"] .confession-card__sign {
 body[data-theme-type="light"] .checklist-card {
   background: var(--bg-card) !important;
   border-color: var(--border-card) !important;
+  box-shadow: var(--card-shadow) !important;
 }
 
 body[data-theme-type="light"] .checklist-card__stats {
@@ -196,7 +351,7 @@ body[data-theme-type="light"] .checklist-card__stats {
 }
 
 body[data-theme-type="light"] .checklist-item {
-  background: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
   border-color: var(--border-card) !important;
 }
 
@@ -207,5 +362,6 @@ body[data-theme-type="light"] .checklist-item__text {
 
 body[data-theme-type="light"] .universe-footer__text {
   color: var(--text-sub) !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9) !important;
 }
