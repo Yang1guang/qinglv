@@ -29,7 +29,12 @@ function mergeWithDefaultConfig(cloudCfg) {
     meta: { ...(base.meta || {}), ...(cloudCfg.meta || {}) },
     gatekeeper: { ...(base.gatekeeper || {}), ...(cloudCfg.gatekeeper || {}) },
     letter: { ...(base.letter || {}), ...(cloudCfg.letter || {}) },
-    audio: { ...(base.audio || {}), ...(cloudCfg.audio || {}) },
+    audio: {
+      playlist: [],
+      ...(base.audio || {}),
+      ...(cloudCfg.audio || {}),
+      playlist: Array.isArray(cloudCfg.audio?.playlist) ? cloudCfg.audio.playlist : (base.audio?.playlist || [])
+    },
     theme: { ...(base.theme || {}), ...(cloudCfg.theme || {}) },
     lifecycle: { ...(base.lifecycle || {}), ...(cloudCfg.lifecycle || {}) },
     timeline: (Array.isArray(cloudCfg.timeline) && cloudCfg.timeline.length > 0) ? cloudCfg.timeline : (base.timeline || []),
@@ -128,10 +133,13 @@ function renderAllForms() {
 
   const audio = currentConfig.audio || {};
   document.getElementById("audio_bgmAutoPlay").value = String(audio.bgmAutoPlay !== false);
+  document.getElementById("audio_playMode").value = audio.playMode || "list-loop";
   document.getElementById("audio_bgmTitle").value = audio.bgmTitle || "";
   document.getElementById("audio_bgmArtist").value = audio.bgmArtist || "";
   document.getElementById("audio_bgmUrl").value = audio.bgmUrl || "";
   document.getElementById("audio_vinylCover").value = audio.vinylCover || "";
+
+  renderPlaylist();
 
   const eggs = currentConfig.easterEggs || [];
   document.getElementById("egg_1_message").value = eggs[0]?.message || "";
@@ -195,7 +203,7 @@ async function executeOnlineMusicSearch() {
   const listContainer = document.getElementById("onlineSearchResultList");
   if (!kw) return alert("请输入要搜索的歌名或歌手！");
 
-  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索酷狗直连音频流...</div>`;
+  listContainer.innerHTML = `<div style="color:#fde68a; font-size:12px; padding:10px; text-align:center;">⏳ 正在检索全网高保真音频流...</div>`;
 
   try {
     const res = await fetch(`/api/love/music-search?keyword=${encodeURIComponent(kw)}`);
@@ -210,7 +218,8 @@ async function executeOnlineMusicSearch() {
           </div>
           <div style="display:flex; gap:6px; flex-shrink:0;">
             <button class="btn-tool preview-play-btn" id="prev_btn_${idx}" style="padding:5px 10px; font-size:11.5px;" onclick="testPreviewAudio('${song.url}', 'prev_btn_${idx}', '${escapeHtml(song.title)}')">🎧 试听</button>
-            <button class="btn-tool" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; padding:5px 12px; font-size:11.5px;" onclick="setAsSingleBGM('${escapeHtml(song.title)}', '${escapeHtml(song.artist)}', '${song.url}')">✓ 设为背景音乐</button>
+            <button class="btn-tool" style="background:rgba(56, 189, 248, 0.2); color:#7dd3fc; border-color:rgba(56,189,248,0.35); padding:5px 10px; font-size:11.5px;" onclick="addSongToPlaylist('${escapeHtml(song.title)}', '${escapeHtml(song.artist)}', '${song.url}', '')">➕ 加歌单</button>
+            <button class="btn-tool" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; padding:5px 10px; font-size:11.5px;" onclick="setAsSingleBGM('${escapeHtml(song.title)}', '${escapeHtml(song.artist)}', '${song.url}')">👑 设为主打</button>
           </div>
         </div>
       `).join("");
@@ -226,7 +235,122 @@ function setAsSingleBGM(title, artist, url) {
   document.getElementById("audio_bgmTitle").value = title;
   document.getElementById("audio_bgmArtist").value = artist;
   document.getElementById("audio_bgmUrl").value = url;
-  showToast(`✓ 已将《${title}》设为BGM，请点击右上角【💾 立即发布生效】！`);
+  
+  if (!currentConfig.audio) currentConfig.audio = {};
+  if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
+  
+  const exists = currentConfig.audio.playlist.some(s => s.url === url);
+  if (!exists && currentConfig.audio.playlist.length < 30) {
+    currentConfig.audio.playlist.unshift({ id: "song_" + Date.now(), title, artist, url, cover: "" });
+    renderPlaylist();
+  }
+  showToast(`✓ 已将《${title}》设为主打歌，请点击右上角【💾 立即发布生效】！`);
+}
+
+function addSongToPlaylist(title, artist, url, cover) {
+  if (!currentConfig.audio) currentConfig.audio = {};
+  if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
+
+  if (currentConfig.audio.playlist.length >= 30) {
+    return alert("⚠️ 播放列表最多可添加 30 首音乐，请删除部分曲目后再添加！");
+  }
+
+  currentConfig.audio.playlist.push({
+    id: "song_" + Date.now(),
+    title: title || "新添加曲目",
+    artist: artist || "精选歌手",
+    url: url || "",
+    cover: cover || ""
+  });
+
+  renderPlaylist();
+  showToast(`✓ 已将《${title}》加入播放列表 (${currentConfig.audio.playlist.length}/30)`);
+}
+
+function renderPlaylist() {
+  const container = document.getElementById("playlistContainer");
+  const countBadge = document.getElementById("playlistCountBadge");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const list = currentConfig?.audio?.playlist || [];
+  if (countBadge) countBadge.textContent = `(${list.length} / 30 首)`;
+
+  if (list.length === 0) {
+    container.innerHTML = `<div style="color:#94a3b8; font-size:12.5px; text-align:center; padding:18px;">🍃 暂无列表曲目，可在上方搜索歌曲一键【➕ 加歌单】或手动添加。</div>`;
+    return;
+  }
+
+  list.forEach((song, idx) => {
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.style.marginBottom = "10px";
+    card.innerHTML = `
+      <div class="item-card-header">
+        <span class="item-card-title">🎵 #${idx + 1} - ${escapeHtml(song.title || "未命名曲目")}</span>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-tool preview-play-btn" id="pl_prev_${idx}" style="padding:3px 8px; font-size:11px;" onclick="testPreviewAudio('${song.url}', 'pl_prev_${idx}', '${escapeHtml(song.title)}')">🎧 试听</button>
+          <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="movePlaylistSong(${idx}, -1)" ${idx === 0 ? "disabled" : ""}>⬆️</button>
+          <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="movePlaylistSong(${idx}, 1)" ${idx === list.length - 1 ? "disabled" : ""}>⬇️</button>
+          <button class="btn-del" style="padding:3px 8px; font-size:11px;" onclick="deletePlaylistSong(${idx})">🗑️</button>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>歌名</label><input type="text" class="admin-input" id="pl_title_${idx}" value="${escapeHtml(song.title || "")}" oninput="currentConfig.audio.playlist[${idx}].title=this.value"></div>
+        <div class="form-group"><label>歌手</label><input type="text" class="admin-input" id="pl_artist_${idx}" value="${escapeHtml(song.artist || "")}" oninput="currentConfig.audio.playlist[${idx}].artist=this.value"></div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>音频直链地址</label>
+          <div class="upload-input-group">
+            <input type="text" class="admin-input" id="pl_url_${idx}" value="${escapeHtml(song.url || "")}" oninput="currentConfig.audio.playlist[${idx}].url=this.value">
+            <button class="btn-upload" onclick="triggerDirectUpload('pl_url_${idx}', 'audio/*', (url)=>{ currentConfig.audio.playlist[${idx}].url=url; })">📤 上传MP3</button>
+          </div>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>专属黑胶中心封面 (可选)</label>
+          <div class="upload-input-group">
+            <input type="text" class="admin-input" id="pl_cover_${idx}" value="${escapeHtml(song.cover || "")}" oninput="currentConfig.audio.playlist[${idx}].cover=this.value">
+            <button class="btn-upload" onclick="triggerDirectUpload('pl_cover_${idx}', 'image/*', (url)=>{ currentConfig.audio.playlist[${idx}].cover=url; })">🖼️ 上传封面</button>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function addCustomPlaylistItem() {
+  if (!currentConfig.audio) currentConfig.audio = {};
+  if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
+
+  if (currentConfig.audio.playlist.length >= 30) {
+    return alert("⚠️ 播放列表最多可添加 30 首音乐！");
+  }
+
+  currentConfig.audio.playlist.push({
+    id: "song_" + Date.now(),
+    title: "自定义新音乐",
+    artist: "歌手",
+    url: "",
+    cover: ""
+  });
+  renderPlaylist();
+}
+
+function deletePlaylistSong(idx) {
+  if (confirm("确定从播放列表中移除该歌曲吗？")) {
+    currentConfig.audio.playlist.splice(idx, 1);
+    renderPlaylist();
+  }
+}
+
+function movePlaylistSong(idx, direction) {
+  const targetIdx = idx + direction;
+  const list = currentConfig.audio.playlist;
+  if (targetIdx < 0 || targetIdx >= list.length) return;
+  const temp = list[idx];
+  list[idx] = list[targetIdx];
+  list[targetIdx] = temp;
+  renderPlaylist();
 }
 
 let previewAudioObj = null;
@@ -493,12 +617,23 @@ async function saveAllConfigToCloud() {
     node.frontImg = document.getElementById(`tl_img_${idx}`)?.value;
   });
 
+  const playlistToSave = (currentConfig.audio?.playlist || []).map((song, idx) => ({
+    id: song.id || ("song_" + idx),
+    title: document.getElementById(`pl_title_${idx}`)?.value.trim() || song.title || "背景音乐",
+    artist: document.getElementById(`pl_artist_${idx}`)?.value.trim() || song.artist || "精选歌手",
+    url: document.getElementById(`pl_url_${idx}`)?.value.trim() || song.url || "",
+    cover: document.getElementById(`pl_cover_${idx}`)?.value.trim() || song.cover || ""
+  }));
+
   currentConfig.audio = {
+    ...(currentConfig.audio || {}),
     bgmAutoPlay: document.getElementById("audio_bgmAutoPlay").value === "true",
+    playMode: document.getElementById("audio_playMode").value || "list-loop",
     bgmTitle: document.getElementById("audio_bgmTitle").value.trim(),
     bgmArtist: document.getElementById("audio_bgmArtist").value.trim(),
     bgmUrl: document.getElementById("audio_bgmUrl").value.trim(),
-    vinylCover: document.getElementById("audio_vinylCover").value.trim()
+    vinylCover: document.getElementById("audio_vinylCover").value.trim(),
+    playlist: playlistToSave
   };
 
   showToast("⏳ 正在发布到独立存储空间...");
@@ -512,7 +647,7 @@ async function saveAllConfigToCloud() {
     const data = await res.json();
     if (data.success) {
       localStorage.setItem("love_admin_token", currentConfig.adminSecurity.password);
-      showToast("✨ 全部配置与单曲 BGM 已成功发布！");
+      showToast("✨ 全部配置与播放列表已成功发布！");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
