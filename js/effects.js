@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、多曲目播放列表引擎、自动连播与黑胶唱针联动
+ * 作用: 动效中枢、高稳定单曲/多曲目列表播放引擎、隐藏列表抽屉与黑胶唱针联动
  */
 
 class EffectsEngine {
@@ -12,6 +12,7 @@ class EffectsEngine {
     this.playlist = [];
     this.currentIndex = 0;
     this.playMode = "list-loop"; // "list-loop" | "single-loop" | "random"
+    this.isDrawerOpen = false;
 
     this.fireworksCanvas = document.getElementById("fireworks-canvas");
     this.fwCtx = this.fireworksCanvas ? this.fireworksCanvas.getContext("2d") : null;
@@ -25,27 +26,28 @@ class EffectsEngine {
     const audioCfg = this.config.audio || {};
     this.playMode = audioCfg.playMode || "list-loop";
 
+    // 默认单曲统一设为二珂版《告白气球》
+    const defaultSingleTitle = audioCfg.bgmTitle || "告白气球";
+    const defaultSingleArtist = audioCfg.bgmArtist || "二珂";
+    const defaultSingleUrl = audioCfg.bgmUrl || "/api/love/music-stream?hash=F4726605D01122AD14206E4EBFD3D2E1&album_id=0&title=%E5%91%8A%E7%99%BD%E6%B0%94%E7%90%83&artist=%E4%BA%8C%E7%8F%82";
+    const defaultCover = audioCfg.vinylCover || "";
+
     if (Array.isArray(audioCfg.playlist) && audioCfg.playlist.length > 0) {
       this.playlist = audioCfg.playlist.filter(item => item && (item.url || item.title)).map(item => ({
-        title: item.title || "浪漫背景音乐",
-        artist: item.artist || "精选旋律",
+        id: item.id || ("song_" + Math.random().toString(36).substring(2, 7)),
+        title: item.title || defaultSingleTitle,
+        artist: item.artist || defaultSingleArtist,
         url: item.url || `/api/love/music-stream?title=${encodeURIComponent(item.title)}&artist=${encodeURIComponent(item.artist)}`,
-        cover: item.cover || audioCfg.vinylCover || ""
+        cover: item.cover || defaultCover
       }));
     } else {
-      const defaultTitle = audioCfg.bgmTitle || "告白气球 (浪漫钢琴版)";
-      const defaultArtist = audioCfg.bgmArtist || "周杰伦";
-      let defaultUrl = audioCfg.bgmUrl || "";
-
-      if (!defaultUrl) {
-        defaultUrl = `/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E&album_id=0&title=${encodeURIComponent(defaultTitle)}&artist=${encodeURIComponent(defaultArtist)}`;
-      }
-
+      // 列表为空时，统一构建单曲播放条目
       this.playlist = [{
-        title: defaultTitle,
-        artist: defaultArtist,
-        url: defaultUrl,
-        cover: audioCfg.vinylCover || ""
+        id: "default_single",
+        title: defaultSingleTitle,
+        artist: defaultSingleArtist,
+        url: defaultSingleUrl,
+        cover: defaultCover
       }];
     }
 
@@ -56,7 +58,12 @@ class EffectsEngine {
 
   getCurrentTrack() {
     if (this.playlist.length === 0) {
-      return { title: "浪漫背景音乐", artist: "精选旋律", url: "", cover: "" };
+      return {
+        title: "告白气球",
+        artist: "二珂",
+        url: "/api/love/music-stream?hash=F4726605D01122AD14206E4EBFD3D2E1&album_id=0&title=%E5%91%8A%E7%99%BD%E6%B0%94%E7%90%83&artist=%E4%BA%8C%E7%8F%82",
+        cover: ""
+      };
     }
     return this.playlist[this.currentIndex] || this.playlist[0];
   }
@@ -67,6 +74,7 @@ class EffectsEngine {
     this.initCanvasSize();
     this.initEventListeners();
     this.updateTrackInfoDisplay();
+    this.renderDrawerPlaylist();
 
     // 交互唤醒手势，解除所有浏览器的静音拦截
     const unlockAudio = () => {
@@ -93,6 +101,7 @@ class EffectsEngine {
       this.bgmAudio.load();
     }
     this.updateTrackInfoDisplay();
+    this.renderDrawerPlaylist();
   }
 
   initCanvasSize() {
@@ -107,16 +116,18 @@ class EffectsEngine {
       const currentTrack = this.getCurrentTrack();
       this.bgmAudio = new Audio(currentTrack.url);
       this.bgmAudio.preload = "auto";
-      this.bgmAudio.loop = false; // 采用事件驱动连播
+      this.bgmAudio.loop = false; // 采用列表/事件驱动循环
 
       this.bgmAudio.addEventListener("play", () => {
         this.isPlaying = true;
         this.setVinylVisualPlaying(true);
+        this.renderDrawerPlaylist();
       });
 
       this.bgmAudio.addEventListener("pause", () => {
         this.isPlaying = false;
         this.setVinylVisualPlaying(false);
+        this.renderDrawerPlaylist();
       });
 
       // 歌曲播放完毕，触发自动连播管线
@@ -124,12 +135,11 @@ class EffectsEngine {
         this.handleTrackEnded();
       });
 
-      // 精准拦截音频加载失败，平稳隔离，并尝试轮换下一首
+      // 精准拦截音频加载失败，平稳隔离
       this.bgmAudio.addEventListener("error", () => {
         this.isPlaying = false;
         this.setVinylVisualPlaying(false);
-        console.warn(`[音频系统] 当前曲目《${this.getCurrentTrack().title}》加载受阻，正在检查后续曲目...`);
-        
+        console.warn(`[音频系统] 当前曲目《${this.getCurrentTrack().title}》加载受阻，尝试检测下一首...`);
         if (this.playlist.length > 1) {
           setTimeout(() => {
             this.playNext(true);
@@ -140,22 +150,16 @@ class EffectsEngine {
   }
 
   handleTrackEnded() {
-    if (this.playMode === "single-loop") {
+    if (this.playMode === "single-loop" || this.playlist.length === 1) {
       this.bgmAudio.currentTime = 0;
       this.playBgm();
     } else if (this.playMode === "random") {
-      if (this.playlist.length > 1) {
-        let nextIdx = Math.floor(Math.random() * this.playlist.length);
-        if (nextIdx === this.currentIndex) {
-          nextIdx = (nextIdx + 1) % this.playlist.length;
-        }
-        this.playIndex(nextIdx);
-      } else {
-        this.bgmAudio.currentTime = 0;
-        this.playBgm();
+      let nextIdx = Math.floor(Math.random() * this.playlist.length);
+      if (nextIdx === this.currentIndex) {
+        nextIdx = (nextIdx + 1) % this.playlist.length;
       }
+      this.playIndex(nextIdx);
     } else {
-      // 默认列表循环 list-loop
       this.playNext(true);
     }
   }
@@ -172,6 +176,7 @@ class EffectsEngine {
     this.bgmAudio.src = track.url;
     this.bgmAudio.load();
     this.updateTrackInfoDisplay();
+    this.renderDrawerPlaylist();
     this.playBgm();
     this.showMiniToast(`🎵 正在播放: ${track.title} - ${track.artist}`);
   }
@@ -186,6 +191,7 @@ class EffectsEngine {
       this.bgmAudio.load();
     }
     this.updateTrackInfoDisplay();
+    this.renderDrawerPlaylist();
     if (autoPlay) {
       this.playBgm();
     }
@@ -202,6 +208,7 @@ class EffectsEngine {
       this.bgmAudio.load();
     }
     this.updateTrackInfoDisplay();
+    this.renderDrawerPlaylist();
     if (autoPlay) {
       this.playBgm();
     }
@@ -242,6 +249,52 @@ class EffectsEngine {
     } else {
       this.playBgm();
     }
+  }
+
+  // 展开 / 收起隐藏歌曲列表抽屉
+  togglePlaylistDrawer() {
+    const drawer = document.getElementById("playlist-drawer");
+    if (!drawer) return;
+    this.isDrawerOpen = !this.isDrawerOpen;
+    if (this.isDrawerOpen) {
+      this.renderDrawerPlaylist();
+      drawer.classList.add("show");
+    } else {
+      drawer.classList.remove("show");
+    }
+  }
+
+  closePlaylistDrawer() {
+    const drawer = document.getElementById("playlist-drawer");
+    if (drawer) {
+      this.isDrawerOpen = false;
+      drawer.classList.remove("show");
+    }
+  }
+
+  renderDrawerPlaylist() {
+    const listContainer = document.getElementById("playlist-drawer-list");
+    if (!listContainer) return;
+
+    if (!this.playlist || this.playlist.length === 0) {
+      listContainer.innerHTML = `<div class="playlist-drawer__empty">🍃 暂无自定义歌曲<br>当前默认播放《告白气球》</div>`;
+      return;
+    }
+
+    listContainer.innerHTML = this.playlist.map((song, idx) => {
+      const isCur = idx === this.currentIndex;
+      return `
+        <div class="playlist-drawer__item ${isCur ? 'active' : ''}" onclick="window.Effects.playIndex(${idx})">
+          <div class="playlist-drawer__item-info">
+            <div class="playlist-drawer__item-title">${idx + 1}. ${this.escape(song.title)}</div>
+            <div class="playlist-drawer__item-artist">${this.escape(song.artist)}</div>
+          </div>
+          <div class="playlist-drawer__item-icon">
+            ${isCur ? (this.isPlaying ? '🔊' : '⏸️') : '▶'}
+          </div>
+        </div>
+      `;
+    }).join("");
   }
 
   setVinylVisualPlaying(playing) {
@@ -305,13 +358,35 @@ class EffectsEngine {
   initEventListeners() {
     const disc = document.getElementById("vinyl-disc");
     const toggleBtn = document.getElementById("audio-toggle-btn");
-    const nextBtn = document.getElementById("audio-next-btn");
-    const prevBtn = document.getElementById("audio-prev-btn");
+    const listBtn = document.getElementById("audio-list-btn");
+    const closeDrawerBtn = document.getElementById("playlist-drawer-close");
 
     if (disc) disc.onclick = () => this.toggleBgm();
     if (toggleBtn) toggleBtn.onclick = () => this.toggleBgm();
-    if (nextBtn) nextBtn.onclick = () => this.playNext(true);
-    if (prevBtn) prevBtn.onclick = () => this.playPrev(true);
+    
+    // 精准修复：绑定歌单按钮点击事件，阻断冒泡并呼出抽屉
+    if (listBtn) {
+      listBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.togglePlaylistDrawer();
+      };
+    }
+    
+    if (closeDrawerBtn) {
+      closeDrawerBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.closePlaylistDrawer();
+      };
+    }
+
+    // 点击外部区域自动收起抽屉
+    document.addEventListener("click", (e) => {
+      const drawer = document.getElementById("playlist-drawer");
+      const vinylPlayer = document.getElementById("vinyl-player");
+      if (this.isDrawerOpen && drawer && !drawer.contains(e.target) && !vinylPlayer.contains(e.target)) {
+        this.closePlaylistDrawer();
+      }
+    });
   }
 
   playAudio(soundName) {
