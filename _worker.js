@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 架构: 单源多租户路由、酷狗真实音频流式转发、双轨管理鉴权、免密灵宠通道、圣洁言语过滤、HMAC 授权验证
+ * 架构: 单源多租户路由、多源流式音频转发、严格租户独立鉴权(彻底封堵521后门)、免密灵宠通道、圣洁言语过滤、HMAC 授权验证
  */
 
 export default {
@@ -38,29 +38,35 @@ export default {
     const ADMIN_PASSWORD = String(env.ADMIN_PASSWORD || env.SECRET_PWD || env.ADMIN_PWD || "521").trim();
     const MASTER_LICENSE_SECRET = String(env.MASTER_LICENSE_SECRET || "SACRED_UNQUENCHABLE_LOVE_2026_KEY").trim();
 
+    // 严格管理鉴权：租户自定义密码具有最高优先级，彻底消除 521 越权后门
     async function verifyAdminAuth(req) {
       const headerAuth = req.headers.get("x-admin-auth") || req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
       const queryAuth = url.searchParams.get("auth");
       const token = (headerAuth || queryAuth || "").trim();
 
       if (!token) return false;
-      if (token === ADMIN_PASSWORD || token === "521" || token.toLowerCase() === "521") return true;
 
+      // 1. 如果环境变量配置了非 521 的全局超级密钥，允许作为运维直通
+      if (env.ADMIN_PASSWORD && env.ADMIN_PASSWORD !== "521" && token === String(env.ADMIN_PASSWORD).trim()) {
+        return true;
+      }
+
+      // 2. 检查租户专属 R2 存储中的配置密码
       if (bucket) {
         try {
           const obj = await bucket.get(CONFIG_KEY);
           if (obj) {
             const cfg = JSON.parse(await obj.text());
+            // 只要租户配置了自定义管理密码，必须严格匹配该密码，绝不放行 521
             if (cfg.adminSecurity && cfg.adminSecurity.password) {
-              if (token === String(cfg.adminSecurity.password).trim()) return true;
-            }
-            if (cfg.gatekeeper && cfg.gatekeeper.correctAnswer) {
-              if (token.toLowerCase() === String(cfg.gatekeeper.correctAnswer).trim().toLowerCase()) return true;
+              return token === String(cfg.adminSecurity.password).trim();
             }
           }
         } catch (_) {}
       }
-      return false;
+
+      // 3. 仅在站点尚未进行任何自定义配置时，才允许默认初始密码 521
+      return token === "521" || token === ADMIN_PASSWORD;
     }
 
     function sanitizeSanctity(contentString) {
@@ -101,7 +107,7 @@ export default {
     }
 
     try {
-      // 1. 获取全站配置 (自动传递当前租户 Host 给前端渲染)
+      // 1. 获取全站配置
       if (url.pathname === "/api/love/config" && request.method === "GET") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -244,17 +250,15 @@ export default {
         }
       }
 
-      // 5. 门禁校验
+      // 5. 门禁校验 (严格根据自定义管理密码判定 isAdmin，彻底封堵 521 漏洞)
       if (url.pathname === "/api/love/verify-gatekeeper" && request.method === "POST") {
         let reqData = {};
         try { reqData = await request.json(); } catch (_) {}
         const inputPwd = String(reqData.password || "").trim().toLowerCase();
 
-        if (inputPwd === "521" || inputPwd === "admin" || inputPwd === ADMIN_PASSWORD.toLowerCase()) {
-          return jsonResponse({ success: true, isAdmin: true });
-        }
-
         let correctPwd = "240520";
+        let customAdminPwd = null;
+
         if (bucket) {
           try {
             const cfgObj = await bucket.get(CONFIG_KEY);
@@ -263,13 +267,30 @@ export default {
               if (cfg.gatekeeper?.correctAnswer) {
                 correctPwd = String(cfg.gatekeeper.correctAnswer).trim().toLowerCase();
               }
-              if (cfg.adminSecurity?.password && inputPwd === String(cfg.adminSecurity.password).trim().toLowerCase()) {
-                return jsonResponse({ success: true, isAdmin: true });
+              if (cfg.adminSecurity?.password) {
+                customAdminPwd = String(cfg.adminSecurity.password).trim().toLowerCase();
               }
             }
           } catch (_) {}
         }
 
+        // 仅当输入密码与当前租户自定义密码完全相符时才判定为管理员
+        let isAdmin = false;
+        if (customAdminPwd) {
+          if (inputPwd === customAdminPwd || (env.ADMIN_PASSWORD && env.ADMIN_PASSWORD !== "521" && inputPwd === String(env.ADMIN_PASSWORD).trim().toLowerCase())) {
+            isAdmin = true;
+          }
+        } else {
+          if (inputPwd === "521" || inputPwd === "admin" || inputPwd === ADMIN_PASSWORD.toLowerCase()) {
+            isAdmin = true;
+          }
+        }
+
+        if (isAdmin) {
+          return jsonResponse({ success: true, isAdmin: true });
+        }
+
+        // 访客门禁校验
         if (inputPwd === correctPwd) {
           return jsonResponse({ success: true, isAdmin: false });
         } else {
