@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/components.css
- * 升级：针对手机端顶部胶囊避让、黑胶唱片底部安全区、拍立得背面心动语音条与元素防重叠优化
+ * 升级：释放 3D 拍立得手势传递管道，支持 iOS 平滑贯通滚动
  */
 
 .universe-canvas,
@@ -375,6 +375,7 @@
   perspective: 1200px;
   cursor: pointer;
   user-select: none;
+  touch-action: pan-y;
 }
 
 .polaroid-card__inner {
@@ -383,6 +384,7 @@
   border-radius: 20px;
   transition: transform 0.7s var(--ease-spring);
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 .polaroid-card__inner--flipped { transform: rotateY(180deg); }
@@ -643,6 +645,7 @@
   max-height: 380px;
   overflow-y: auto;
   padding-right: 6px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .checklist-item {
@@ -951,6 +954,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .playlist-drawer__item {
