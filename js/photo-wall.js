@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe)
  * 文件名: js/photo-wall.js
- * 作用: 「时光留白」自由视差照片墙渲染与全页面流式视差滚动计算 (支持首图正立头像固定)
+ * 作用: 「时光留白」自由视差照片墙渲染与全页面流式视差滚动计算 (支持首图正立头像固定与手机端安全避让)
  */
 
 class PhotoWallManager {
@@ -61,7 +61,8 @@ class PhotoWallManager {
       const totalPhotos = remainingNodes.length;
 
       if (totalPhotos > 0) {
-        const startTop = 260; // 避开顶部头像与大标题区域
+        const isMobile = window.innerWidth <= 640;
+        const startTop = isMobile ? 330 : 260; // 移动端充分避让顶部头像、大标题与同行计时器
         const availableHeight = Math.max(pageHeight - startTop - 200, totalPhotos * 260);
         const verticalGap = availableHeight / Math.max(totalPhotos, 1);
 
