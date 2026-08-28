@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/components.css
- * 升级：释放 3D 拍立得手势传递管道，支持 iOS 平滑贯通滚动
+ * 升级：移动端姓名避让布局、释放 3D 拍立得手势传递管道，支持 iOS/Android 平滑滚动
  */
 
 .universe-canvas,
@@ -1068,34 +1068,42 @@
 .poster-modal__tip { font-size: 12px; color: var(--text-sub, var(--text-muted)); margin-top: 10px; }
 .poster-modal__actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
 
-/* ================= 📱 手机端视口深度优化 ================= */
+/* ================= 📱 手机端视口深度优化 (彻底消除头像遮挡名字) ================= */
 @media (max-width: 640px) {
   .hero-section {
-    padding-top: max(56px, calc(env(safe-area-inset-top, 0px) + 52px));
-    margin-bottom: 28px;
+    padding-top: max(76px, calc(env(safe-area-inset-top, 0px) + 72px));
+    margin-bottom: 26px;
+  }
+  .hero-section__badge {
+    margin-bottom: 8px;
   }
   .hero-section__names {
-    font-size: 26px;
+    font-size: 24px;
+    position: relative;
+    z-index: 30;
+    padding: 0 8px;
+    margin-bottom: 6px;
   }
   .hero-section__subtitle {
-    font-size: 12px;
+    font-size: 11.5px;
     padding: 0 12px;
     line-height: 1.5;
+    margin-bottom: 20px;
   }
 
   .perspective-capsule {
-    top: max(12px, env(safe-area-inset-top, 12px));
-    right: 12px;
+    top: max(10px, env(safe-area-inset-top, 10px));
+    right: 10px;
     padding: 2.5px;
   }
   .perspective-btn {
-    padding: 6px 11px;
-    font-size: 11.5px;
+    padding: 5px 10px;
+    font-size: 11px;
   }
 
   .easter-egg-trigger--star {
-    top: max(58px, calc(env(safe-area-inset-top, 0px) + 54px)) !important;
-    right: 14px !important;
+    top: max(56px, calc(env(safe-area-inset-top, 0px) + 52px)) !important;
+    right: 12px !important;
   }
 
   .love-timer {
