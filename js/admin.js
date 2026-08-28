@@ -624,7 +624,7 @@ async function cleanOrphanR2Cache() {
   } catch (err) { alert("❌ 请求异常: " + err.message); }
 }
 
-// 时光轴渲染
+// 时光轴渲染 (集成背面录音直链输入与 🎙️ 上传音频)
 function renderTimelineList() {
   const container = document.getElementById("timelineListContainer");
   if (!container) return;
@@ -641,7 +641,14 @@ function renderTimelineList() {
         <div class="form-group"><label>地点</label><input type="text" class="admin-input" id="tl_loc_${idx}" value="${escapeHtml(item.location || "")}"></div>
         <div class="form-group" style="grid-column: 1 / -1;"><label>正面描述</label><textarea class="admin-textarea" id="tl_desc_${idx}" rows="2">${escapeHtml(item.desc || "")}</textarea></div>
         <div class="form-group" style="grid-column: 1 / -1;"><label>背面留言</label><textarea class="admin-textarea" id="tl_back_${idx}" rows="2">${escapeHtml(item.backText || "")}</textarea></div>
-        <div class="form-group"><label>正面照片直链</label><div class="upload-input-group"><input type="text" class="admin-input" id="tl_img_${idx}" value="${escapeHtml(item.frontImg || "")}"><button class="btn-upload" onclick="triggerDirectUpload('tl_img_${idx}', 'image/*')">🖼️</button></div></div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label style="color:#fbcfe8; font-weight:800;">🎙️ 背面专属录音/语音直链 (60秒以内美好声音记录)</label>
+          <div class="upload-input-group">
+            <input type="text" class="admin-input" id="tl_voice_${idx}" value="${escapeHtml(item.voiceAudio || "")}" placeholder="输入音频直链或点击右侧上传 MP3/M4A 录音..." oninput="if(currentConfig.timeline[${idx}]) currentConfig.timeline[${idx}].voiceAudio=this.value">
+            <button class="btn-upload" style="background:linear-gradient(135deg, #f43f5e 0%, #be123c 100%); color:#fff; border-color:rgba(255,255,255,0.3);" onclick="triggerDirectUpload('tl_voice_${idx}', 'audio/*', (url)=>{ if(currentConfig.timeline[${idx}]) currentConfig.timeline[${idx}].voiceAudio=url; })">🎙️ 上传录音</button>
+          </div>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;"><label>正面照片直链</label><div class="upload-input-group"><input type="text" class="admin-input" id="tl_img_${idx}" value="${escapeHtml(item.frontImg || "")}"><button class="btn-upload" onclick="triggerDirectUpload('tl_img_${idx}', 'image/*')">🖼️ 上传照片</button></div></div>
       </div>
     `;
     container.appendChild(card);
@@ -759,7 +766,7 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
-// 发布全量配置到云端
+// 发布全量配置到云端 (全量持久化时光轴 voiceAudio)
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
   currentConfig.adminSecurity = {
@@ -805,13 +812,14 @@ async function saveAllConfigToCloud() {
   };
 
   (currentConfig.timeline || []).forEach((node, idx) => {
-    node.date = document.getElementById(`tl_date_${idx}`)?.value;
-    node.tag = document.getElementById(`tl_tag_${idx}`)?.value;
-    node.title = document.getElementById(`tl_title_${idx}`)?.value;
-    node.location = document.getElementById(`tl_loc_${idx}`)?.value;
-    node.desc = document.getElementById(`tl_desc_${idx}`)?.value;
-    node.backText = document.getElementById(`tl_back_${idx}`)?.value;
-    node.frontImg = document.getElementById(`tl_img_${idx}`)?.value;
+    node.date = document.getElementById(`tl_date_${idx}`)?.value || "";
+    node.tag = document.getElementById(`tl_tag_${idx}`)?.value || "";
+    node.title = document.getElementById(`tl_title_${idx}`)?.value || "";
+    node.location = document.getElementById(`tl_loc_${idx}`)?.value || "";
+    node.desc = document.getElementById(`tl_desc_${idx}`)?.value || "";
+    node.backText = document.getElementById(`tl_back_${idx}`)?.value || "";
+    node.voiceAudio = document.getElementById(`tl_voice_${idx}`)?.value?.trim() || "";
+    node.frontImg = document.getElementById(`tl_img_${idx}`)?.value || "";
   });
 
   const playlistToSave = (currentConfig.audio?.playlist || []).map((song, idx) => ({
@@ -844,7 +852,7 @@ async function saveAllConfigToCloud() {
     const data = await res.json();
     if (data.success) {
       localStorage.setItem("love_admin_token", currentConfig.adminSecurity.password);
-      showToast("✨ 全部配置与播放列表已成功发布！");
+      showToast("✨ 全部配置、时光语音与播放列表已成功发布！");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
