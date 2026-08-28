@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、高稳定单曲直连播放引擎、黑胶唱针联动
+ * 作用: 动效中枢、多曲目播放列表引擎、自动连播与黑胶唱针联动
  */
 
 class EffectsEngine {
@@ -9,6 +9,9 @@ class EffectsEngine {
     this.config = config || window.LOVE_CONFIG || {};
     this.bgmAudio = null;
     this.isPlaying = false;
+    this.playlist = [];
+    this.currentIndex = 0;
+    this.playMode = "list-loop"; // "list-loop" | "single-loop" | "random"
 
     this.fireworksCanvas = document.getElementById("fireworks-canvas");
     this.fwCtx = this.fireworksCanvas ? this.fireworksCanvas.getContext("2d") : null;
@@ -18,25 +21,48 @@ class EffectsEngine {
     this.init();
   }
 
-  getNormalizedAudioConfig() {
+  loadPlaylistFromConfig() {
     const audioCfg = this.config.audio || {};
-    const title = audioCfg.bgmTitle || "告白气球 (浪漫钢琴版)";
-    const artist = audioCfg.bgmArtist || "周杰伦";
-    let url = audioCfg.bgmUrl || "";
+    this.playMode = audioCfg.playMode || "list-loop";
 
-    if (!url) {
-      url = `/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E&album_id=0&title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
+    if (Array.isArray(audioCfg.playlist) && audioCfg.playlist.length > 0) {
+      this.playlist = audioCfg.playlist.filter(item => item && (item.url || item.title)).map(item => ({
+        title: item.title || "浪漫背景音乐",
+        artist: item.artist || "精选旋律",
+        url: item.url || `/api/love/music-stream?title=${encodeURIComponent(item.title)}&artist=${encodeURIComponent(item.artist)}`,
+        cover: item.cover || audioCfg.vinylCover || ""
+      }));
+    } else {
+      const defaultTitle = audioCfg.bgmTitle || "告白气球 (浪漫钢琴版)";
+      const defaultArtist = audioCfg.bgmArtist || "周杰伦";
+      let defaultUrl = audioCfg.bgmUrl || "";
+
+      if (!defaultUrl) {
+        defaultUrl = `/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E&album_id=0&title=${encodeURIComponent(defaultTitle)}&artist=${encodeURIComponent(defaultArtist)}`;
+      }
+
+      this.playlist = [{
+        title: defaultTitle,
+        artist: defaultArtist,
+        url: defaultUrl,
+        cover: audioCfg.vinylCover || ""
+      }];
     }
 
-    return {
-      title,
-      artist,
-      url,
-      cover: audioCfg.vinylCover || ""
-    };
+    if (this.currentIndex >= this.playlist.length) {
+      this.currentIndex = 0;
+    }
+  }
+
+  getCurrentTrack() {
+    if (this.playlist.length === 0) {
+      return { title: "浪漫背景音乐", artist: "精选旋律", url: "", cover: "" };
+    }
+    return this.playlist[this.currentIndex] || this.playlist[0];
   }
 
   init() {
+    this.loadPlaylistFromConfig();
     this.initAudioPlayer();
     this.initCanvasSize();
     this.initEventListeners();
@@ -59,9 +85,11 @@ class EffectsEngine {
 
   updateConfig(newConfig) {
     this.config = newConfig || {};
-    const track = this.getNormalizedAudioConfig();
-    if (this.bgmAudio && this.bgmAudio.src !== track.url) {
-      this.bgmAudio.src = track.url;
+    this.loadPlaylistFromConfig();
+    const currentTrack = this.getCurrentTrack();
+
+    if (this.bgmAudio && currentTrack.url && this.bgmAudio.src !== currentTrack.url) {
+      this.bgmAudio.src = currentTrack.url;
       this.bgmAudio.load();
     }
     this.updateTrackInfoDisplay();
@@ -76,10 +104,10 @@ class EffectsEngine {
 
   initAudioPlayer() {
     if (!this.bgmAudio) {
-      const track = this.getNormalizedAudioConfig();
-      this.bgmAudio = new Audio(track.url);
+      const currentTrack = this.getCurrentTrack();
+      this.bgmAudio = new Audio(currentTrack.url);
       this.bgmAudio.preload = "auto";
-      this.bgmAudio.loop = true;
+      this.bgmAudio.loop = false; // 采用事件驱动连播
 
       this.bgmAudio.addEventListener("play", () => {
         this.isPlaying = true;
@@ -91,19 +119,98 @@ class EffectsEngine {
         this.setVinylVisualPlaying(false);
       });
 
-      // 精准拦截音频加载失败，物理隔离播放状态与 UI 表现
+      // 歌曲播放完毕，触发自动连播管线
+      this.bgmAudio.addEventListener("ended", () => {
+        this.handleTrackEnded();
+      });
+
+      // 精准拦截音频加载失败，平稳隔离，并尝试轮换下一首
       this.bgmAudio.addEventListener("error", () => {
         this.isPlaying = false;
         this.setVinylVisualPlaying(false);
-        console.warn("当前背景音乐加载受阻: 音频源暂时不可用或网络异常");
+        console.warn(`[音频系统] 当前曲目《${this.getCurrentTrack().title}》加载受阻，正在检查后续曲目...`);
+        
+        if (this.playlist.length > 1) {
+          setTimeout(() => {
+            this.playNext(true);
+          }, 1500);
+        }
       });
     }
+  }
+
+  handleTrackEnded() {
+    if (this.playMode === "single-loop") {
+      this.bgmAudio.currentTime = 0;
+      this.playBgm();
+    } else if (this.playMode === "random") {
+      if (this.playlist.length > 1) {
+        let nextIdx = Math.floor(Math.random() * this.playlist.length);
+        if (nextIdx === this.currentIndex) {
+          nextIdx = (nextIdx + 1) % this.playlist.length;
+        }
+        this.playIndex(nextIdx);
+      } else {
+        this.bgmAudio.currentTime = 0;
+        this.playBgm();
+      }
+    } else {
+      // 默认列表循环 list-loop
+      this.playNext(true);
+    }
+  }
+
+  playIndex(index) {
+    if (index < 0 || index >= this.playlist.length) return;
+    this.currentIndex = index;
+    const track = this.getCurrentTrack();
+
+    if (!this.bgmAudio) {
+      this.initAudioPlayer();
+    }
+
+    this.bgmAudio.src = track.url;
+    this.bgmAudio.load();
+    this.updateTrackInfoDisplay();
+    this.playBgm();
+    this.showMiniToast(`🎵 正在播放: ${track.title} - ${track.artist}`);
+  }
+
+  playNext(autoPlay = true) {
+    if (this.playlist.length === 0) return;
+    this.currentIndex = (this.currentIndex + 1) % this.playlist.length;
+    const track = this.getCurrentTrack();
+
+    if (this.bgmAudio) {
+      this.bgmAudio.src = track.url;
+      this.bgmAudio.load();
+    }
+    this.updateTrackInfoDisplay();
+    if (autoPlay) {
+      this.playBgm();
+    }
+    this.showMiniToast(`⏭️ 下一首: ${track.title}`);
+  }
+
+  playPrev(autoPlay = true) {
+    if (this.playlist.length === 0) return;
+    this.currentIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
+    const track = this.getCurrentTrack();
+
+    if (this.bgmAudio) {
+      this.bgmAudio.src = track.url;
+      this.bgmAudio.load();
+    }
+    this.updateTrackInfoDisplay();
+    if (autoPlay) {
+      this.playBgm();
+    }
+    this.showMiniToast(`⏮️ 上一首: ${track.title}`);
   }
 
   playBgm() {
     if (!this.bgmAudio || !this.bgmAudio.src) return;
 
-    // 若音频已处于错误状态，不强行发起播放请求以防抛出未捕获的 DOM 异常
     if (this.bgmAudio.error) {
       this.isPlaying = false;
       this.setVinylVisualPlaying(false);
@@ -166,7 +273,7 @@ class EffectsEngine {
   }
 
   updateTrackInfoDisplay() {
-    const track = this.getNormalizedAudioConfig();
+    const track = this.getCurrentTrack();
     const coverImg = document.getElementById("vinyl-cover");
     const defaultHeart = document.querySelector(".vinyl-player__default-heart");
 
@@ -180,6 +287,11 @@ class EffectsEngine {
         if (defaultHeart) defaultHeart.style.display = "block";
       }
     }
+
+    const titleEl = document.getElementById("vinyl-title-display") || document.querySelector(".vinyl-song-title");
+    const artistEl = document.getElementById("vinyl-artist-display") || document.querySelector(".vinyl-song-artist");
+    if (titleEl) titleEl.textContent = track.title;
+    if (artistEl) artistEl.textContent = track.artist;
   }
 
   showMiniToast(text) {
@@ -193,9 +305,13 @@ class EffectsEngine {
   initEventListeners() {
     const disc = document.getElementById("vinyl-disc");
     const toggleBtn = document.getElementById("audio-toggle-btn");
+    const nextBtn = document.getElementById("audio-next-btn");
+    const prevBtn = document.getElementById("audio-prev-btn");
 
     if (disc) disc.onclick = () => this.toggleBgm();
     if (toggleBtn) toggleBtn.onclick = () => this.toggleBgm();
+    if (nextBtn) nextBtn.onclick = () => this.playNext(true);
+    if (prevBtn) prevBtn.onclick = () => this.playPrev(true);
   }
 
   playAudio(soundName) {
