@@ -1,32 +1,38 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: css/photo-wall.css
+ * 作用: 全景流式视差照片墙样式 (支持全页面自适应分布与防边缘裁切)
  */
 
 .parallax-photo-wall {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
   z-index: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .wall-polaroid-item {
   position: absolute;
-  width: 110px;
-  background: #fffdfa;
-  padding: 8px 8px 24px 8px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  width: 120px;
+  background: #ffffff;
+  padding: 8px 8px 22px 8px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.15);
   border-radius: 4px;
-  opacity: 0.22;
-  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.38;
+  will-change: transform;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: opacity 0.35s ease, box-shadow 0.35s ease;
 }
 
-@media (min-width: 1024px) {
-  .wall-polaroid-item { width: 140px; opacity: 0.35; }
-  .wall-polaroid-item:hover { opacity: 0.95; z-index: 50; transform: scale(1.15) rotate(0deg) !important; }
+.wall-polaroid-item:hover {
+  opacity: 0.98;
+  z-index: 40;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(244, 63, 94, 0.35);
 }
 
 .wall-polaroid-inner {
@@ -35,10 +41,34 @@
   overflow: hidden;
   border-radius: 2px;
   background: #0f172a;
+  position: relative;
 }
 
 .wall-polaroid-inner img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .wall-polaroid-item {
+    width: 145px;
+    padding: 10px 10px 26px 10px;
+    opacity: 0.45;
+  }
+  .wall-polaroid-inner {
+    height: 130px;
+  }
+}
+
+@media (max-width: 640px) {
+  .wall-polaroid-item {
+    width: 90px;
+    padding: 6px 6px 16px 6px;
+    opacity: 0.3;
+  }
+  .wall-polaroid-inner {
+    height: 80px;
+  }
 }
