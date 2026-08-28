@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe) 前台核心主控
  * 文件名: js/core.js
- * 作用: 门禁鉴权、打字机、彩蛋与 300DPI 多图拍立得、无损保真裁切及专属中文二维码海报生成
+ * 作用: 门禁鉴权、软键盘失焦防白屏、打字机、彩蛋与 300DPI 多图拍立得海报生成
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -366,16 +366,36 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function unlockMainUniverse(withAnimation = true) {
+    // 1. 强制收起移动端软键盘并复位视口位置（根除 Android 键盘回弹白屏与空白残留）
+    if (document.activeElement && typeof document.activeElement.blur === "function") {
+      document.activeElement.blur();
+    }
+    if (dom.gatekeeperInput) {
+      dom.gatekeeperInput.blur();
+    }
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
     if (withAnimation && dom.gatekeeperScreen) {
       dom.gatekeeperScreen.classList.add("gatekeeper--unlocking");
-      setTimeout(() => { dom.gatekeeperScreen.style.display = "none"; }, 700);
+      setTimeout(() => {
+        dom.gatekeeperScreen.style.display = "none";
+        window.scrollTo(0, 0);
+        window.dispatchEvent(new Event("resize"));
+      }, 700);
     } else if (dom.gatekeeperScreen) {
       dom.gatekeeperScreen.style.display = "none";
+      window.scrollTo(0, 0);
+      window.dispatchEvent(new Event("resize"));
     }
 
     if (dom.mainContainer) {
       dom.mainContainer.style.display = "block";
-      setTimeout(() => { dom.mainContainer.classList.remove("main-container--hidden"); }, 50);
+      setTimeout(() => {
+        dom.mainContainer.classList.remove("main-container--hidden");
+        window.dispatchEvent(new Event("resize"));
+      }, 50);
     }
 
     if (window.LifecycleEngine) {
