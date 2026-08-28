@@ -53,7 +53,7 @@
         <button class="tab-btn" data-tab="tab-audio">🎵 7. 背景音乐与播放列表</button>
         <button class="tab-btn" data-tab="tab-eggs">🐣 8. 隐藏彩蛋悄悄话</button>
         <button class="tab-btn" data-tab="tab-theme">🎨 9. 双视角主题陈列室</button>
-        <button class="tab-btn" data-tab="tab-license">💎 10. 星河契约授权</button>
+        <button class="tab-btn" data-tab="tab-license">💎 10. 契约授权</button>
       </nav>
 
       <div class="admin-content">
@@ -62,7 +62,7 @@
           <div class="pane-header"><h3>👫 基础档案与生命周期阶段设置</h3></div>
           <div class="form-grid">
             <div class="form-group" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1); padding: 14px; border-radius: 14px; border: 1px solid rgba(56, 189, 248, 0.3);">
-              <label style="color:#7dd3fc; font-weight:800;">🔑 本站后台独立管理登录密码 (修改后请牢记，默认 521)</label>
+              <label style="color:#7dd3fc; font-weight:800;">🔑 本站后台独立管理登录密码 (注意：为了保密，密码修改后请牢记，不可找回！！！默认 521)</label>
               <input type="text" id="admin_customPassword" class="admin-input" placeholder="输入新管理密码 (留空则默认为 521)">
             </div>
             <div class="form-group" style="grid-column: 1 / -1; background: rgba(245, 158, 11, 0.12); padding: 14px; border-radius: 14px; border: 1px solid rgba(245,158,11,0.3);">
@@ -94,7 +94,7 @@
             <div class="form-group"><label>正确数字密码</label><input type="text" id="gatekeeper_correctAnswer" class="admin-input"></div>
             <div class="form-group" style="grid-column: 1 / -1; background: rgba(245, 158, 11, 0.1); padding: 14px; border-radius: 14px; border: 1.5px solid rgba(245, 158, 11, 0.35);">
               <label style="color:#fde68a; font-weight:800;">🎙️ 专属语音誓言解锁密码</label>
-              <input type="text" id="gatekeeper_voiceVows" class="admin-input" placeholder="例如: 众水不能熄灭, 我愿一生包容你, 永远爱你, 240520">
+              <input type="text" id="gatekeeper_voiceVows" class="admin-input" placeholder="例如: 开心, 喜乐, 永远爱你, 240520">
             </div>
             <div class="form-group" style="grid-column: 1 / -1;"><label>输错密码提示词</label><textarea id="gatekeeper_errorTips" class="admin-textarea" rows="4"></textarea></div>
           </div>
@@ -248,7 +248,7 @@
 
         <!-- 10. 授权 -->
         <section id="tab-license" class="tab-pane">
-          <div class="pane-header"><h3>💎 星河契约 · 专属授权激活状态</h3></div>
+          <div class="pane-header"><h3>💎 契约 · 专属授权激活状态</h3></div>
           <div style="background: rgba(3, 7, 18, 0.7); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 22px;">
             <div id="licenseStatusBox" style="margin-bottom: 18px; font-size: 14px;"><span style="color: #94a3b8;">状态：</span><span id="licenseStatusBadge" style="font-weight: 800; color: #f59e0b;">检测中...</span></div>
             <div class="form-group">
