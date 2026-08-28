@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/theme-engine.js
- * 作用: 多维物理引擎、12 套男女主题切换、双视角胶囊激活联动与独立背景图自适应遮罩
+ * 作用: 多维物理引擎、12 套男女主题切换、双视角胶囊激活联动与独立全高清视口背景图渲染
  */
 
 class ThemeEngineCore {
@@ -18,6 +18,7 @@ class ThemeEngineCore {
     this.canvas = document.getElementById("starry-canvas");
     this.ctx = this.canvas ? this.canvas.getContext("2d") : null;
 
+    this.ensureBackgroundLayer();
     this.resizeCanvas();
     window.removeEventListener("resize", this.handleResize);
     this.handleResize = () => this.resizeCanvas();
@@ -39,6 +40,18 @@ class ThemeEngineCore {
       : (themeCfg.customBgUrlGirl || "");
 
     this.applyTheme(defaultTheme, customBg, false);
+  }
+
+  // 确保底层全视口独立背景容器存在
+  ensureBackgroundLayer() {
+    let bgLayer = document.getElementById("universe-bg-layer");
+    if (!bgLayer) {
+      bgLayer = document.createElement("div");
+      bgLayer.id = "universe-bg-layer";
+      bgLayer.className = "universe-bg-layer";
+      document.body.prepend(bgLayer);
+    }
+    return bgLayer;
   }
 
   bindCapsuleEvents() {
@@ -129,20 +142,20 @@ class ThemeEngineCore {
     document.body.setAttribute("data-theme-type", themeType);
     document.documentElement.setAttribute("data-theme-type", themeType);
 
-    // 2. 注入自适应对比度背景层（浅色增加高透光抗混叠遮罩，深色增加深邃透光遮罩）
+    // 2. 将高清壁纸精准注入至独立全视口背景层（解决移动端拉伸模糊与裁切问题）
+    const bgLayer = this.ensureBackgroundLayer();
+    
+    // 清除可能残留在 body 上的背景样式以防冲突
+    document.body.style.backgroundImage = "none";
+    document.body.style.backgroundAttachment = "scroll";
+
     if (customBgUrl) {
       const scrim = isLight 
         ? "linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4))"
         : "linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45))";
-      document.body.style.backgroundImage = `${scrim}, url('${customBgUrl}')`;
-      document.body.style.backgroundSize = "cover";
-      document.body.style.backgroundPosition = "center";
-      document.body.style.backgroundAttachment = "fixed";
+      bgLayer.style.backgroundImage = `${scrim}, url('${customBgUrl}')`;
     } else if (themeMeta && themeMeta.colors && themeMeta.colors.bg) {
-      document.body.style.backgroundImage = themeMeta.colors.bg;
-      document.body.style.backgroundSize = "cover";
-      document.body.style.backgroundPosition = "center";
-      document.body.style.backgroundAttachment = "fixed";
+      bgLayer.style.backgroundImage = themeMeta.colors.bg;
     }
 
     // 3. 启动物理粒子引擎
