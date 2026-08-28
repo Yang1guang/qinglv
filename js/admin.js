@@ -624,16 +624,27 @@ async function cleanOrphanR2Cache() {
   } catch (err) { alert("❌ 请求异常: " + err.message); }
 }
 
-// 时光轴渲染 (集成背面录音直链输入与 🎙️ 上传音频)
+// 时光轴渲染 (集成背面录音直链输入、🎙️ 上传音频与首图专属头像标识)
 function renderTimelineList() {
   const container = document.getElementById("timelineListContainer");
   if (!container) return;
   container.innerHTML = "";
   (currentConfig.timeline || []).forEach((item, idx) => {
+    const isFirstNode = idx === 0;
     const card = document.createElement("div");
     card.className = "item-card";
+    if (isFirstNode) {
+      card.style.border = "1.5px solid rgba(245, 158, 11, 0.45)";
+      card.style.boxShadow = "0 0 16px rgba(245, 158, 11, 0.15)";
+    }
     card.innerHTML = `
-      <div class="item-card-header"><span class="item-card-title">节点 #${idx + 1} - ${escapeHtml(item.title || "未命名")}</span><button class="btn-del" onclick="deleteTimelineNode(${idx})">🗑️ 删除</button></div>
+      <div class="item-card-header">
+        <span class="item-card-title">
+          节点 #${idx + 1} - ${escapeHtml(item.title || "未命名")}
+          ${isFirstNode ? '<span style="font-size:11px; font-weight:800; background:rgba(245, 158, 11, 0.25); color:#fde68a; padding:2px 8px; border-radius:10px; margin-left:8px;">⭐ 网站专属固定头像来源</span>' : ''}
+        </span>
+        <button class="btn-del" onclick="deleteTimelineNode(${idx})">🗑️ 删除</button>
+      </div>
       <div class="form-grid">
         <div class="form-group"><label>日期</label><input type="text" class="admin-input" id="tl_date_${idx}" value="${escapeHtml(item.date || "")}"></div>
         <div class="form-group"><label>标签</label><input type="text" class="admin-input" id="tl_tag_${idx}" value="${escapeHtml(item.tag || "")}"></div>
@@ -648,7 +659,15 @@ function renderTimelineList() {
             <button class="btn-upload" style="background:linear-gradient(135deg, #f43f5e 0%, #be123c 100%); color:#fff; border-color:rgba(255,255,255,0.3);" onclick="triggerDirectUpload('tl_voice_${idx}', 'audio/*', (url)=>{ if(currentConfig.timeline[${idx}]) currentConfig.timeline[${idx}].voiceAudio=url; })">🎙️ 上传录音</button>
           </div>
         </div>
-        <div class="form-group" style="grid-column: 1 / -1;"><label>正面照片直链</label><div class="upload-input-group"><input type="text" class="admin-input" id="tl_img_${idx}" value="${escapeHtml(item.frontImg || "")}"><button class="btn-upload" onclick="triggerDirectUpload('tl_img_${idx}', 'image/*')">🖼️ 上传照片</button></div></div>
+        <div class="form-group" style="grid-column: 1 / -1; ${isFirstNode ? 'background: rgba(245, 158, 11, 0.08); padding: 10px; border-radius: 10px; border: 1px dashed rgba(245, 158, 11, 0.4);' : ''}">
+          <label style="${isFirstNode ? 'color:#fde68a; font-weight:800;' : ''}">
+            正面照片直链 ${isFirstNode ? '<span style="color:#fbbf24;">(⭐ 此照片将固定作为全站左上角专属头像，请上传清晰情侣合照)</span>' : ''}
+          </label>
+          <div class="upload-input-group">
+            <input type="text" class="admin-input" id="tl_img_${idx}" value="${escapeHtml(item.frontImg || "")}">
+            <button class="btn-upload" onclick="triggerDirectUpload('tl_img_${idx}', 'image/*')">🖼️ 上传照片</button>
+          </div>
+        </div>
       </div>
     `;
     container.appendChild(card);
