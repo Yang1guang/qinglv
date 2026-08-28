@@ -2,7 +2,7 @@
  * ====================================================================
  * 太阳 ios-IP · 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: js/timeline.js
- * 作用: 恋爱同行计时器、3D 翻转拍立得相册、恋爱 100 件事清单引擎
+ * 作用: 恋爱同行计时器、3D 翻转拍立得相册 (含背面60秒专属语音条)、恋爱 100 件事清单引擎
  * ====================================================================
  */
 
@@ -11,6 +11,7 @@ class TimelineManager {
     this.config = config || window.LOVE_CONFIG;
     this.checklistStorageKey = "love_universe_checklist_state";
     this.currentPlayingAudio = null;
+    this.currentActivePillEl = null;
 
     this.dom = {
       years: document.getElementById("timer-years"),
@@ -79,7 +80,17 @@ class TimelineManager {
   }
 
   /**
-   * 2. 动态渲染时光轴与 3D 拍立得翻转相册
+   * 格式化秒数为 mm:ss
+   */
+  formatAudioTime(sec) {
+    if (isNaN(sec) || sec <= 0) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  /**
+   * 2. 动态渲染时光轴与 3D 拍立得翻转相册 (含背面语音胶囊)
    */
   renderTimeline() {
     const container = this.dom.timelineFlow;
@@ -93,11 +104,13 @@ class TimelineManager {
       nodeEl.className = "timeline-node";
       nodeEl.setAttribute("data-index", index);
 
+      const nodeId = item.id || `node_${index}`;
+
       // 拍立得卡片骨架
       nodeEl.innerHTML = `
         <div class="timeline-node__dot"></div>
         <div class="timeline-node__time">${item.date}</div>
-        <div class="polaroid-card" id="polaroid-${item.id}">
+        <div class="polaroid-card" id="polaroid-${nodeId}">
           <div class="polaroid-card__inner">
             <!-- 正面: 照片与地点 -->
             <div class="polaroid-card__front">
@@ -115,7 +128,7 @@ class TimelineManager {
               </div>
             </div>
 
-            <!-- 背面: 手写私语与语音播放 -->
+            <!-- 背面: 手写私语与 60 秒语音记录胶囊 -->
             <div class="polaroid-card__back">
               <div class="polaroid-card__back-content">
                 <div class="polaroid-card__stamp">LOVE MEMORY</div>
@@ -125,10 +138,20 @@ class TimelineManager {
                   item.voiceAudio
                     ? `
                   <div class="polaroid-card__voice-box">
-                    <button class="polaroid-card__voice-btn" data-audio="${item.voiceAudio}">
-                      <span class="voice-icon">▶️</span>
-                      <span class="voice-label">播放情话原声</span>
-                    </button>
+                    <div class="polaroid-voice-pill" id="voice-pill-${nodeId}" data-audio="${item.voiceAudio}">
+                      <div class="polaroid-voice-icon">▶</div>
+                      <div class="polaroid-voice-waves">
+                        <span class="polaroid-wave-bar"></span>
+                        <span class="polaroid-wave-bar"></span>
+                        <span class="polaroid-wave-bar"></span>
+                        <span class="polaroid-wave-bar"></span>
+                        <span class="polaroid-wave-bar"></span>
+                      </div>
+                      <div class="polaroid-voice-info">
+                        <span class="polaroid-voice-title">独家语音记忆</span>
+                        <span class="polaroid-voice-duration" id="voice-dur-${nodeId}">点击聆听</span>
+                      </div>
+                    </div>
                   </div>`
                     : ""
                 }
@@ -142,11 +165,10 @@ class TimelineManager {
         </div>
       `;
 
-      // 绑定 3D 翻转交互
+      // 绑定 3D 翻转交互 (物理隔离：点击语音胶囊时不翻转卡片)
       const cardInner = nodeEl.querySelector(".polaroid-card__inner");
       nodeEl.querySelector(".polaroid-card").addEventListener("click", (e) => {
-        // 如果点击的是语音播放按钮，则不触发翻转
-        if (e.target.closest(".polaroid-card__voice-btn")) return;
+        if (e.target.closest(".polaroid-voice-pill")) return;
 
         cardInner.classList.toggle("polaroid-card__inner--flipped");
         if (window.Effects) {
@@ -155,11 +177,11 @@ class TimelineManager {
       });
 
       // 绑定情话语音播放事件
-      const voiceBtn = nodeEl.querySelector(".polaroid-card__voice-btn");
-      if (voiceBtn) {
-        voiceBtn.addEventListener("click", (e) => {
+      const voicePill = nodeEl.querySelector(".polaroid-voice-pill");
+      if (voicePill) {
+        voicePill.addEventListener("click", (e) => {
           e.stopPropagation();
-          this.handleVoicePlayback(voiceBtn, item.voiceAudio);
+          this.handleVoicePlayback(voicePill, item.voiceAudio, nodeId);
         });
       }
 
@@ -168,36 +190,62 @@ class TimelineManager {
   }
 
   /**
-   * 语音片段播放控制
+   * 语音片段播放控制 (带声波律动、实时倒计时与互斥暂停)
    */
-  handleVoicePlayback(btnEl, audioUrl) {
-    const iconEl = btnEl.querySelector(".voice-icon");
-    const labelEl = btnEl.querySelector(".voice-label");
+  handleVoicePlayback(pillEl, audioUrl, nodeId) {
+    const iconEl = pillEl.querySelector(".polaroid-voice-icon");
+    const durEl = pillEl.querySelector(".polaroid-voice-duration");
 
-    if (this.currentPlayingAudio && !this.currentPlayingAudio.paused) {
+    // 1. 若当前点击的正是正在播放的音频，则执行暂停复位
+    if (this.currentPlayingAudio && !this.currentPlayingAudio.paused && this.currentActivePillEl === pillEl) {
       this.currentPlayingAudio.pause();
-      document.querySelectorAll(".polaroid-card__voice-btn").forEach((btn) => {
-        btn.querySelector(".voice-icon").textContent = "▶️";
-        btn.querySelector(".voice-label").textContent = "播放情话原声";
-      });
-      if (this.currentPlayingAudio.src.includes(audioUrl)) {
-        return;
-      }
+      pillEl.classList.remove("playing");
+      if (iconEl) iconEl.textContent = "▶";
+      if (durEl) durEl.textContent = "已暂停";
+      return;
     }
 
+    // 2. 清理并复位其它正在播放的语音节点
+    if (this.currentPlayingAudio) {
+      this.currentPlayingAudio.pause();
+      this.currentPlayingAudio = null;
+    }
+    document.querySelectorAll(".polaroid-voice-pill").forEach((pill) => {
+      pill.classList.remove("playing");
+      const ic = pill.querySelector(".polaroid-voice-icon");
+      const dur = pill.querySelector(".polaroid-voice-duration");
+      if (ic) ic.textContent = "▶";
+      if (dur && dur.textContent.includes("正在播放")) dur.textContent = "点击聆听";
+    });
+
+    // 3. 实例化新音频流
     const audio = new Audio(audioUrl);
     this.currentPlayingAudio = audio;
-    iconEl.textContent = "⏸️";
-    labelEl.textContent = "正在聆听...";
+    this.currentActivePillEl = pillEl;
+
+    pillEl.classList.add("playing");
+    if (iconEl) iconEl.textContent = "⏸";
+    if (durEl) durEl.textContent = "缓冲中...";
+
+    audio.addEventListener("timeupdate", () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        const remaining = Math.max(0, audio.duration - audio.currentTime);
+        if (durEl) durEl.textContent = `播放中 ${this.formatAudioTime(remaining)}`;
+      }
+    });
 
     audio.play().catch(() => {
-      iconEl.textContent = "▶️";
-      labelEl.textContent = "播放失败";
+      pillEl.classList.remove("playing");
+      if (iconEl) iconEl.textContent = "▶";
+      if (durEl) durEl.textContent = "播放失败";
     });
 
     audio.onended = () => {
-      iconEl.textContent = "▶️";
-      labelEl.textContent = "重播情话原声";
+      pillEl.classList.remove("playing");
+      if (iconEl) iconEl.textContent = "▶";
+      if (durEl) durEl.textContent = "重播记忆";
+      this.currentPlayingAudio = null;
+      this.currentActivePillEl = null;
     };
   }
 
