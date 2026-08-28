@@ -9,10 +9,11 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
+  height: auto;
   pointer-events: none;
   z-index: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .wall-polaroid-item {
@@ -22,17 +23,18 @@
   padding: 8px 8px 22px 8px;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.12);
   border-radius: 4px;
-  opacity: 0.38;
+  opacity: 0.85;
   will-change: transform;
   pointer-events: auto;
   cursor: pointer;
-  transition: opacity 0.35s ease, box-shadow 0.35s ease;
+  transition: opacity 0.35s ease, box-shadow 0.35s ease, transform 0.3s ease;
 }
 
 .wall-polaroid-item:hover {
-  opacity: 0.98;
+  opacity: 1;
   z-index: 40;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(244, 63, 94, 0.35);
+  transform: scale(1.08) rotate(0deg) !important;
 }
 
 .wall-polaroid-inner {
@@ -55,7 +57,7 @@
   .wall-polaroid-item {
     width: 145px;
     padding: 10px 10px 26px 10px;
-    opacity: 0.45;
+    opacity: 0.9;
   }
   .wall-polaroid-inner {
     height: 130px;
@@ -66,9 +68,151 @@
   .wall-polaroid-item {
     width: 90px;
     padding: 6px 6px 16px 6px;
-    opacity: 0.3;
+    opacity: 0.8;
   }
   .wall-polaroid-inner {
     height: 80px;
   }
 }
+```[cite: 3]
+
+---
+
+#### 2. 受影响文件 2：`js/photo-wall.js`（100% 完整代码）
+
+```javascript
+/**
+ * 众水不灭 · 雅歌之印 (Love Universe)
+ * 文件名: js/photo-wall.js
+ * 作用: 「时光留白」自由视差照片墙渲染与全页面流式视差滚动计算
+ */
+
+class PhotoWallManager {
+  constructor(config) {
+    this.config = config || window.LOVE_CONFIG || {};
+    this.itemsData = [];
+    this.ticking = false;
+  }
+
+  init() {
+    const container = document.getElementById("parallax-photo-wall");
+    if (!container) return;
+
+    // 收集时光轴中的真实照片直链，无照片时不产生无意义的假节点
+    const timeline = this.config.timeline || [];
+    const photos = timeline.map(item => item.frontImg).filter(Boolean);
+
+    if (photos.length === 0) {
+      container.innerHTML = "";
+      return;
+    }
+
+    container.innerHTML = "";
+    this.itemsData = [];
+
+    // 延迟执行以确保主页面 DOM 渲染完成，获取真实完整的文档高度
+    const layoutPhotos = () => {
+      const mainContainer = document.getElementById("main-container");
+      const pageHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        mainContainer ? mainContainer.offsetHeight + 400 : window.innerHeight * 2.5
+      );
+
+      // 动态调整容器最小高度，保证底部图片完整包裹不溢出被截断
+      container.style.height = `${pageHeight}px`;
+
+      // 计算合理的纵向分布间距，避开顶部与极底部
+      const totalPhotos = photos.length;
+      const startTop = 100;
+      const availableHeight = Math.max(pageHeight - startTop - 150, totalPhotos * 260);
+      const verticalGap = availableHeight / Math.max(totalPhotos, 1);
+
+      container.innerHTML = "";
+      this.itemsData = [];
+
+      photos.forEach((url, idx) => {
+        const item = document.createElement("div");
+        item.className = "wall-polaroid-item";
+
+        // 左右两侧对称交错分布 (避开屏幕正中央的主体文字区)
+        const isLeft = idx % 2 === 0;
+        const posX = isLeft ? (Math.random() * 5 + 2) : (Math.random() * 5 + 83);
+        const baseTop = startTop + (idx * verticalGap) + (Math.random() * 40);
+        const baseRot = (Math.random() - 0.5) * 18; // 随机轻微倾斜角度
+
+        // 严格保证负向视差阻尼系数 (-0.03 ~ -0.07)，使页面往下滑动时照片自然随视口往上走并全部展示完毕
+        const speed = isLeft ? -0.04 : -0.065;
+
+        item.style.left = `${posX}%`;
+        item.style.top = `${baseTop}px`;
+        item.style.transform = `translate3d(0, 0, 0) rotate(${baseRot}deg)`;
+
+        item.innerHTML = `
+          <div class="wall-polaroid-inner">
+            <img src="${url}" alt="时光碎片" loading="lazy" onerror="this.parentElement.parentElement.style.display='none'">
+          </div>
+        `;
+
+        container.appendChild(item);
+
+        // 缓存物理参数
+        this.itemsData.push({
+          element: item,
+          baseRot: baseRot,
+          speed: speed
+        });
+      });
+
+      this.updateParallax();
+    };
+
+    // 立即执行一次布局
+    layoutPhotos();
+
+    // 当页面完全加载完成（图片和字体就绪）后再次校准一次高度
+    window.addEventListener("load", layoutPhotos, { once: true });
+
+    // 监听高度变化以动态适配
+    if (window.ResizeObserver) {
+      const resizeObserver = new ResizeObserver(() => {
+        layoutPhotos();
+      });
+      resizeObserver.observe(document.body);
+    }
+
+    // 绑定基于 requestAnimationFrame 节流的高性能视差滚动
+    window.addEventListener("scroll", () => {
+      if (!this.ticking) {
+        window.requestAnimationFrame(() => {
+          this.updateParallax();
+          this.ticking = false;
+        });
+        this.ticking = true;
+      }
+    }, { passive: true });
+  }
+
+  /**
+   * 执行负向视差浮动位移（确保随页面自然上滑呈现）
+   */
+  updateParallax() {
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    this.itemsData.forEach(data => {
+      if (!data.element) return;
+      const offsetY = scrollY * data.speed;
+      data.element.style.transform = `translate3d(0, ${offsetY}px, 0) rotate(${data.baseRot}deg)`;
+    });
+  }
+}
+
+// 自动挂载并在 DOM 就绪后启动
+window.PhotoWallManager = PhotoWallManager;
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.LOVE_CONFIG) {
+    const photoWall = new PhotoWallManager(window.LOVE_CONFIG);
+    photoWall.init();
+  }
+});
+```[cite: 2]
