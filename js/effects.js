@@ -20,10 +20,18 @@ class EffectsEngine {
 
   getNormalizedAudioConfig() {
     const audioCfg = this.config.audio || {};
+    const title = audioCfg.bgmTitle || "告白气球 (浪漫钢琴版)";
+    const artist = audioCfg.bgmArtist || "周杰伦";
+    let url = audioCfg.bgmUrl || "";
+
+    if (!url) {
+      url = `/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E&album_id=0&title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
+    }
+
     return {
-      title: audioCfg.bgmTitle || "告白气球 (浪漫钢琴版)",
-      artist: audioCfg.bgmArtist || "周杰伦",
-      url: audioCfg.bgmUrl || "/api/love/music-stream?hash=E3A199727B40A5B73C4CE15CEE5FA41E",
+      title,
+      artist,
+      url,
       cover: audioCfg.vinylCover || ""
     };
   }
@@ -54,6 +62,7 @@ class EffectsEngine {
     const track = this.getNormalizedAudioConfig();
     if (this.bgmAudio && this.bgmAudio.src !== track.url) {
       this.bgmAudio.src = track.url;
+      this.bgmAudio.load();
     }
     this.updateTrackInfoDisplay();
   }
@@ -82,21 +91,34 @@ class EffectsEngine {
         this.setVinylVisualPlaying(false);
       });
 
+      // 精准拦截音频加载失败，物理隔离播放状态与 UI 表现
       this.bgmAudio.addEventListener("error", () => {
-        console.warn("当前背景音乐加载受阻");
+        this.isPlaying = false;
+        this.setVinylVisualPlaying(false);
+        console.warn("当前背景音乐加载受阻: 音频源暂时不可用或网络异常");
       });
     }
   }
 
   playBgm() {
-    if (!this.bgmAudio) return;
+    if (!this.bgmAudio || !this.bgmAudio.src) return;
+
+    // 若音频已处于错误状态，不强行发起播放请求以防抛出未捕获的 DOM 异常
+    if (this.bgmAudio.error) {
+      this.isPlaying = false;
+      this.setVinylVisualPlaying(false);
+      return;
+    }
+
     this.bgmAudio.play().then(() => {
       this.isPlaying = true;
       this.setVinylVisualPlaying(true);
     }).catch((err) => {
-      console.warn("播放受阻:", err);
       this.isPlaying = false;
       this.setVinylVisualPlaying(false);
+      if (err.name !== "NotAllowedError") {
+        console.warn("播放受阻 (已平稳隔离):", err.message);
+      }
     });
   }
 
