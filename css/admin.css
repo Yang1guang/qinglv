@@ -1,13 +1,15 @@
 /**
  * 漫游宇宙控制中心后台样式
  * 文件名: css/admin.css
- * 升级：全面适配 PC 端与移动端 (iOS Safari / Android Chrome) 双端高保真响应式布局
+ * 升级：全量重塑 3D 高级水晶毛玻璃拟态、双向光追倒角与立体悬浮微动效
  */
 
 :root {
   --bg-dark: #070a14;
-  --panel-bg: rgba(15, 23, 42, 0.85);
+  --panel-bg: rgba(15, 23, 42, 0.8);
   --panel-border: rgba(255, 255, 255, 0.12);
+  --glass-rim-top: inset 0 1px 1px 0 rgba(255, 255, 255, 0.35);
+  --glass-rim-bottom: inset 0 -1px 2px 0 rgba(0, 0, 0, 0.4);
   --primary: #f43f5e;
   --primary-hover: #e11d48;
   --gold: #f59e0b;
@@ -18,154 +20,263 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-main);
   min-height: 100vh;
   background-image: 
-    radial-gradient(circle at 10% 15%, rgba(244, 63, 94, 0.12) 0%, transparent 40%),
-    radial-gradient(circle at 90% 85%, rgba(245, 158, 11, 0.12) 0%, transparent 40%);
+    radial-gradient(circle at 15% 15%, rgba(244, 63, 94, 0.16) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(245, 158, 11, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
+    linear-gradient(180deg, #070a14 0%, #030712 100%);
+  background-attachment: fixed;
 }
 
-/* 验证弹窗 */
+/* 3D 验证弹窗 */
 .admin-auth-modal {
-  position: fixed; inset: 0; background: rgba(7, 10, 20, 0.92);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 100000;
+  position: fixed; inset: 0; background: rgba(3, 7, 18, 0.92);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); z-index: 100000;
   display: flex; align-items: center; justify-content: center; padding: 20px;
 }
 .admin-auth-dialog {
-  background: var(--panel-bg); border: 1.5px solid var(--panel-border);
-  border-radius: 24px; padding: 32px 26px; max-width: 380px; width: 100%;
-  text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 26px; padding: 36px 28px; max-width: 400px; width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), var(--glass-rim-top), var(--glass-rim-bottom);
 }
-.admin-auth-icon { font-size: 42px; margin-bottom: 12px; }
-.admin-auth-title { font-size: 20px; font-weight: 900; margin-bottom: 8px; color: #fff; }
-.admin-auth-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+.admin-auth-icon { font-size: 46px; margin-bottom: 12px; filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.6)); }
+.admin-auth-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: #fff; letter-spacing: 0.5px; }
+.admin-auth-desc { font-size: 13.5px; color: var(--text-muted); margin-bottom: 22px; line-height: 1.5; }
 
-/* 整体布局 */
+/* 整体布局容器 */
 .admin-layout {
-  max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px;
+  max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px;
 }
+
+/* 3D 头部毛玻璃卡片 */
 .admin-header {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 18px 24px; background: var(--panel-bg); border: 1px solid var(--panel-border);
-  border-radius: 20px; margin-bottom: 20px; backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  padding: 18px 24px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 22px; margin-bottom: 20px;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), var(--glass-rim-top), var(--glass-rim-bottom);
   flex-wrap: wrap; gap: 14px;
 }
-.admin-brand { display: flex; align-items: center; gap: 12px; }
-.admin-brand-icon { font-size: 32px; }
-.admin-brand-title { font-size: 18px; font-weight: 900; color: #ffffff; }
-.admin-brand-sub { font-size: 11px; color: var(--gold); font-weight: 700; letter-spacing: 1px; }
+.admin-brand { display: flex; align-items: center; gap: 14px; }
+.admin-brand-icon { font-size: 34px; filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.5)); }
+.admin-brand-title { font-size: 19px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; }
+.admin-brand-sub { font-size: 11.5px; color: #fde68a; font-weight: 700; letter-spacing: 1px; }
 
+/* 🌟 全局 3D 水晶毛边操作按钮体系 */
 .admin-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.btn-tool, .btn-save-main, .btn-admin-action, .btn-add, .btn-upload {
-  padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 800;
-  cursor: pointer; transition: all 0.2s; border: none; outline: none; user-select: none;
-}
-.btn-tool {
-  background: rgba(255, 255, 255, 0.08); color: var(--text-main);
-  border: 1px solid var(--panel-border); text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-}
-.btn-tool:hover { background: rgba(255, 255, 255, 0.16); }
 
+.btn-tool, .btn-save-main, .btn-admin-action, .btn-add, .btn-upload, .btn-del {
+  padding: 9px 16px; border-radius: 14px; font-size: 13px; font-weight: 800;
+  cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent; outline: none; user-select: none;
+  position: relative; overflow: hidden;
+}
+
+/* 标准 3D 毛玻璃工具按钮 */
+.btn-tool {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.04) 100%);
+  color: var(--text-main);
+  border: 1.2px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), var(--glass-rim-top);
+  text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.btn-tool:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 255, 255, 0.2), var(--glass-rim-top);
+}
+.btn-tool:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* 翡翠绿 3D 高奢发布主按钮 */
 .btn-save-main {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: #fff; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); display: inline-flex; align-items: center; justify-content: center;
+  color: #ffffff;
+  border: 1.2px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.6), inset 0 -2px 4px rgba(0, 0, 0, 0.25);
+  display: inline-flex; align-items: center; justify-content: center;
 }
-.btn-save-main:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6); }
+.btn-save-main:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.65), 0 0 16px rgba(52, 211, 153, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+.btn-save-main:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
 
+/* 玫瑰红 3D 登入按钮 */
 .btn-admin-action {
-  width: 100%; background: linear-gradient(135deg, var(--primary), #be123c);
-  color: #fff; padding: 12px; font-size: 15px;
+  width: 100%;
+  background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+  color: #fff; padding: 13px; font-size: 15px;
+  border: 1.2px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 6px 22px rgba(244, 63, 94, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+.btn-admin-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(244, 63, 94, 0.65), 0 0 16px rgba(251, 113, 133, 0.4);
 }
 
+/* 琥珀金 3D 上传按钮 */
+.btn-upload {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.18) 100%);
+  color: #fde68a;
+  border: 1.2px solid rgba(245, 158, 11, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+}
+.btn-upload:hover {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff; border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 22px rgba(245, 158, 11, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+.btn-upload:active { transform: translateY(1px); }
+
+/* 浪漫粉 3D 新增按钮 */
+.btn-add {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(190, 18, 60, 0.18) 100%);
+  color: #fecdd3;
+  border: 1.2px solid rgba(244, 63, 94, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+.btn-add:hover {
+  background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+  color: #fff; border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 22px rgba(244, 63, 94, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+/* 危险红 3D 删除按钮 */
+.btn-del {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(185, 28, 28, 0.15) 100%);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 5px 12px; border-radius: 10px; font-size: 11.5px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+.btn-del:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #fff; border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.45);
+}
+
+/* 主体布局 */
 .admin-main {
   display: grid; grid-template-columns: 240px 1fr; gap: 20px;
 }
 
-/* 侧边栏导航 */
+/* 侧边栏 3D 拟态面板 */
 .admin-sidebar {
-  background: var(--panel-bg); border: 1px solid var(--panel-border);
-  border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 6px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 7px;
   height: fit-content;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), var(--glass-rim-top);
 }
 .tab-btn {
-  text-align: left; padding: 12px 14px; border-radius: 12px; font-size: 13px;
-  font-weight: 700; color: var(--text-muted); background: transparent; border: none;
-  cursor: pointer; transition: all 0.2s;
+  text-align: left; padding: 12px 14px; border-radius: 14px; font-size: 13px;
+  font-weight: 800; color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: pointer; transition: all 0.22s ease;
+  user-select: none;
 }
-.tab-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.08); color: #fff;
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateX(3px);
+}
 .tab-btn.active {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.2) 0%, rgba(244, 63, 94, 0.08) 100%);
-  color: #fecdd3; border: 1px solid rgba(244, 63, 94, 0.35);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.28) 0%, rgba(190, 18, 60, 0.16) 100%);
+  color: #fecdd3;
+  border: 1.2px solid rgba(244, 63, 94, 0.45);
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.35);
 }
 
-/* 编辑区卡片 */
+/* 编辑区 3D 核心面板 */
 .admin-content {
-  background: var(--panel-bg); border: 1px solid var(--panel-border);
-  border-radius: 20px; padding: 26px; backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 22px; padding: 28px;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), var(--glass-rim-top);
 }
 .tab-pane { display: none; }
 .tab-pane.active { display: block; animation: fadeIn 0.25s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-.pane-header { margin-bottom: 22px; border-bottom: 1px solid var(--panel-border); padding-bottom: 14px; }
-.pane-header h3 { font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 4px; }
+.pane-header { margin-bottom: 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 14px; }
+.pane-header h3 { font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 4px; letter-spacing: 0.5px; }
 .pane-header p { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
 
 /* 表单组件 */
 .form-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;
 }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group label { font-size: 12px; font-weight: 800; color: var(--text-muted); }
+.form-group { display: flex; flex-direction: column; gap: 7px; }
+.form-group label { font-size: 12.5px; font-weight: 800; color: #cbd5e1; }
 
+/* 3D 内嵌下沉式输入框 */
 .admin-input, .admin-select, .admin-textarea {
-  background: rgba(3, 7, 18, 0.7); border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px; padding: 10px 14px; font-size: 13.5px; color: #fff;
-  outline: none; font-family: inherit; transition: border-color 0.2s; width: 100%;
+  background: rgba(3, 7, 18, 0.75);
+  border: 1.2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px; padding: 11px 15px; font-size: 13.5px; color: #fff;
+  outline: none; font-family: inherit;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6), 0 1px 1px rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease; width: 100%;
 }
 .admin-input:focus, .admin-select:focus, .admin-textarea:focus {
-  border-color: var(--primary); box-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
+  border-color: #f43f5e;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6), 0 0 14px rgba(244, 63, 94, 0.35);
 }
 
-.upload-input-group { display: flex; gap: 8px; width: 100%; }
+.upload-input-group { display: flex; gap: 8px; width: 100%; align-items: center; }
 .upload-input-group .admin-input { flex: 1; min-width: 0; }
-.btn-upload { background: rgba(245, 158, 11, 0.2); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.4); flex-shrink: 0; }
-.btn-upload:hover { background: var(--gold); color: #fff; }
 
-.btn-add { background: rgba(244, 63, 94, 0.2); color: #fecdd3; border: 1px solid rgba(244, 63, 94, 0.4); }
-.btn-add:hover { background: var(--primary); color: #fff; }
-
-/* 动态列表卡片 */
+/* 动态列表卡片 3D 浮雕 */
 .dynamic-list { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; width: 100%; }
 .item-card {
-  background: rgba(3, 7, 18, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px; padding: 18px; position: relative; display: flex; flex-direction: column; gap: 12px; width: 100%;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(3, 7, 18, 0.85) 100%);
+  border: 1.2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px; padding: 18px; position: relative;
+  display: flex; flex-direction: column; gap: 12px; width: 100%;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.15);
 }
 .item-card-header {
   display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.08); padding-bottom: 10px; flex-wrap: wrap; gap: 8px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1); padding-bottom: 10px; flex-wrap: wrap; gap: 8px;
 }
 .item-card-title { font-size: 14px; font-weight: 800; color: #fde68a; }
-.btn-del {
-  background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4);
-  padding: 4px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 800; cursor: pointer;
-}
-.btn-del:hover { background: var(--danger); color: #fff; }
 
+/* 3D Toast 悬浮胶囊 */
 #toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
-  background: rgba(15, 23, 42, 0.95); color: #fde68a; border: 1px solid var(--gold);
-  padding: 10px 24px; border-radius: 30px; font-size: 13.5px; font-weight: 800;
-  transition: transform 0.25s; z-index: 100000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(120px);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.96) 0%, rgba(15, 23, 42, 0.98) 100%);
+  color: #fde68a; border: 1.5px solid #f59e0b;
+  padding: 11px 26px; border-radius: 30px; font-size: 13.5px; font-weight: 800;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 100000;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(245, 158, 11, 0.35), var(--glass-rim-top);
   max-width: 90vw; text-align: center;
 }
 #toast.show { transform: translateX(-50%) translateY(0); }
 
-/* ================= 📱 手机端深度响应式适配 (iOS / Android) ================= */
+/* ================= 📱 手机端双端响应式网格自适应 (iOS / Android) ================= */
 @media (max-width: 768px) {
   .admin-layout {
     padding: 12px 10px 60px;
@@ -275,8 +386,10 @@ body {
     flex-direction: column;
     gap: 6px;
   }
-  .upload-input-group .btn-upload {
+  .upload-input-group .btn-upload,
+  .upload-input-group .btn-tool {
     width: 100%;
     padding: 10px;
+    justify-content: center;
   }
 }
