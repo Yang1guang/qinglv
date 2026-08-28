@@ -53,9 +53,9 @@ function decodePunycodeHost(domainStr) {
   }
 }
 
-// 获取认证 Token
+// 获取认证 Token (严禁留空时盲目回退 521)
 function getAuthToken() {
-  return (currentAdminToken || localStorage.getItem("love_admin_token") || "521").trim();
+  return (currentAdminToken || localStorage.getItem("love_admin_token") || "").trim();
 }
 
 // 弹出 Toast 提示
@@ -117,15 +117,21 @@ function mergeWithDefaultConfig(cloudCfg) {
   };
 }
 
-// 管理员登录校验
+// 管理员登录校验 (严禁空密码静默放行)
 async function verifyAdminLogin() {
   const pwdInput = document.getElementById("adminPwdInput");
   const pwd = pwdInput ? pwdInput.value.trim() : "";
   const tokenToVerify = pwd || getAuthToken();
-  currentAdminToken = tokenToVerify;
+
+  if (!tokenToVerify) {
+    alert("请输入管理员密码！");
+    if (pwdInput) pwdInput.focus();
+    return;
+  }
 
   const success = await fetchConfigFromCloud(tokenToVerify);
   if (success) {
+    currentAdminToken = tokenToVerify;
     localStorage.setItem("love_admin_token", tokenToVerify);
     const modal = document.getElementById("authModal");
     const layout = document.getElementById("adminLayout");
@@ -134,13 +140,17 @@ async function verifyAdminLogin() {
     showToast("✓ 验证成功，已连接独立云端存储");
   } else {
     localStorage.removeItem("love_admin_token");
-    alert("❌ 口令错误或未授权！请输入正确的管理员密码 (默认 521)");
+    currentAdminToken = "";
+    if (pwdInput) pwdInput.value = "";
+    alert("❌ 口令错误或未授权！请输入当前站点设置的正确管理员密码");
   }
 }
 
 // 从云端拉取配置 (自动执行中文网址逆向解码)
 async function fetchConfigFromCloud(tokenOverride) {
   const token = (tokenOverride || getAuthToken()).trim();
+  if (!token) return false;
+
   try {
     const res = await fetch(`/api/love/config?auth=${encodeURIComponent(token)}`, {
       headers: { "x-admin-auth": token, "Authorization": `Bearer ${token}` }
@@ -766,11 +776,12 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
-// 发布全量配置到云端 (全量持久化时光轴 voiceAudio)
+// 发布全量配置到云端 (全量持久化时光轴 voiceAudio 与全新管理密码)
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
+  const customPwd = (document.getElementById("admin_customPassword")?.value || "521").trim();
   currentConfig.adminSecurity = {
-    password: document.getElementById("admin_customPassword").value.trim() || "521",
+    password: customPwd || "521",
     updatedAt: new Date().toISOString()
   };
   currentConfig.lifecycle = { currentPhase: document.getElementById("lifecycle_phase").value };
@@ -851,8 +862,9 @@ async function saveAllConfigToCloud() {
     });
     const data = await res.json();
     if (data.success) {
-      localStorage.setItem("love_admin_token", currentConfig.adminSecurity.password);
-      showToast("✨ 全部配置、时光语音与播放列表已成功发布！");
+      currentAdminToken = customPwd;
+      localStorage.setItem("love_admin_token", customPwd);
+      showToast("✨ 全部配置、新管理密码与播放列表已成功发布！");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
@@ -901,12 +913,23 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
   });
 });
 
-// 初始化鉴权会话
+// 初始化鉴权会话 (存在旧缓存时静默验证，若失效则清空缓存并阻断在弹窗)
 document.addEventListener("DOMContentLoaded", () => {
   const cached = localStorage.getItem("love_admin_token");
   if (cached) {
-    document.getElementById("adminPwdInput").value = cached;
     currentAdminToken = cached;
-    verifyAdminLogin();
+    fetchConfigFromCloud(cached).then(success => {
+      if (success) {
+        const modal = document.getElementById("authModal");
+        const layout = document.getElementById("adminLayout");
+        if (modal) modal.style.display = "none";
+        if (layout) layout.style.display = "block";
+      } else {
+        localStorage.removeItem("love_admin_token");
+        currentAdminToken = "";
+        const input = document.getElementById("adminPwdInput");
+        if (input) input.value = "";
+      }
+    });
   }
 });
