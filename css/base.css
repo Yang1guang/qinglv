@@ -1,6 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/base.css
+ * 升级：重构独立硬件加速固定背景层，彻底根除移动端背景模糊与裁切故障
  */
 
 :root {
@@ -52,7 +53,7 @@ html {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
-  background-color: var(--space-dark);
+  background-color: transparent;
   color: var(--text-main);
   min-height: 100vh;
   min-height: -webkit-fill-available;
@@ -60,6 +61,25 @@ body {
   position: relative;
   line-height: 1.6;
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 🖼️ 独立硬件加速全视口固定背景层 (解决移动端拉伸模糊与裁切问题) */
+.universe-bg-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: -10;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform, background-image;
+  transition: background-image 0.4s ease;
 }
 
 img {
@@ -77,13 +97,9 @@ button, input, textarea {
   background: none;
 }
 
-/* 🌅 微醺星河暖色暮光背景 */
+/* 🌅 微醺星河暖色暮光默认基底 */
 .universe-body {
-  background: 
-    radial-gradient(circle at 50% -10%, rgba(244, 63, 94, 0.22) 0%, transparent 60%),
-    radial-gradient(circle at 85% 25%, rgba(245, 158, 11, 0.14) 0%, transparent 50%),
-    radial-gradient(circle at 15% 70%, rgba(168, 85, 247, 0.12) 0%, transparent 55%),
-    linear-gradient(180deg, #14172a 0%, #090c19 50%, #050711 100%);
+  background-color: var(--space-dark);
 }
 
 .main-container {
