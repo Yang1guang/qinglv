@@ -113,7 +113,13 @@
 
         <!-- 4. 时光轴 -->
         <section id="tab-timeline" class="tab-pane">
-          <div class="pane-header" style="display:flex; justify-content:space-between;"><div><h3>🪐 时光轴轨迹</h3></div><button class="btn-add" onclick="addTimelineNode()">➕ 新增</button></div>
+          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h3>🪐 时光轴轨迹与拍立得照片墙</h3>
+              <p style="font-size:12px; color:#94a3b8; margin-top:4px;">提示：节点 #1 的正面照片将自动作为网页左上角专属情侣头像固定展示。</p>
+            </div>
+            <button class="btn-add" onclick="addTimelineNode()">➕ 新增</button>
+          </div>
           <div id="timelineListContainer" class="dynamic-list"></div>
         </section>
 
@@ -129,14 +135,13 @@
           <div id="scratchCardsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 7. 🎵 背景音乐与多曲目播放列表 (支持本地直传/云端检索/上限30首/本地限5首) -->
+        <!-- 7. 🎵 背景音乐与多曲目播放列表 -->
         <section id="tab-audio" class="tab-pane">
           <div class="pane-header">
             <h3>🎵 背景音乐与多曲目播放列表</h3>
             <p>支持聚合在线搜索与本地 MP3 原版直传（本地存储限制 5 首，总列表上限 30 首）。</p>
           </div>
 
-          <!-- 在线搜歌面板 (自适应移动端) -->
           <div style="background: rgba(3, 7, 18, 0.65); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: 18px; padding: 18px; margin-bottom: 22px;">
             <label style="font-size:13px; font-weight:800; color:#fde68a; margin-bottom:10px; display:block;">🔍 在线搜索云端音乐 (酷狗/网易云/酷我聚合检索 · 0存储占用)</label>
             <div class="search-bar-wrap" style="display:flex; gap:8px; margin-bottom:12px;">
@@ -154,7 +159,6 @@
             </div>
           </div>
 
-          <!-- 播放列表管理面板 (自适应移动端) -->
           <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 18px; margin-bottom: 24px;">
             <div class="playlist-header-wrap" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
               <div>
@@ -169,7 +173,6 @@
             <div id="playlistContainer" class="dynamic-list"></div>
           </div>
 
-          <!-- 播放模式与全局参数设置 -->
           <div class="form-grid">
             <div class="form-group">
               <label>是否尝试自动播放 BGM</label>
@@ -214,7 +217,7 @@
           </div>
         </section>
 
-        <!-- 9. 双视角主题陈列室 (支持一键 🔄 恢复默认 系统自带主题) -->
+        <!-- 9. 双视角主题陈列室 -->
         <section id="tab-theme" class="tab-pane">
           <div class="pane-header"><h3>🎨 双视角主题陈列室</h3></div>
           <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 18px; margin-bottom: 24px;">
