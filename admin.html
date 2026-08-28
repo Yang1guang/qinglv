@@ -127,16 +127,16 @@
           <div id="scratchCardsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 7. 🎵 背景音乐与多曲目播放列表 (支持搜歌加入/多曲连播/上限30首) -->
+        <!-- 7. 🎵 背景音乐与多曲目播放列表 (支持本地直传/云端检索/上限30首/本地限5首) -->
         <section id="tab-audio" class="tab-pane">
           <div class="pane-header">
             <h3>🎵 背景音乐与多曲目播放列表</h3>
-            <p>支持在线检索一键加入播放列表，自动顺序连播，建议添加 10~30 首精选曲目。</p>
+            <p>支持聚合在线搜索与本地 MP3 原版直传（本地存储限制 5 首，总列表上限 30 首）。</p>
           </div>
 
           <!-- 在线搜歌面板 -->
           <div style="background: rgba(3, 7, 18, 0.65); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: 18px; padding: 18px; margin-bottom: 22px;">
-            <label style="font-size:13px; font-weight:800; color:#fde68a; margin-bottom:10px; display:block;">🔍 在线搜索云端音乐 (酷狗/网易云/酷我聚合检索)</label>
+            <label style="font-size:13px; font-weight:800; color:#fde68a; margin-bottom:10px; display:block;">🔍 在线搜索云端音乐 (酷狗/网易云/酷我聚合检索 · 0存储占用)</label>
             <div style="display:flex; gap:8px; margin-bottom:12px;">
               <input type="text" id="musicSearchKeyword" class="admin-input" placeholder="输入歌名/歌手 (例如: 周杰伦 / 告白气球 / 浪漫钢琴)..." onkeydown="if(event.key==='Enter') executeOnlineMusicSearch();">
               <button class="btn-tool" style="background:var(--gold); color:#fff; flex-shrink:0; padding:8px 18px;" onclick="executeOnlineMusicSearch()">🔎 搜索歌曲</button>
@@ -154,12 +154,15 @@
 
           <!-- 播放列表管理面板 -->
           <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 18px; margin-bottom: 24px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
               <div>
                 <span style="font-size:15px; font-weight:900; color:#7dd3fc;">📑 播放列表管理</span>
-                <span id="playlistCountBadge" style="font-size:11px; color:#94a3b8; margin-left:8px; font-weight:700;">(0 / 30 首)</span>
+                <span id="playlistCountBadge" style="font-size:11px; color:#94a3b8; margin-left:8px; font-weight:700;">(0 / 30 首 · 本地已传 0 / 5)</span>
               </div>
-              <button class="btn-add" type="button" onclick="addCustomPlaylistItem()">➕ 手动添加曲目</button>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-tool" type="button" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#fff; padding:6px 12px; font-size:12px;" onclick="triggerDirectUploadLocalSong()">📤 传本地MP3 (限5首)</button>
+                <button class="btn-add" type="button" onclick="addCustomPlaylistItem()">➕ 手动加曲目</button>
+              </div>
             </div>
             <div id="playlistContainer" class="dynamic-list"></div>
           </div>
@@ -187,7 +190,7 @@
               <label>默认音频直链地址 (MP3直链 / 服务端代理流)</label>
               <div class="upload-input-group">
                 <input type="text" id="audio_bgmUrl" class="admin-input">
-                <button class="btn-upload" onclick="triggerDirectUpload('audio_bgmUrl', 'audio/*')">📤 上传MP3</button>
+                <button class="btn-upload" onclick="triggerDirectUploadSingleBgm()">📤 上传MP3</button>
               </div>
             </div>
             <div class="form-group" style="grid-column: 1 / -1;">
