@@ -7,6 +7,52 @@ let currentConfig = null;
 let currentAdminToken = "";
 let currentDomainHost = "";
 
+// 纯原生 RFC 3492 Punycode 逆向解码器 (实现中文域名如 张小阳李小光.love520.xyz 的无损还原展示)
+function decodePunycodeHost(domainStr) {
+  if (!domainStr || typeof domainStr !== "string") return domainStr || "";
+  try {
+    return domainStr.split(".").map(part => {
+      if (!part.toLowerCase().startsWith("xn--")) return part;
+      let input = part.slice(4);
+      let output = [];
+      let i = 0, n = 128, bias = 72;
+      let basic = input.lastIndexOf("-");
+      if (basic > 0) {
+        for (let j = 0; j < basic; ++j) output.push(input.charCodeAt(j));
+        input = input.slice(basic + 1);
+      }
+      while (input.length > 0) {
+        let oldi = i, w = 1, k = 36;
+        for (;; k += 36) {
+          let c = input.charCodeAt(0);
+          input = input.slice(1);
+          let digit = c - 48 < 10 ? c - 22 : c - 65 < 26 ? c - 65 : c - 97 < 26 ? c - 97 : 36;
+          i += digit * w;
+          let t = k <= bias ? 1 : (k >= bias + 26 ? 26 : k - bias);
+          if (digit < t) break;
+          w *= 36 - t;
+        }
+        let outLen = output.length + 1;
+        let delta = oldi === 0 ? Math.floor(i / 700) : Math.floor((i - oldi) / 2);
+        delta += Math.floor(delta / outLen);
+        let k2 = 0;
+        while (delta > ((36 - 1) * 26) / 2) {
+          delta = Math.floor(delta / (36 - 1));
+          k2 += 36;
+        }
+        bias = Math.floor(k2 + ((36 - 1 + 1) * delta) / (delta + 38));
+        n += Math.floor(i / outLen);
+        i %= outLen;
+        output.splice(i, 0, n);
+        i++;
+      }
+      return String.fromCodePoint(...output);
+    }).join(".");
+  } catch (_) {
+    return domainStr;
+  }
+}
+
 // 获取认证 Token
 function getAuthToken() {
   return (currentAdminToken || localStorage.getItem("love_admin_token") || "521").trim();
@@ -92,7 +138,7 @@ async function verifyAdminLogin() {
   }
 }
 
-// 从云端拉取配置
+// 从云端拉取配置 (自动执行中文网址逆向解码)
 async function fetchConfigFromCloud(tokenOverride) {
   const token = (tokenOverride || getAuthToken()).trim();
   try {
@@ -104,8 +150,9 @@ async function fetchConfigFromCloud(tokenOverride) {
 
     if (data.success && data.isAdmin) {
       currentDomainHost = data.domain || window.location.hostname;
+      const displayDomain = decodePunycodeHost(currentDomainHost);
       const domainBadge = document.getElementById("adminDomainBadge");
-      if (domainBadge) domainBadge.textContent = `我的网址: ${currentDomainHost}`;
+      if (domainBadge) domainBadge.textContent = `我的网址: ${displayDomain}`;
 
       if (data.custom && data.config) {
         currentConfig = mergeWithDefaultConfig(data.config);
@@ -181,8 +228,9 @@ function renderAllForms() {
 function renderLicenseStatus() {
   const badge = document.getElementById("licenseStatusBadge");
   if (!badge) return;
+  const displayHost = decodePunycodeHost(currentConfig._license?.boundDomain || currentDomainHost);
   if (currentConfig._license && currentConfig._license.unlocked) {
-    badge.innerHTML = `<span style="color:#34d399;">✨ 已永久激活【${currentConfig._license.tier || "全功能版本"}】 (绑定域名: ${currentConfig._license.boundDomain || currentDomainHost})</span>`;
+    badge.innerHTML = `<span style="color:#34d399;">✨ 已永久激活【${currentConfig._license.tier || "全功能版本"}】 (绑定网址: ${displayHost})</span>`;
   } else {
     badge.innerHTML = `<span style="color:#f59e0b;">⏳ 基础免费版 (未输入专属激活码)</span>`;
   }
@@ -411,7 +459,6 @@ function triggerDirectUploadSongItem(idx) {
     const titleInput = document.getElementById(`pl_title_${idx}`);
     const artistInput = document.getElementById(`pl_artist_${idx}`);
     
-    // 若歌名为空或为默认名称，自动提取文件名
     if (titleInput && (!titleInput.value || titleInput.value === "自定义新音乐")) {
       const meta = parseSongFilename(file.name);
       titleInput.value = meta.title;
@@ -664,7 +711,6 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   const file = e.target.files[0];
   if (!file) return;
 
-  // 15MB 上传体积防御
   const maxBytes = 15 * 1024 * 1024;
   if (file.size > maxBytes) {
     e.target.value = "";
