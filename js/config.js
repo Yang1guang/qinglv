@@ -44,29 +44,15 @@ window.LOVE_CONFIG = {
     ]
   },
 
-  // ================= 3. 专属黑胶播放列表 =================
+  // ================= 3. 专属黑胶播放列表 (默认纯净空列表，统一采用二珂版告白气球起播) =================
   audio: {
     bgmAutoPlay: true,
-    playlist: [
-      {
-        title: "告白气球 (浪漫钢琴版)",
-        artist: "周杰伦 / 纯音乐",
-        url: "https://assets.mixkit.co/music/preview/mixkit-romantic-moment-50.mp3",
-        cover: ""
-      },
-      {
-        title: "晴天 (唯美吉他版)",
-        artist: "周杰伦 / 纯音乐",
-        url: "https://assets.mixkit.co/music/preview/mixkit-love-story-532.mp3",
-        cover: ""
-      },
-      {
-        title: "简单爱 (心动轻柔版)",
-        artist: "周杰伦 / 纯音乐",
-        url: "https://assets.mixkit.co/music/preview/mixkit-wedding-piano-walk-530.mp3",
-        cover: ""
-      }
-    ]
+    playMode: "list-loop",
+    bgmTitle: "告白气球",
+    bgmArtist: "二珂",
+    bgmUrl: "/api/love/music-stream?hash=F4726605D01122AD14206E4EBFD3D2E1&album_id=0&title=%E5%91%8A%E7%99%BD%E6%B0%94%E7%90%83&artist=%E4%BA%8C%E7%8F%82",
+    vinylCover: "",
+    playlist: [] // 初始默认为纯净空列表，无需手动删除预设曲目，用户可后续自由添加
   },
 
   // ================= 4. 打字机真情告白 =================
