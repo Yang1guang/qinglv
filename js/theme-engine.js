@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/theme-engine.js
- * 作用: 多维物理引擎、12 套男女主题切换、双视角胶囊激活联动与独立背景图映射
+ * 作用: 多维物理引擎、12 套男女主题切换、双视角胶囊激活联动与独立背景图自适应遮罩
  */
 
 class ThemeEngineCore {
@@ -118,16 +118,23 @@ class ThemeEngineCore {
       themeMeta = (presets.boy && presets.boy[0]) ? presets.boy[0] : { particleType: "meteor", themeType: "dark" };
     }
 
-    // 1. 设置 Body 类名与主题属性
+    const isLight = themeMeta.themeType === "light" || this.currentPerspective === "girl";
+    const themeType = isLight ? "light" : "dark";
+
+    // 1. 设置 Body 类名与无障碍对比度主题类型属性
     document.body.className = document.body.className
       .replace(/theme-[a-z0-9-]+/g, "")
       .trim();
     document.body.classList.add(`theme-${themeId}`);
-    document.body.setAttribute("data-theme-type", themeMeta.themeType || "dark");
+    document.body.setAttribute("data-theme-type", themeType);
+    document.documentElement.setAttribute("data-theme-type", themeType);
 
-    // 2. 注入背景色或壁纸
+    // 2. 注入自适应对比度背景层（浅色增加高透光抗混叠遮罩，深色增加深邃透光遮罩）
     if (customBgUrl) {
-      document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('${customBgUrl}')`;
+      const scrim = isLight 
+        ? "linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4))"
+        : "linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45))";
+      document.body.style.backgroundImage = `${scrim}, url('${customBgUrl}')`;
       document.body.style.backgroundSize = "cover";
       document.body.style.backgroundPosition = "center";
       document.body.style.backgroundAttachment = "fixed";
@@ -142,7 +149,7 @@ class ThemeEngineCore {
     this.initParticlePhysics(themeMeta.particleType || "meteor");
 
     if (notify) {
-      const msg = `✨ 已切入【${themeMeta.name}】专属时空`;
+      const msg = `✨ 已切入【${themeMeta.name || "专属"}】时空`;
       if (typeof window.showToast === "function") {
         window.showToast(msg);
       } else if (window.Effects && typeof window.Effects.showMiniToast === "function") {
