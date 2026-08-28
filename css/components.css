@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/components.css
- * 升级：针对手机端顶部胶囊避让、黑胶唱片底部安全区与元素防重叠优化
+ * 升级：针对手机端顶部胶囊避让、黑胶唱片底部安全区、拍立得背面心动语音条与元素防重叠优化
  */
 
 .universe-canvas,
@@ -471,25 +471,120 @@
   transform: rotate(8deg);
 }
 
-.polaroid-card__back-title { font-size: 16px; font-weight: 800; color: #9f1239; margin-bottom: 12px; }
+.polaroid-card__back-title { font-size: 16px; font-weight: 800; color: #9f1239; margin-bottom: 10px; }
 .polaroid-card__back-text { font-size: 14px; line-height: 1.8; color: #374151; font-style: italic; }
-.polaroid-card__voice-box { margin-top: 16px; }
 
-.polaroid-card__voice-btn {
-  background: #fff1f2;
-  border: 1px solid #fecdd3;
-  color: #e11d48;
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-size: 12.5px;
-  font-weight: 800;
+/* 🎙️ 时光轴背面 60 秒专属语音胶囊组件 */
+.polaroid-card__voice-box {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.polaroid-voice-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(255, 241, 242, 0.95) 0%, rgba(254, 226, 226, 0.9) 100%);
+  border: 1.5px solid rgba(244, 63, 94, 0.35);
+  border-radius: 26px;
+  padding: 7px 15px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  user-select: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.12);
+  max-width: 100%;
 }
-.polaroid-card__voice-btn:hover { background: #ffe4e6; transform: scale(1.02); }
+
+.polaroid-voice-pill:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 18px rgba(244, 63, 94, 0.22);
+  border-color: rgba(244, 63, 94, 0.6);
+}
+
+.polaroid-voice-pill.playing {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  border-color: #be123c;
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.45);
+}
+
+.polaroid-voice-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(244, 63, 94, 0.15);
+  color: #e11d48;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.polaroid-voice-pill.playing .polaroid-voice-icon {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.polaroid-voice-waves {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 16px;
+}
+
+.polaroid-wave-bar {
+  width: 3px;
+  height: 6px;
+  background: #f43f5e;
+  border-radius: 2px;
+  transition: height 0.2s ease;
+}
+
+.polaroid-voice-pill.playing .polaroid-wave-bar {
+  background: #ffffff;
+  animation: polaroidWaveAnimation 0.9s ease-in-out infinite alternate;
+}
+
+.polaroid-voice-pill.playing .polaroid-wave-bar:nth-child(1) { animation-delay: 0.1s; }
+.polaroid-voice-pill.playing .polaroid-wave-bar:nth-child(2) { animation-delay: 0.3s; }
+.polaroid-voice-pill.playing .polaroid-wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.polaroid-voice-pill.playing .polaroid-wave-bar:nth-child(4) { animation-delay: 0.4s; }
+.polaroid-voice-pill.playing .polaroid-wave-bar:nth-child(5) { animation-delay: 0.15s; }
+
+@keyframes polaroidWaveAnimation {
+  0% { height: 4px; }
+  100% { height: 16px; }
+}
+
+.polaroid-voice-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.polaroid-voice-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #9f1239;
+  line-height: 1.2;
+}
+
+.polaroid-voice-pill.playing .polaroid-voice-title {
+  color: #ffffff;
+}
+
+.polaroid-voice-duration {
+  font-size: 10px;
+  font-weight: 700;
+  color: #e11d48;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.polaroid-voice-pill.playing .polaroid-voice-duration {
+  color: rgba(255, 255, 255, 0.9);
+}
 
 .polaroid-card__back-footer {
   display: flex;
