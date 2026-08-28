@@ -105,7 +105,7 @@ async function fetchConfigFromCloud(tokenOverride) {
     if (data.success && data.isAdmin) {
       currentDomainHost = data.domain || window.location.hostname;
       const domainBadge = document.getElementById("adminDomainBadge");
-      if (domainBadge) domainBadge.textContent = `当前租户节点: ${currentDomainHost}`;
+      if (domainBadge) domainBadge.textContent = `我的网址: ${currentDomainHost}`;
 
       if (data.custom && data.config) {
         currentConfig = mergeWithDefaultConfig(data.config);
@@ -209,18 +209,6 @@ async function submitDomainLicense() {
     }
   } catch (err) {
     alert("❌ 请求异常: " + err.message);
-  }
-}
-
-// 重置载入最新预设
-function resetToCodePresets() {
-  if (!confirm("⚠️ 确定要载入最新预设吗？\n点击右上角【💾 立即发布生效】即可同步写入云端！")) return;
-  if (window.LOVE_CONFIG) {
-    const existingLicense = currentConfig?._license;
-    currentConfig = JSON.parse(JSON.stringify(window.LOVE_CONFIG));
-    if (existingLicense) currentConfig._license = existingLicense;
-    renderAllForms();
-    showToast("✓ 已载入最新预设，请保存！");
   }
 }
 
