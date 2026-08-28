@@ -34,7 +34,7 @@ window.LOVE_CONFIG = {
     question: "输入我们第一次确认关系的纪念日 (6位数字)：",
     hint: "提示：2024年5月20日 ➔ 240520",
     correctAnswer: "240520",
-    voiceVows: "众水不能熄灭, 我愿一生包容你, 永远爱你, 240520",
+    voiceVows: "开心, 喜乐, 永远爱你, 240520",
     errorTips: [
       "没关系，慢慢想，我一直都在这里等你。",
       "记忆偶尔会迷路，但我们的爱永远是归途。",
@@ -95,7 +95,7 @@ window.LOVE_CONFIG = {
       desc: "数万人倒计时的时候，我在漫天彩带下握住你的手，许下一生一世的愿望。",
       location: "📍 城市广场",
       frontImg: "assets/images/photo_03.jpg",
-      backText: "每年的零点，我身边的人都只能是你。",
+      backText: "结婚后的每一个零点，我身边的人都只能是你。",
       voiceAudio: ""
     }
   ],
@@ -105,7 +105,7 @@ window.LOVE_CONFIG = {
     {
       id: "egg_1",
       selector: "#egg-star",
-      message: "🌟 发现暗号星：爱情是一生一世、一男一女、一心一意！"
+      message: "🌟 发现暗号星：一生一世、一男一女、一心一意！"
     },
     {
       id: "egg_2",
