@@ -7,10 +7,12 @@ let currentConfig = null;
 let currentAdminToken = "";
 let currentDomainHost = "";
 
+// 获取认证 Token
 function getAuthToken() {
   return (currentAdminToken || localStorage.getItem("love_admin_token") || "521").trim();
 }
 
+// 弹出 Toast 提示
 function showToast(msg) {
   const toast = document.getElementById("toast");
   if (!toast) return;
@@ -19,6 +21,29 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove("show"), 2500);
 }
 
+// 统计播放列表中已上传的本地歌曲数量（以 /raw/ 或 /assets/ 标识）
+function getLocalSongCount() {
+  const list = currentConfig?.audio?.playlist || [];
+  return list.filter(s => s && s.url && (s.url.startsWith("/raw/") || s.url.includes("/assets/"))).length;
+}
+
+// 智能解析文件名中的歌手与歌名 (支持 "周杰伦 - 告白气球.mp3" 等格式)
+function parseSongFilename(filename) {
+  const clean = filename.replace(/\.[^/.]+$/, "").trim();
+  if (clean.includes(" - ")) {
+    const parts = clean.split(" - ");
+    return { artist: parts[0].trim(), title: parts.slice(1).join(" - ").trim() };
+  } else if (clean.includes("-")) {
+    const parts = clean.split("-");
+    return { artist: parts[0].trim(), title: parts.slice(1).join("-").trim() };
+  } else if (clean.includes("_")) {
+    const parts = clean.split("_");
+    return { artist: parts[0].trim(), title: parts.slice(1).join("_").trim() };
+  }
+  return { artist: "本地上传", title: clean };
+}
+
+// 深度合并云端配置与本地默认基准
 function mergeWithDefaultConfig(cloudCfg) {
   const base = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
   if (!cloudCfg || typeof cloudCfg !== "object") return base;
@@ -46,6 +71,7 @@ function mergeWithDefaultConfig(cloudCfg) {
   };
 }
 
+// 管理员登录校验
 async function verifyAdminLogin() {
   const pwdInput = document.getElementById("adminPwdInput");
   const pwd = pwdInput ? pwdInput.value.trim() : "";
@@ -66,6 +92,7 @@ async function verifyAdminLogin() {
   }
 }
 
+// 从云端拉取配置
 async function fetchConfigFromCloud(tokenOverride) {
   const token = (tokenOverride || getAuthToken()).trim();
   try {
@@ -94,6 +121,7 @@ async function fetchConfigFromCloud(tokenOverride) {
   }
 }
 
+// 渲染所有表单内容
 function renderAllForms() {
   if (!currentConfig) return;
 
@@ -149,6 +177,7 @@ function renderAllForms() {
   renderLicenseStatus();
 }
 
+// 渲染授权状态
 function renderLicenseStatus() {
   const badge = document.getElementById("licenseStatusBadge");
   if (!badge) return;
@@ -159,6 +188,7 @@ function renderLicenseStatus() {
   }
 }
 
+// 提交域名授权激活码
 async function submitDomainLicense() {
   const codeInput = document.getElementById("inputLicenseCode");
   const code = codeInput ? codeInput.value.trim() : "";
@@ -182,6 +212,7 @@ async function submitDomainLicense() {
   }
 }
 
+// 重置载入最新预设
 function resetToCodePresets() {
   if (!confirm("⚠️ 确定要载入最新预设吗？\n点击右上角【💾 立即发布生效】即可同步写入云端！")) return;
   if (window.LOVE_CONFIG) {
@@ -193,11 +224,13 @@ function resetToCodePresets() {
   }
 }
 
+// 热门标签点击快捷搜索
 function quickSearchTag(tagText) {
   document.getElementById("musicSearchKeyword").value = tagText;
   executeOnlineMusicSearch();
 }
 
+// 执行在线音乐检索
 async function executeOnlineMusicSearch() {
   const kw = document.getElementById("musicSearchKeyword").value.trim();
   const listContainer = document.getElementById("onlineSearchResultList");
@@ -231,6 +264,7 @@ async function executeOnlineMusicSearch() {
   }
 }
 
+// 设为主打背景音乐
 function setAsSingleBGM(title, artist, url) {
   document.getElementById("audio_bgmTitle").value = title;
   document.getElementById("audio_bgmArtist").value = artist;
@@ -247,6 +281,7 @@ function setAsSingleBGM(title, artist, url) {
   showToast(`✓ 已将《${title}》设为主打歌，请点击右上角【💾 立即发布生效】！`);
 }
 
+// 添加搜索歌曲至播放列表
 function addSongToPlaylist(title, artist, url, cover) {
   if (!currentConfig.audio) currentConfig.audio = {};
   if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
@@ -267,6 +302,7 @@ function addSongToPlaylist(title, artist, url, cover) {
   showToast(`✓ 已将《${title}》加入播放列表 (${currentConfig.audio.playlist.length}/30)`);
 }
 
+// 渲染播放列表管理卡片
 function renderPlaylist() {
   const container = document.getElementById("playlistContainer");
   const countBadge = document.getElementById("playlistCountBadge");
@@ -274,20 +310,28 @@ function renderPlaylist() {
   container.innerHTML = "";
 
   const list = currentConfig?.audio?.playlist || [];
-  if (countBadge) countBadge.textContent = `(${list.length} / 30 首)`;
+  const localCount = getLocalSongCount();
+
+  if (countBadge) {
+    countBadge.textContent = `(${list.length} / 30 首 · 本地已传 ${localCount} / 5)`;
+  }
 
   if (list.length === 0) {
-    container.innerHTML = `<div style="color:#94a3b8; font-size:12.5px; text-align:center; padding:18px;">🍃 暂无列表曲目，可在上方搜索歌曲一键【➕ 加歌单】或手动添加。</div>`;
+    container.innerHTML = `<div style="color:#94a3b8; font-size:12.5px; text-align:center; padding:18px;">🍃 暂无列表曲目，可在上方搜索歌曲一键【➕ 加歌单】或点击上方【📤 传本地MP3】。</div>`;
     return;
   }
 
   list.forEach((song, idx) => {
+    const isLocal = song.url && (song.url.startsWith("/raw/") || song.url.includes("/assets/"));
     const card = document.createElement("div");
     card.className = "item-card";
     card.style.marginBottom = "10px";
     card.innerHTML = `
       <div class="item-card-header">
-        <span class="item-card-title">🎵 #${idx + 1} - ${escapeHtml(song.title || "未命名曲目")}</span>
+        <span class="item-card-title">
+          🎵 #${idx + 1} - ${escapeHtml(song.title || "未命名曲目")}
+          ${isLocal ? '<span style="font-size:10px; background:rgba(56,189,248,0.2); color:#38bdf8; padding:2px 6px; border-radius:8px; margin-left:6px;">本地文件</span>' : ''}
+        </span>
         <div style="display:flex; gap:6px;">
           <button class="btn-tool preview-play-btn" id="pl_prev_${idx}" style="padding:3px 8px; font-size:11px;" onclick="testPreviewAudio('${song.url}', 'pl_prev_${idx}', '${escapeHtml(song.title)}')">🎧 试听</button>
           <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="movePlaylistSong(${idx}, -1)" ${idx === 0 ? "disabled" : ""}>⬆️</button>
@@ -302,7 +346,7 @@ function renderPlaylist() {
           <label>音频直链地址</label>
           <div class="upload-input-group">
             <input type="text" class="admin-input" id="pl_url_${idx}" value="${escapeHtml(song.url || "")}" oninput="currentConfig.audio.playlist[${idx}].url=this.value">
-            <button class="btn-upload" onclick="triggerDirectUpload('pl_url_${idx}', 'audio/*', (url)=>{ currentConfig.audio.playlist[${idx}].url=url; })">📤 上传MP3</button>
+            <button class="btn-upload" onclick="triggerDirectUploadSongItem(${idx})">📤 上传MP3</button>
           </div>
         </div>
         <div class="form-group" style="grid-column: 1 / -1;">
@@ -318,6 +362,7 @@ function renderPlaylist() {
   });
 }
 
+// 手动添加一条空白曲目
 function addCustomPlaylistItem() {
   if (!currentConfig.audio) currentConfig.audio = {};
   if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
@@ -336,6 +381,75 @@ function addCustomPlaylistItem() {
   renderPlaylist();
 }
 
+// 快捷上传本地 MP3 并直接加入播放列表（限制本地最多 5 首）
+function triggerDirectUploadLocalSong() {
+  if (!currentConfig.audio) currentConfig.audio = {};
+  if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
+
+  if (currentConfig.audio.playlist.length >= 30) {
+    return alert("⚠️ 播放列表最多可容纳 30 首音乐！请先删除部分歌曲。");
+  }
+
+  const localCount = getLocalSongCount();
+  if (localCount >= 5) {
+    return alert(`⚠️ 存储空间保护机制生效：\n每个站点最多支持上传 5 首本地专属 MP3 音频（当前已上传 ${localCount} 首）。\n\n💡 建议方案：\n请使用上方【🔍 在线搜索云端音乐】功能，支持全网数百万首歌曲无损直连，0 占用本地存储！`);
+  }
+
+  triggerDirectUpload(null, "audio/*", (url, file) => {
+    const meta = parseSongFilename(file.name);
+    currentConfig.audio.playlist.push({
+      id: "song_" + Date.now(),
+      title: meta.title,
+      artist: meta.artist,
+      url: url,
+      cover: ""
+    });
+    renderPlaylist();
+    showToast(`✓ 已成功上传《${meta.title}》并加入播放列表！`);
+  });
+}
+
+// 单个曲目卡片内部上传替换 MP3
+function triggerDirectUploadSongItem(idx) {
+  const currentUrl = currentConfig.audio.playlist[idx]?.url || "";
+  const isAlreadyLocal = currentUrl.startsWith("/raw/") || currentUrl.includes("/assets/");
+  
+  if (!isAlreadyLocal && getLocalSongCount() >= 5) {
+    return alert(`⚠️ 存储空间保护机制生效：\n每个站点最多支持上传 5 首本地专属 MP3 音频。\n请使用在线搜索，或将已有本地歌曲替换！`);
+  }
+
+  triggerDirectUpload(`pl_url_${idx}`, "audio/*", (url, file) => {
+    currentConfig.audio.playlist[idx].url = url;
+    const titleInput = document.getElementById(`pl_title_${idx}`);
+    const artistInput = document.getElementById(`pl_artist_${idx}`);
+    
+    // 若歌名为空或为默认名称，自动提取文件名
+    if (titleInput && (!titleInput.value || titleInput.value === "自定义新音乐")) {
+      const meta = parseSongFilename(file.name);
+      titleInput.value = meta.title;
+      currentConfig.audio.playlist[idx].title = meta.title;
+      if (artistInput && (!artistInput.value || artistInput.value === "歌手")) {
+        artistInput.value = meta.artist;
+        currentConfig.audio.playlist[idx].artist = meta.artist;
+      }
+    }
+    renderPlaylist();
+  });
+}
+
+// 单曲模式默认 BGM 上传
+function triggerDirectUploadSingleBgm() {
+  triggerDirectUpload("audio_bgmUrl", "audio/*", (url, file) => {
+    const meta = parseSongFilename(file.name);
+    const titleInput = document.getElementById("audio_bgmTitle");
+    const artistInput = document.getElementById("audio_bgmArtist");
+    if (titleInput) titleInput.value = meta.title;
+    if (artistInput) artistInput.value = meta.artist;
+    showToast(`✓ 主打歌音频已上传，自动解析为《${meta.title}》`);
+  });
+}
+
+// 删除播放列表歌曲
 function deletePlaylistSong(idx) {
   if (confirm("确定从播放列表中移除该歌曲吗？")) {
     currentConfig.audio.playlist.splice(idx, 1);
@@ -343,6 +457,7 @@ function deletePlaylistSong(idx) {
   }
 }
 
+// 移动排序
 function movePlaylistSong(idx, direction) {
   const targetIdx = idx + direction;
   const list = currentConfig.audio.playlist;
@@ -353,6 +468,7 @@ function movePlaylistSong(idx, direction) {
   renderPlaylist();
 }
 
+// 试听控制器
 let previewAudioObj = null;
 let currentPreviewBtnId = null;
 
@@ -383,7 +499,7 @@ function testPreviewAudio(url, btnId, songTitle) {
     showToast(`🎵 正在试听: ${songTitle || "选定曲目"}`);
   }).catch(() => {
     if (currentBtn) currentBtn.textContent = "🎧 试听";
-    alert(`⚠️ 《${songTitle || "该歌曲"}》因平台 VIP 版权风控无法在线解析。\n\n💡 完美解决方案：\n请使用下方【📤 上传MP3】按钮，直接上传您本地下载好的原版 MP3 文件，100% 永久稳定可播！`);
+    alert(`⚠️ 《${songTitle || "该歌曲"}》因平台 VIP 版权风控无法在线解析。\n\n💡 完美解决方案：\n请使用下方【📤 传本地MP3】按钮，直接上传您本地下载好的原版 MP3 文件，100% 永久稳定可播！`);
   });
 
   previewAudioObj.onended = () => {
@@ -391,6 +507,7 @@ function testPreviewAudio(url, btnId, songTitle) {
   };
 }
 
+// 渲染主题陈列室
 function renderThemeShowroom() {
   const boyBox = document.getElementById("boyThemesContainer");
   const girlBox = document.getElementById("girlThemesContainer");
@@ -442,6 +559,7 @@ function renderThemeShowroom() {
 function selectBoyTheme(themeId) { if (!currentConfig.theme) currentConfig.theme = {}; currentConfig.theme.currentThemeBoy = themeId; currentConfig.theme.currentTheme = themeId; renderThemeShowroom(); showToast(`✓ 已选定男生视角主题【${themeId}】`); }
 function selectGirlTheme(themeId) { if (!currentConfig.theme) currentConfig.theme = {}; currentConfig.theme.currentThemeGirl = themeId; renderThemeShowroom(); showToast(`✓ 已选定女生视角主题【${themeId}】`); }
 
+// 清理 R2 孤立文件
 async function cleanOrphanR2Cache() {
   if (!confirm("⚠️ 确定要清理孤立文件吗？")) return;
   showToast("⏳ 扫描清理中...");
@@ -452,6 +570,7 @@ async function cleanOrphanR2Cache() {
   } catch (err) { alert("❌ 请求异常: " + err.message); }
 }
 
+// 时光轴渲染
 function renderTimelineList() {
   const container = document.getElementById("timelineListContainer");
   if (!container) return;
@@ -477,6 +596,7 @@ function renderTimelineList() {
 function addTimelineNode() { if (!currentConfig.timeline) currentConfig.timeline = []; currentConfig.timeline.push({ id: "node_" + Date.now(), date: "2026.05.20", tag: "甜蜜日常", title: "新美好瞬间", desc: "记录下这一天的感动...", location: "📍 幸福角落", frontImg: "assets/images/photo_01.jpg", backText: "翻转看到的独家留言...", voiceAudio: "" }); renderTimelineList(); }
 function deleteTimelineNode(idx) { if (confirm("确定删除该时光节点吗？")) { currentConfig.timeline.splice(idx, 1); renderTimelineList(); } }
 
+// 100 件事渲染
 function renderChecklist() {
   const container = document.getElementById("checklistItemsContainer");
   if (!container) return;
@@ -498,6 +618,7 @@ function renderChecklist() {
 function addChecklistItem() { if (!currentConfig.checklist100) currentConfig.checklist100 = []; currentConfig.checklist100.push({ id: currentConfig.checklist100.length + 1, phase: 1, title: "一起去做一件浪漫的事", completed: false }); renderChecklist(); }
 function deleteChecklistItem(idx) { currentConfig.checklist100.splice(idx, 1); renderChecklist(); }
 
+// 刮刮乐渲染
 function renderScratchCards() {
   const container = document.getElementById("scratchCardsContainer");
   if (!container) return;
@@ -520,15 +641,33 @@ function renderScratchCards() {
 function addScratchCard() { if (!currentConfig.scratchCards) currentConfig.scratchCards = []; currentConfig.scratchCards.push({ id: "card_" + Date.now(), phase: 1, title: "专属心愿卡", content: "无条件兑现一次！", icon: "✨", scratched: false, used: false, usedTime: "" }); renderScratchCards(); }
 function deleteScratchCard(idx) { currentConfig.scratchCards.splice(idx, 1); renderScratchCards(); }
 
+// 全局通用上传调度器 (含 15MB 保护与回调支持)
 let activeUploadCallback = null;
 let activeUploadInputId = null;
-function triggerDirectUpload(targetInputId, acceptType, callback) { activeUploadInputId = targetInputId; activeUploadCallback = callback; const uploader = document.getElementById("globalUploader"); uploader.accept = acceptType || "*/*"; uploader.click(); }
+
+function triggerDirectUpload(targetInputId, acceptType, callback) {
+  activeUploadInputId = targetInputId;
+  activeUploadCallback = callback;
+  const uploader = document.getElementById("globalUploader");
+  uploader.accept = acceptType || "*/*";
+  uploader.click();
+}
 
 document.getElementById("globalUploader").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  showToast("⏳ 正在极速上传到空间里...");
-  const formData = new FormData(); formData.append("file", file);
+
+  // 15MB 上传体积防御
+  const maxBytes = 15 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    e.target.value = "";
+    return alert(`⚠️ 文件体积过大 (${(file.size / (1024 * 1024)).toFixed(1)} MB)！\n为了保证移动端秒开与存储负载，单个文件请限制在 15 MB 以内。`);
+  }
+
+  showToast("⏳ 正在极速上传到独立空间...");
+  const formData = new FormData();
+  formData.append("file", file);
+
   try {
     const token = getAuthToken();
     const res = await fetch(`/api/love/upload?auth=${encodeURIComponent(token)}`, {
@@ -538,12 +677,16 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
     });
     const data = await res.json();
     if (data.success && data.url) {
-      const targetInput = document.getElementById(activeUploadInputId);
-      if (targetInput) {
-        targetInput.value = data.url;
-        targetInput.dispatchEvent(new Event("input"));
+      if (activeUploadInputId) {
+        const targetInput = document.getElementById(activeUploadInputId);
+        if (targetInput) {
+          targetInput.value = data.url;
+          targetInput.dispatchEvent(new Event("input"));
+        }
       }
-      if (activeUploadCallback) activeUploadCallback(data.url);
+      if (activeUploadCallback) {
+        activeUploadCallback(data.url, file);
+      }
       if (activeUploadInputId === "theme_customBgUrlBoy" && currentConfig) {
         if (!currentConfig.theme) currentConfig.theme = {};
         currentConfig.theme.customBgUrlBoy = data.url;
@@ -552,9 +695,9 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
         if (!currentConfig.theme) currentConfig.theme = {};
         currentConfig.theme.customBgUrlGirl = data.url;
       }
-      showToast("✓ 上传成功！直链已自动填入");
+      showToast("✓ 上传成功！直链已自动同步");
     } else {
-      alert("❌ 上传失败");
+      alert("❌ 上传失败: " + (data.error || "服务端拒绝接收"));
     }
   } catch (err) {
     alert("❌ 上传异常: " + err.message);
@@ -563,6 +706,7 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
+// 发布全量配置到云端
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
   currentConfig.adminSecurity = {
@@ -656,6 +800,7 @@ async function saveAllConfigToCloud() {
   }
 }
 
+// 导出与导入备份
 function exportBackupJSON() {
   if (!currentConfig) return;
   const a = document.createElement("a");
@@ -685,6 +830,7 @@ function escapeHtml(s) {
   return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Tab 切换驱动
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -694,6 +840,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
   });
 });
 
+// 初始化鉴权会话
 document.addEventListener("DOMContentLoaded", () => {
   const cached = localStorage.getItem("love_admin_token");
   if (cached) {
