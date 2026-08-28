@@ -27,47 +27,73 @@ class PhotoWallManager {
     container.innerHTML = "";
     this.itemsData = [];
 
-    // 获取全页面真实可滚动高度，避免仅局限于首屏高度
-    const pageHeight = Math.max(
-      document.body.scrollHeight,
-      document.documentElement.scrollHeight,
-      window.innerHeight * 2
-    );
+    // 延迟执行以确保主页面 DOM 渲染完成，获取真实完整的文档高度
+    const layoutPhotos = () => {
+      const mainContainer = document.getElementById("main-container");
+      const pageHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        mainContainer ? mainContainer.offsetHeight + 300 : window.innerHeight * 2
+      );
 
-    // 纵向分布步长，保证从顶部至底部均匀散落
-    const totalPhotos = photos.length;
-    const verticalGap = (pageHeight - 260) / Math.max(totalPhotos, 1);
+      // 计算合理的纵向分布间距，避开顶部与极底部
+      const totalPhotos = photos.length;
+      const startTop = 80;
+      const availableHeight = Math.max(pageHeight - startTop - 200, totalPhotos * 240);
+      const verticalGap = availableHeight / Math.max(totalPhotos, 1);
 
-    photos.forEach((url, idx) => {
-      const item = document.createElement("div");
-      item.className = "wall-polaroid-item";
+      container.innerHTML = "";
+      this.itemsData = [];
 
-      // 左右两侧交错分布 (左侧 2%~12%，右侧 78%~88%，避开正中央内容区)
-      const isLeft = idx % 2 === 0;
-      const posX = isLeft ? (Math.random() * 8 + 2) : (Math.random() * 8 + 80);
-      const baseTop = (idx * verticalGap) + (Math.random() * 40 + 40);
-      const baseRot = (Math.random() - 0.5) * 22; // 随机轻微倾斜角度
-      const speed = isLeft ? 0.06 : -0.05;       // 左右相反的自然视差浮动系数
+      photos.forEach((url, idx) => {
+        const item = document.createElement("div");
+        item.className = "wall-polaroid-item";
 
-      item.style.left = `${posX}%`;
-      item.style.top = `${baseTop}px`;
-      item.style.transform = `translate3d(0, 0, 0) rotate(${baseRot}deg)`;
+        // 左右两侧对称交错分布 (避开屏幕正中央 20%~80% 的主体文字区)
+        const isLeft = idx % 2 === 0;
+        const posX = isLeft ? (Math.random() * 6 + 2) : (Math.random() * 6 + 82);
+        const baseTop = startTop + (idx * verticalGap) + (Math.random() * 30);
+        const baseRot = (Math.random() - 0.5) * 20; // 随机轻微倾斜角度
 
-      item.innerHTML = `
-        <div class="wall-polaroid-inner">
-          <img src="${url}" alt="时光碎片" loading="lazy" onerror="this.parentElement.parentElement.style.display='none'">
-        </div>
-      `;
+        // 核心修正：使用纯负向阻尼系数 (-0.03 ~ -0.06)，使滑动时照片自然随页面往上走，同时呈现出优美的浅层视差
+        const speed = isLeft ? -0.04 : -0.06;
 
-      container.appendChild(item);
+        item.style.left = `${posX}%`;
+        item.style.top = `${baseTop}px`;
+        item.style.transform = `translate3d(0, 0, 0) rotate(${baseRot}deg)`;
 
-      // 缓存每个拍立得的物理参数
-      this.itemsData.push({
-        element: item,
-        baseRot: baseRot,
-        speed: speed
+        item.innerHTML = `
+          <div class="wall-polaroid-inner">
+            <img src="${url}" alt="时光碎片" loading="lazy" onerror="this.parentElement.parentElement.style.display='none'">
+          </div>
+        `;
+
+        container.appendChild(item);
+
+        // 缓存物理参数
+        this.itemsData.push({
+          element: item,
+          baseRot: baseRot,
+          speed: speed
+        });
       });
-    });
+
+      this.updateParallax();
+    };
+
+    // 立即执行一次布局
+    layoutPhotos();
+
+    // 当页面完全加载完成（图片和字体就绪）后再次校准一次高度
+    window.addEventListener("load", layoutPhotos, { once: true });
+
+    // 监听高度变化以动态适配
+    if (window.ResizeObserver) {
+      const resizeObserver = new ResizeObserver(() => {
+        layoutPhotos();
+      });
+      resizeObserver.observe(document.body);
+    }
 
     // 绑定基于 requestAnimationFrame 节流的高性能视差滚动
     window.addEventListener("scroll", () => {
@@ -79,15 +105,10 @@ class PhotoWallManager {
         this.ticking = true;
       }
     }, { passive: true });
-
-    // 窗口尺寸变化时自动重新校准
-    window.addEventListener("resize", () => {
-      this.updateParallax();
-    }, { passive: true });
   }
 
   /**
-   * 执行微视差浮动位移
+   * 执行负向视差浮动位移（确保随页面自然上滑）
    */
   updateParallax() {
     const scrollY = window.scrollY || window.pageYOffset || 0;
