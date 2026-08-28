@@ -30,6 +30,7 @@ export default {
       });
     }
 
+    // 多租户隔离机制：自动将 Punycode/英文字符归一化为独立存储目录
     const rawHost = (url.hostname || "default.local").toLowerCase();
     const tenantDir = rawHost.replace(/[^a-z0-9.-]/g, "_");
     const CONFIG_KEY = `${tenantDir}/config.json`;
@@ -100,7 +101,7 @@ export default {
     }
 
     try {
-      // 1. 获取全站配置
+      // 1. 获取全站配置 (自动传递当前租户 Host 给前端渲染)
       if (url.pathname === "/api/love/config" && request.method === "GET") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -136,7 +137,7 @@ export default {
         return jsonResponse({ success: true, custom: false, domain: rawHost, config: null, isAdmin });
       }
 
-      // 2. 保存并发布配置
+      // 2. 保存并发布配置 (严格按租户目录隔离)
       if (url.pathname === "/api/love/config" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
         
