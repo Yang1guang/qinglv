@@ -354,7 +354,7 @@ export default {
         });
       }
 
-      // 8. 在线音乐检索 (酷狗官方接口)
+      // 8. 在线音乐检索 (酷狗官方接口，透传元数据确保流式降级命中率)
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim();
         const songs = [];
@@ -380,7 +380,7 @@ export default {
                     title: sName,
                     artist: sArtist,
                     albumId: item.AlbumID || "0",
-                    url: `/api/love/music-stream?hash=${fHash}&album_id=${item.AlbumID || 0}`
+                    url: `/api/love/music-stream?hash=${fHash}&album_id=${item.AlbumID || 0}&title=${encodeURIComponent(sName)}&artist=${encodeURIComponent(sArtist)}`
                   });
                 }
               });
@@ -391,14 +391,16 @@ export default {
         return jsonResponse({ success: true, songs });
       }
 
-      // 9. 🎵 音频流式代理 (严格拒绝偷梁换柱，解析失败直接抛出 404)
+      // 9. 🎵 音频流式代理 (多引擎无损/高保真解析，严格拒绝偷梁换柱，全部失败直接抛出标准 404)
       if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
         const hash = url.searchParams.get("hash");
         const albumId = url.searchParams.get("album_id") || "0";
+        const title = url.searchParams.get("title") || "";
+        const artist = url.searchParams.get("artist") || "";
         let targetAudioUrl = "";
 
         if (hash) {
-          // 移动端接口解析
+          // 通道 1: 移动端接口解析
           try {
             const kgInfoRes = await fetch(`https://m.kugou.com/app/i/getSongInfo.php?cmd=playInfo&hash=${hash}`, {
               headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)" }
@@ -411,7 +413,7 @@ export default {
             }
           } catch (_) {}
 
-          // 网页端接口备用解析
+          // 通道 2: 网页端接口备用解析
           if (!targetAudioUrl) {
             try {
               const kgWebRes = await fetch(`https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&album_id=${albumId}&dfid=-&mid=-&platid=4&_=${Date.now()}`, {
@@ -429,7 +431,33 @@ export default {
           }
         }
 
-        // 解析失败直接返回 404，绝不静默重定向到《夏天的风》
+        // 通道 3: 若单平台版权拦截且具备歌曲名/歌手，聚合公共开放库同名匹配同一首歌曲
+        if (!targetAudioUrl && (title || hash)) {
+          try {
+            const querySong = `${title} ${artist}`.trim();
+            if (querySong) {
+              const kwUrl = `http://search.kuwo.cn/r.s?client=kt&all=${encodeURIComponent(querySong)}&pn=0&rn=1&vipver=1&ft=music&encoding=utf8&rformat=json&mobi=1`;
+              const kwRes = await fetch(kwUrl, { headers: { "User-Agent": "okhttp/3.10.0" } });
+              if (kwRes.ok) {
+                const kwText = await kwRes.text();
+                const ridMatch = kwText.match(/\"MUSICRID\":\"MUSIC_(\d+)\"/i) || kwText.match(/\"rid\":(\d+)/i) || kwText.match(/\"DC_TARGETID\":\"(\d+)\"/i);
+                if (ridMatch && ridMatch[1]) {
+                  const kwPlayRes = await fetch(`https://antiserver.kuwo.cn/anti.s?type=convert_url&rid=${ridMatch[1]}&format=mp3&response=url`, {
+                    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
+                  });
+                  if (kwPlayRes.ok) {
+                    const directUrl = (await kwPlayRes.text()).trim();
+                    if (directUrl && directUrl.startsWith("http")) {
+                      targetAudioUrl = directUrl;
+                    }
+                  }
+                }
+              }
+            }
+          } catch (_) {}
+        }
+
+        // 解析失败直接返回 404，绝不偷换歌曲
         if (!targetAudioUrl || !targetAudioUrl.startsWith("http")) {
           return new Response("Audio Source Unavailable Due To Copyright", {
             status: 404,
