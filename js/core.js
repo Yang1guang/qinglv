@@ -1,11 +1,57 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe) 前台核心主控
  * 文件名: js/core.js
- * 作用: 门禁鉴权、打字机、彩蛋与 300DPI 多图拍立得、无损保真裁切及专属二维码海报生成
+ * 作用: 门禁鉴权、打字机、彩蛋与 300DPI 多图拍立得、无损保真裁切及专属中文二维码海报生成
  */
 
 document.addEventListener("DOMContentLoaded", () => {
   let config = window.LOVE_CONFIG || {};
+
+  // 纯原生 RFC 3492 Punycode 逆向解码器 (海报生成中展示纯中文网址)
+  function decodePunycodeHost(domainStr) {
+    if (!domainStr || typeof domainStr !== "string") return domainStr || "";
+    try {
+      return domainStr.split(".").map(part => {
+        if (!part.toLowerCase().startsWith("xn--")) return part;
+        let input = part.slice(4);
+        let output = [];
+        let i = 0, n = 128, bias = 72;
+        let basic = input.lastIndexOf("-");
+        if (basic > 0) {
+          for (let j = 0; j < basic; ++j) output.push(input.charCodeAt(j));
+          input = input.slice(basic + 1);
+        }
+        while (input.length > 0) {
+          let oldi = i, w = 1, k = 36;
+          for (;; k += 36) {
+            let c = input.charCodeAt(0);
+            input = input.slice(1);
+            let digit = c - 48 < 10 ? c - 22 : c - 65 < 26 ? c - 65 : c - 97 < 26 ? c - 97 : 36;
+            i += digit * w;
+            let t = k <= bias ? 1 : (k >= bias + 26 ? 26 : k - bias);
+            if (digit < t) break;
+            w *= 36 - t;
+          }
+          let outLen = output.length + 1;
+          let delta = oldi === 0 ? Math.floor(i / 700) : Math.floor((i - oldi) / 2);
+          delta += Math.floor(delta / outLen);
+          let k2 = 0;
+          while (delta > ((36 - 1) * 26) / 2) {
+            delta = Math.floor(delta / (36 - 1));
+            k2 += 36;
+          }
+          bias = Math.floor(k2 + ((36 - 1 + 1) * delta) / (delta + 38));
+          n += Math.floor(i / outLen);
+          i %= outLen;
+          output.splice(i, 0, n);
+          i++;
+        }
+        return String.fromCodePoint(...output);
+      }).join(".");
+    } catch (_) {
+      return domainStr;
+    }
+  }
 
   const dom = {
     gatekeeperScreen: document.getElementById("gatekeeper-screen"),
@@ -522,12 +568,10 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.lineWidth = 4;
     ctx.strokeRect(qrX, qrY, qrSize, qrSize);
 
-    // 基于哈希生成高保真唯美点阵二维码图案
     const gridSize = 21;
     const cellSize = qrSize / gridSize;
     ctx.fillStyle = "#0f172a";
 
-    // 绘制定位角标 (三大标准寻像图案)
     function drawFinderPattern(fx, fy) {
       ctx.fillRect(fx, fy, cellSize * 7, cellSize * 7);
       ctx.fillStyle = "#ffffff";
@@ -539,7 +583,6 @@ document.addEventListener("DOMContentLoaded", () => {
     drawFinderPattern(qrX + cellSize * 14, qrY);
     drawFinderPattern(qrX, qrY + cellSize * 14);
 
-    // 绘制中间数据矩阵点阵
     let seed = 0;
     for (let i = 0; i < targetUrl.length; i++) {
       seed = (seed + targetUrl.charCodeAt(i) * (i + 1)) % 2147483647;
@@ -557,7 +600,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // 中心点缀金色爱心微标
     const centerSize = cellSize * 5;
     const centerX = qrX + (qrSize - centerSize) / 2;
     const centerY = qrY + (qrSize - centerSize) / 2;
@@ -587,7 +629,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, 1080, 1920);
 
-    // 装饰星光粒子
     ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
     for (let i = 0; i < 90; i++) {
       const sx = Math.sin(i * 99) * 540 + 540;
@@ -616,7 +657,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.font = "26px sans-serif";
     ctx.fillText(config.meta?.siteSubtitle || "众水不能熄灭爱情，大水不能淹没 · 一生一世的契约", 540, 245);
 
-    // 3. 提取时光轴照片 (支持多张拍立得排列)
+    // 3. 提取时光轴照片
     const timelineList = config.timeline || [];
     const photoUrls = [
       timelineList[0]?.frontImg || "assets/images/photo_01.jpg",
@@ -655,7 +696,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillText(timelineList[0]?.date || "2024.05.20", 105, 950);
     ctx.restore();
 
-    // 次拍立得卡片 1 (右上叠放)
+    // 次拍立得卡片 1
     ctx.save();
     ctx.translate(690, 310);
     ctx.rotate((3 * Math.PI) / 180);
@@ -672,7 +713,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillText(timelineList[1]?.title || "浪漫日常", 15, 325);
     ctx.restore();
 
-    // 次拍立得卡片 2 (右下叠放)
+    // 次拍立得卡片 2
     ctx.save();
     ctx.translate(680, 680);
     ctx.rotate((-2 * Math.PI) / 180);
@@ -739,8 +780,11 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillText(`—— ${config.letter?.signature || "爱你的良人"} · ${config.letter?.signDate || "2026.05.20"}`, 970, 1515);
     ctx.restore();
 
-    // 6. 底部专属独立二维码直连区
-    const currentDomainUrl = window.location.href.split("#")[0].split("?")[0];
+    // 6. 底部专属独立二维码直连区 (自动解码还原中文网址)
+    const rawDomainUrl = window.location.href.split("#")[0].split("?")[0];
+    const displayHostname = decodePunycodeHost(window.location.hostname);
+    const displayDomainUrl = rawDomainUrl.replace(window.location.hostname, displayHostname);
+
     const qrBoxX = 80;
     const qrBoxY = 1580;
     const qrBoxW = 920;
@@ -753,10 +797,8 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillRect(qrBoxX, qrBoxY, qrBoxW, qrBoxH);
     ctx.strokeRect(qrBoxX, qrBoxY, qrBoxW, qrBoxH);
 
-    // 绘制真实专属二维码
-    drawDomainQrCode(ctx, 110, 1605, 190, currentDomainUrl);
+    drawDomainQrCode(ctx, 110, 1605, 190, rawDomainUrl);
 
-    // 二维码右侧文字说明
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 32px sans-serif";
     ctx.textAlign = "left";
@@ -764,7 +806,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ctx.fillStyle = "#38bdf8";
     ctx.font = "22px sans-serif";
-    ctx.fillText(`🔗 网址直达: ${currentDomainUrl.replace(/^https?:\/\//, "")}`, 330, 1715);
+    ctx.fillText(`🔗 网址直达: ${displayDomainUrl.replace(/^https?:\/\//, "")}`, 330, 1715);
 
     ctx.fillStyle = "#94a3b8";
     ctx.font = "20px sans-serif";
