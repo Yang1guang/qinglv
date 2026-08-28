@@ -1,6 +1,7 @@
 /**
  * 漫游宇宙控制中心后台样式
  * 文件名: css/admin.css
+ * 升级：全面适配 PC 端与移动端 (iOS Safari / Android Chrome) 双端高保真响应式布局
  */
 
 :root {
@@ -29,7 +30,7 @@ body {
 /* 验证弹窗 */
 .admin-auth-modal {
   position: fixed; inset: 0; background: rgba(7, 10, 20, 0.92);
-  backdrop-filter: blur(20px); z-index: 100000;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 100000;
   display: flex; align-items: center; justify-content: center; padding: 20px;
 }
 .admin-auth-dialog {
@@ -49,6 +50,7 @@ body {
   display: flex; justify-content: space-between; align-items: center;
   padding: 18px 24px; background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 20px; margin-bottom: 20px; backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   flex-wrap: wrap; gap: 14px;
 }
 .admin-brand { display: flex; align-items: center; gap: 12px; }
@@ -59,17 +61,17 @@ body {
 .admin-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .btn-tool, .btn-save-main, .btn-admin-action, .btn-add, .btn-upload {
   padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 800;
-  cursor: pointer; transition: all 0.2s; border: none; outline: none;
+  cursor: pointer; transition: all 0.2s; border: none; outline: none; user-select: none;
 }
 .btn-tool {
   background: rgba(255, 255, 255, 0.08); color: var(--text-main);
-  border: 1px solid var(--panel-border); text-decoration: none; display: inline-flex; align-items: center;
+  border: 1px solid var(--panel-border); text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
 }
 .btn-tool:hover { background: rgba(255, 255, 255, 0.16); }
 
 .btn-save-main {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: #fff; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+  color: #fff; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); display: inline-flex; align-items: center; justify-content: center;
 }
 .btn-save-main:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6); }
 
@@ -80,9 +82,6 @@ body {
 
 .admin-main {
   display: grid; grid-template-columns: 240px 1fr; gap: 20px;
-}
-@media (max-width: 860px) {
-  .admin-main { grid-template-columns: 1fr; }
 }
 
 /* 侧边栏导航 */
@@ -106,6 +105,7 @@ body {
 .admin-content {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 20px; padding: 26px; backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 .tab-pane { display: none; }
 .tab-pane.active { display: block; animation: fadeIn 0.25s ease; }
@@ -113,7 +113,7 @@ body {
 
 .pane-header { margin-bottom: 22px; border-bottom: 1px solid var(--panel-border); padding-bottom: 14px; }
 .pane-header h3 { font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 4px; }
-.pane-header p { font-size: 12.5px; color: var(--text-muted); }
+.pane-header p { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
 
 /* 表单组件 */
 .form-grid {
@@ -125,14 +125,14 @@ body {
 .admin-input, .admin-select, .admin-textarea {
   background: rgba(3, 7, 18, 0.7); border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px; padding: 10px 14px; font-size: 13.5px; color: #fff;
-  outline: none; font-family: inherit; transition: border-color 0.2s;
+  outline: none; font-family: inherit; transition: border-color 0.2s; width: 100%;
 }
 .admin-input:focus, .admin-select:focus, .admin-textarea:focus {
   border-color: var(--primary); box-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
 }
 
-.upload-input-group { display: flex; gap: 8px; }
-.upload-input-group .admin-input { flex: 1; }
+.upload-input-group { display: flex; gap: 8px; width: 100%; }
+.upload-input-group .admin-input { flex: 1; min-width: 0; }
 .btn-upload { background: rgba(245, 158, 11, 0.2); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.4); flex-shrink: 0; }
 .btn-upload:hover { background: var(--gold); color: #fff; }
 
@@ -140,14 +140,14 @@ body {
 .btn-add:hover { background: var(--primary); color: #fff; }
 
 /* 动态列表卡片 */
-.dynamic-list { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.dynamic-list { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; width: 100%; }
 .item-card {
   background: rgba(3, 7, 18, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px; padding: 18px; position: relative; display: flex; flex-direction: column; gap: 12px;
+  border-radius: 16px; padding: 18px; position: relative; display: flex; flex-direction: column; gap: 12px; width: 100%;
 }
 .item-card-header {
   display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.08); padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08); padding-bottom: 10px; flex-wrap: wrap; gap: 8px;
 }
 .item-card-title { font-size: 14px; font-weight: 800; color: #fde68a; }
 .btn-del {
@@ -161,5 +161,122 @@ body {
   background: rgba(15, 23, 42, 0.95); color: #fde68a; border: 1px solid var(--gold);
   padding: 10px 24px; border-radius: 30px; font-size: 13.5px; font-weight: 800;
   transition: transform 0.25s; z-index: 100000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  max-width: 90vw; text-align: center;
 }
 #toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ================= 📱 手机端深度响应式适配 (iOS / Android) ================= */
+@media (max-width: 768px) {
+  .admin-layout {
+    padding: 12px 10px 60px;
+  }
+  
+  /* 头部区域完美 2 列网格化，发布按钮独占全宽 */
+  .admin-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 14px;
+    gap: 14px;
+  }
+  .admin-brand {
+    justify-content: center;
+    text-align: center;
+  }
+  .admin-header-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+  .admin-header-actions .btn-tool {
+    width: 100%;
+    padding: 10px 6px;
+    font-size: 12px;
+    justify-content: center;
+  }
+  .admin-header-actions .btn-save-main {
+    grid-column: span 2;
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    justify-content: center;
+  }
+
+  /* 主体切换为单列 */
+  .admin-main {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  
+  /* 侧边栏按钮双列并排 */
+  .admin-sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    padding: 10px;
+  }
+  .tab-btn {
+    padding: 10px 8px;
+    font-size: 12px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .admin-content {
+    padding: 18px 14px;
+    border-radius: 18px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* 搜索栏与加歌栏响应式自适应 */
+  .search-bar-wrap {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .search-bar-wrap .btn-tool {
+    width: 100% !important;
+    padding: 10px !important;
+    justify-content: center;
+  }
+
+  .playlist-header-wrap {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .playlist-header-wrap .playlist-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px !important;
+    width: 100%;
+  }
+  .playlist-header-wrap .playlist-actions button {
+    width: 100% !important;
+    padding: 8px 4px !important;
+    font-size: 11.5px !important;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-sidebar {
+    grid-template-columns: 1fr;
+  }
+  .tab-btn {
+    text-align: left;
+  }
+  .upload-input-group {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .upload-input-group .btn-upload {
+    width: 100%;
+    padding: 10px;
+  }
+}
