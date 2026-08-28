@@ -116,7 +116,7 @@
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <h3>🪐 时光轴轨迹与拍立得照片墙</h3>
-              <p style="font-size:12px; color:#94a3b8; margin-top:4px;">提示：节点 #1 的正面照片将自动作为网页左上角专属情侣头像固定展示。</p>
+              <p style="font-size:12px; color:#94a3b8; margin-top:4px;">提示：节点 #1 的正面照片将自动作为网页左上角专属情侣头像固定展示，其余照片将呈照片墙形态分布。</p>
             </div>
             <button class="btn-add" onclick="addTimelineNode()">➕ 新增</button>
           </div>
@@ -269,3 +269,316 @@
   <script src="js/admin.js?v=2.0"></script>
 </body>
 </html>
+```[cite: 11]
+
+---
+
+#### 3. 受影响文件 3：`js/photo-wall.js`（100% 完整代码）
+
+```javascript
+/**
+ * 众水不灭 · 雅歌之印 (Love Universe)
+ * 文件名: js/photo-wall.js
+ * 作用: 「时光留白」自由视差照片墙渲染与全页面流式视差滚动计算 (支持首图正立头像固定)
+ */
+
+class PhotoWallManager {
+  constructor(config) {
+    this.config = config || window.LOVE_CONFIG || {};
+    this.itemsData = [];
+    this.ticking = false;
+  }
+
+  init() {
+    const container = document.getElementById("parallax-photo-wall");
+    if (!container) return;
+
+    // 收集时光轴中的真实有效照片节点
+    const timeline = this.config.timeline || [];
+    const photoNodes = timeline.filter(item => Boolean(item.frontImg));
+
+    if (photoNodes.length === 0) {
+      container.innerHTML = "";
+      return;
+    }
+
+    container.innerHTML = "";
+    this.itemsData = [];
+
+    // 延迟执行以确保主页面 DOM 渲染完成，获取真实完整的文档高度
+    const layoutPhotos = () => {
+      const mainContainer = document.getElementById("main-container");
+      const pageHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        mainContainer ? mainContainer.offsetHeight + 400 : window.innerHeight * 2.5
+      );
+
+      // 动态撑开容器高度，防止底部拍立得被裁切
+      container.style.height = `${pageHeight}px`;
+
+      container.innerHTML = "";
+      this.itemsData = [];
+
+      // 1. 首张照片作为左上角固定、正立的高清头像
+      const avatarNode = photoNodes[0];
+      if (avatarNode && avatarNode.frontImg) {
+        const avatarItem = document.createElement("div");
+        avatarItem.className = "wall-polaroid-avatar";
+        avatarItem.innerHTML = `
+          <div class="wall-polaroid-inner">
+            <img src="${avatarNode.frontImg}" alt="专属头像" loading="eager" onerror="this.parentElement.parentElement.style.display='none'">
+          </div>
+          <div class="wall-polaroid-caption">${avatarNode.tag || "恒久契约"}</div>
+        `;
+        container.appendChild(avatarItem);
+      }
+
+      // 2. 其余照片渲染为背景流式倾斜视差照片墙
+      const remainingNodes = photoNodes.slice(1);
+      const totalPhotos = remainingNodes.length;
+
+      if (totalPhotos > 0) {
+        const startTop = 260; // 避开顶部头像与大标题区域
+        const availableHeight = Math.max(pageHeight - startTop - 200, totalPhotos * 260);
+        const verticalGap = availableHeight / Math.max(totalPhotos, 1);
+
+        remainingNodes.forEach((node, idx) => {
+          const item = document.createElement("div");
+          item.className = "wall-polaroid-item";
+
+          // 左右两侧交错分布 (避开中间文本主体区域)
+          const isLeft = idx % 2 === 0;
+          const posX = isLeft ? (Math.random() * 5 + 2) : (Math.random() * 5 + 83);
+          const baseTop = startTop + (idx * verticalGap) + (Math.random() * 30);
+          const baseRot = (Math.random() - 0.5) * 18; // 随机轻微倾斜角度
+
+          // 严格保证负向视差阻尼系数 (-0.04 ~ -0.065)，使向下滚动时照片自然随视口平稳往上走
+          const speed = isLeft ? -0.04 : -0.065;
+
+          item.style.left = `${posX}%`;
+          item.style.top = `${baseTop}px`;
+          item.style.transform = `translate3d(0, 0, 0) rotate(${baseRot}deg)`;
+
+          item.innerHTML = `
+            <div class="wall-polaroid-inner">
+              <img src="${node.frontImg}" alt="${node.title || "时光碎片"}" loading="lazy" onerror="this.parentElement.parentElement.style.display='none'">
+            </div>
+          `;
+
+          container.appendChild(item);
+
+          // 缓存物理参数供视差计算使用
+          this.itemsData.push({
+            element: item,
+            baseRot: baseRot,
+            speed: speed
+          });
+        });
+      }
+
+      this.updateParallax();
+    };
+
+    // 立即执行一次布局
+    layoutPhotos();
+
+    // 监听资源加载与窗口变化以动态校准
+    window.addEventListener("load", layoutPhotos, { once: true });
+
+    if (window.ResizeObserver) {
+      const resizeObserver = new ResizeObserver(() => {
+        layoutPhotos();
+      });
+      resizeObserver.observe(document.body);
+    }
+
+    // 绑定高性能视差滚动
+    window.addEventListener("scroll", () => {
+      if (!this.ticking) {
+        window.requestAnimationFrame(() => {
+          this.updateParallax();
+          this.ticking = false;
+        });
+        this.ticking = true;
+      }
+    }, { passive: true });
+  }
+
+  /**
+   * 执行负向视差浮动位移（确保随页面自然上滑呈现）
+   */
+  updateParallax() {
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    this.itemsData.forEach(data => {
+      if (!data.element) return;
+      const offsetY = scrollY * data.speed;
+      data.element.style.transform = `translate3d(0, ${offsetY}px, 0) rotate(${data.baseRot}deg)`;
+    });
+  }
+}
+
+// 自动挂载并在 DOM 就绪后启动
+window.PhotoWallManager = PhotoWallManager;
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.LOVE_CONFIG) {
+    const photoWall = new PhotoWallManager(window.LOVE_CONFIG);
+    photoWall.init();
+  }
+});
+```[cite: 8]
+
+---
+
+#### 4. 受影响文件 4：`css/photo-wall.css`（100% 完整代码）
+
+```css
+/**
+ * 众水不灭 · 雅歌之印
+ * 文件名: css/photo-wall.css
+ * 作用: 全景流式视差照片墙样式 (包含左上角固定高清头像与防边缘裁切自适应分布)
+ */
+
+.parallax-photo-wall {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+
+/* ================= 1. 左上角专属固定正立头像 (Avatar Polaroid) ================= */
+.wall-polaroid-avatar {
+  position: absolute;
+  top: 24px;
+  left: 20px;
+  width: 110px;
+  background: #ffffff;
+  padding: 6px 6px 16px 6px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), 0 0 15px rgba(245, 158, 11, 0.25);
+  border-radius: 6px;
+  opacity: 1 !important;
+  transform: none !important; /* 保证正正的固定，不倾斜 */
+  z-index: 25;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.wall-polaroid-avatar:hover {
+  transform: scale(1.06) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 22px rgba(244, 63, 94, 0.4);
+}
+
+.wall-polaroid-avatar .wall-polaroid-inner {
+  width: 100%;
+  height: 98px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #0f172a;
+  position: relative;
+}
+
+.wall-polaroid-avatar .wall-polaroid-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.wall-polaroid-avatar .wall-polaroid-caption {
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  color: #334155;
+  margin-top: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.5px;
+}
+
+/* ================= 2. 其他流式倾斜视差照片墙 (Regular Photo Wall) ================= */
+.wall-polaroid-item {
+  position: absolute;
+  width: 120px;
+  background: #ffffff;
+  padding: 8px 8px 22px 8px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  opacity: 0.85;
+  will-change: transform;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: opacity 0.35s ease, box-shadow 0.35s ease, transform 0.3s ease;
+}
+
+.wall-polaroid-item:hover {
+  opacity: 1;
+  z-index: 40;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(244, 63, 94, 0.35);
+  transform: scale(1.08) rotate(0deg) !important;
+}
+
+.wall-polaroid-inner {
+  width: 100%;
+  height: 110px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #0f172a;
+  position: relative;
+}
+
+.wall-polaroid-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ================= 3. 屏幕响应式断点 ================= */
+@media (min-width: 1024px) {
+  .wall-polaroid-avatar {
+    top: 32px;
+    left: 36px;
+    width: 135px;
+    padding: 8px 8px 20px 8px;
+  }
+  .wall-polaroid-avatar .wall-polaroid-inner {
+    height: 120px;
+  }
+  .wall-polaroid-item {
+    width: 145px;
+    padding: 10px 10px 26px 10px;
+    opacity: 0.9;
+  }
+  .wall-polaroid-inner {
+    height: 130px;
+  }
+}
+
+@media (max-width: 640px) {
+  .wall-polaroid-avatar {
+    top: max(16px, env(safe-area-inset-top, 16px));
+    left: 14px;
+    width: 96px;
+    padding: 5px 5px 12px 5px;
+  }
+  .wall-polaroid-avatar .wall-polaroid-inner {
+    height: 84px;
+  }
+  .wall-polaroid-item {
+    width: 90px;
+    padding: 6px 6px 16px 6px;
+    opacity: 0.8;
+  }
+  .wall-polaroid-inner {
+    height: 80px;
+  }
+}
