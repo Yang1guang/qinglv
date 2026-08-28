@@ -969,9 +969,8 @@
 .poster-modal__tip { font-size: 12px; color: var(--text-sub, var(--text-muted)); margin-top: 10px; }
 .poster-modal__actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
 
-/* ================= 📱 手机端视口深度优化 (解决胶囊遮挡与元素重叠) ================= */
+/* ================= 📱 手机端视口深度优化 ================= */
 @media (max-width: 640px) {
-  /* 解决图 3 核心痛点：给 Hero 区域预留足够的顶部安全高度，绝不被胶囊遮挡 */
   .hero-section {
     padding-top: max(56px, calc(env(safe-area-inset-top, 0px) + 52px));
     margin-bottom: 28px;
@@ -1019,7 +1018,6 @@
     font-size: 9.5px;
   }
 
-  /* 手机端黑胶尺寸适度缩紧，给内容留出空间 */
   .vinyl-player {
     bottom: max(16px, env(safe-area-inset-bottom, 16px));
     left: 12px;
