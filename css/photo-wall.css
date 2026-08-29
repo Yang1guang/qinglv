@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: css/photo-wall.css
- * 作用: 全景流式视差照片墙样式 (包含左上角固定高清头像与防边缘裁切自适应分布)
+ * 作用: 全景流式视差照片墙样式 (开启 GPU 硬件加速与渲染边界隔离，彻底杜绝滚动穿透与卡顿)
  */
 
 .parallax-photo-wall {
@@ -14,7 +14,10 @@
   height: auto;
   pointer-events: none;
   z-index: 0;
-  overflow: hidden; /* 严密锁死照片墙边界，绝不撑开浏览器视口 */
+  overflow: hidden;
+  contain: layout paint; /* 隔绝内部元素对主文档流的重排影响 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 /* ================= 1. 左上角专属固定正立头像 (Avatar Polaroid) ================= */
@@ -28,15 +31,18 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), 0 0 15px rgba(245, 158, 11, 0.25);
   border-radius: 6px;
   opacity: 1 !important;
-  transform: none !important; /* 保证正正的固定，不倾斜 */
+  transform: translateZ(0) !important;
+  -webkit-transform: translateZ(0) !important;
   z-index: 20;
   pointer-events: auto;
   cursor: pointer;
+  contain: paint layout;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
 }
 
 .wall-polaroid-avatar:hover {
-  transform: scale(1.06) !important;
+  transform: scale(1.06) translateZ(0) !important;
+  -webkit-transform: scale(1.06) translateZ(0) !important;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 22px rgba(244, 63, 94, 0.4);
 }
 
@@ -75,20 +81,13 @@
   width: 120px;
   background: #ffffff;
   padding: 8px 8px 22px 8px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
   border-radius: 4px;
   opacity: 0.85;
   will-change: transform;
-  pointer-events: auto;
-  cursor: pointer;
-  transition: opacity 0.35s ease, box-shadow 0.35s ease, transform 0.3s ease;
-}
-
-.wall-polaroid-item:hover {
-  opacity: 1;
-  z-index: 40;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(244, 63, 94, 0.35);
-  transform: scale(1.08) rotate(0deg) !important;
+  pointer-events: none; /* 悬浮背景图不拦截手势，释放全屏极速惯性滚动 */
+  contain: paint layout;
+  transition: opacity 0.3s ease;
 }
 
 .wall-polaroid-inner {
@@ -134,7 +133,7 @@
     left: 10px;
     width: 78px;
     padding: 4px 4px 8px 4px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), 0 0 10px rgba(245, 158, 11, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   .wall-polaroid-avatar .wall-polaroid-inner {
     height: 70px;
@@ -147,6 +146,7 @@
     width: 78px;
     padding: 4px 4px 12px 4px;
     opacity: 0.75;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
   .wall-polaroid-inner {
     height: 70px;
