@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/components.css
- * 升级：移动端姓名避让布局、释放 3D 拍立得手势传递管道，支持 iOS/Android 平滑滚动
+ * 升级：释放 3D 拍立得手势传递管道，优化 GPU 毛玻璃开销，支持全平台 60FPS 极速贯通滚动
  */
 
 .universe-canvas,
@@ -11,6 +11,8 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 .universe-canvas { z-index: 1; }
 .fireworks-canvas { z-index: 99999; }
@@ -29,6 +31,7 @@
   transition: all 0.22s var(--ease-spring);
   position: relative;
   overflow: hidden;
+  transform: translateZ(0);
 }
 
 .btn-universe--primary {
@@ -55,6 +58,7 @@
   color: var(--text-main);
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* 门禁层 */
@@ -67,9 +71,9 @@
   justify-content: center;
   padding: 20px;
   background: radial-gradient(circle at center, #231d45 0%, #070a14 80%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  transition: opacity 0.6s var(--ease-spring), visibility 0.6s;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: opacity 0.5s var(--ease-spring), visibility 0.5s;
 }
 
 .gatekeeper__dialog {
@@ -81,8 +85,8 @@
   padding: 30px 24px;
   box-shadow: var(--glass-shadow), 0 0 35px rgba(244, 63, 94, 0.2);
   text-align: center;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .gatekeeper__badge {
@@ -148,6 +152,7 @@
   text-align: center;
   margin-bottom: 36px;
   padding-top: 10px;
+  contain: layout style;
 }
 
 .hero-section__badge {
@@ -190,10 +195,11 @@
   border-radius: 24px;
   padding: 22px 18px;
   box-shadow: var(--card-shadow, var(--glass-shadow));
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   max-width: 580px;
   margin: 0 auto;
+  contain: layout style;
   transition: all 0.3s ease;
 }
 
@@ -266,7 +272,7 @@
 }
 
 /* 告白信 */
-.confession-section { margin-bottom: 40px; }
+.confession-section { margin-bottom: 40px; contain: layout style; }
 
 .confession-card {
   background: var(--confession-bg, rgba(255, 253, 245, 0.95));
@@ -333,8 +339,8 @@
   transition: color 0.3s ease;
 }
 
-/* 拍立得时光轴 */
-.timeline-section { margin-bottom: 45px; }
+/* 拍立得时光轴 (优化 GPU 图层混合，彻底消除卡死) */
+.timeline-section { margin-bottom: 45px; contain: layout style; }
 
 .timeline-flow {
   display: flex;
@@ -372,22 +378,28 @@
 }
 
 .polaroid-card {
-  perspective: 1200px;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
   cursor: pointer;
   user-select: none;
   touch-action: pan-y;
+  contain: layout paint;
 }
 
 .polaroid-card__inner {
   position: relative;
   width: 100%;
   border-radius: 20px;
-  transition: transform 0.7s var(--ease-spring);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
+  will-change: transform;
 }
 
-.polaroid-card__inner--flipped { transform: rotateY(180deg); }
+.polaroid-card__inner--flipped {
+  transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg);
+}
 
 .polaroid-card__front,
 .polaroid-card__back {
@@ -398,6 +410,8 @@
   padding: 16px;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .polaroid-card__front { display: flex; flex-direction: column; }
@@ -415,10 +429,10 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s ease;
+  transition: transform 0.3s ease;
 }
 
-.polaroid-card:hover .polaroid-card__img { transform: scale(1.03); }
+.polaroid-card:hover .polaroid-card__img { transform: scale(1.02); }
 
 .polaroid-card__tag {
   position: absolute;
@@ -430,7 +444,8 @@
   font-weight: 800;
   padding: 3px 10px;
   border-radius: 12px;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -452,7 +467,8 @@
 .polaroid-card__back {
   position: absolute;
   inset: 0;
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(1px);
+  -webkit-transform: rotateY(180deg) translateZ(1px);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -597,7 +613,7 @@
 }
 
 /* 100 件事 */
-.checklist-section { margin-bottom: 45px; }
+.checklist-section { margin-bottom: 45px; contain: layout style; }
 
 .checklist-card {
   background: var(--bg-card, var(--space-card));
@@ -605,10 +621,11 @@
   border-radius: 24px;
   padding: 24px 20px;
   box-shadow: var(--card-shadow, var(--glass-shadow));
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   max-width: 680px;
   margin: 0 auto;
+  contain: layout style;
   transition: all 0.3s ease;
 }
 
@@ -708,7 +725,7 @@
 }
 
 /* 刮刮乐 */
-.scratch-section { margin-bottom: 45px; }
+.scratch-section { margin-bottom: 45px; contain: layout style; }
 
 .scratch-grid {
   display: grid;
@@ -726,6 +743,7 @@
   background: linear-gradient(135deg, rgba(255, 253, 245, 0.95) 0%, rgba(254, 243, 199, 0.95) 100%);
   border: 1.5px solid rgba(253, 230, 138, 0.6);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+  contain: paint layout;
 }
 
 .scratch-card__content {
@@ -786,6 +804,8 @@
   align-items: center;
   gap: 10px;
   pointer-events: auto;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .vinyl-player__disc {
@@ -869,7 +889,8 @@
   justify-content: center;
   box-shadow: var(--card-shadow, 0 8px 24px rgba(0, 0, 0, 0.4));
   cursor: pointer;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transition: all 0.2s ease;
   pointer-events: auto;
   user-select: none;
@@ -891,8 +912,8 @@
   background: var(--drawer-bg);
   border: 1.5px solid var(--drawer-border);
   border-radius: 20px;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), 0 0 20px var(--accent-gold-glow, rgba(245, 158, 11, 0.15));
   z-index: 56000;
   display: flex;
@@ -1033,6 +1054,7 @@
   user-select: none;
   opacity: 0.8;
   transition: opacity 0.2s, transform 0.2s;
+  transform: translateZ(0);
 }
 .easter-egg-trigger:hover { opacity: 1; transform: scale(1.2); }
 .easter-egg-trigger--star { top: 30px; right: 25px; }
@@ -1043,8 +1065,8 @@
   position: fixed;
   inset: 0;
   background: rgba(7, 10, 20, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 60000;
   display: none;
   align-items: center;
@@ -1068,7 +1090,7 @@
 .poster-modal__tip { font-size: 12px; color: var(--text-sub, var(--text-muted)); margin-top: 10px; }
 .poster-modal__actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
 
-/* ================= 📱 手机端视口深度优化 (彻底消除头像遮挡名字) ================= */
+/* ================= 📱 手机端视口深度优化 ================= */
 @media (max-width: 640px) {
   .hero-section {
     padding-top: max(76px, calc(env(safe-area-inset-top, 0px) + 72px));
@@ -1095,6 +1117,8 @@
     top: max(10px, env(safe-area-inset-top, 10px));
     right: 10px;
     padding: 2.5px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
   .perspective-btn {
     padding: 5px 10px;
@@ -1109,6 +1133,8 @@
   .love-timer {
     padding: 16px 10px;
     border-radius: 20px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
   .love-timer__grid {
     gap: 5px;
@@ -1150,11 +1176,15 @@
     width: calc(100vw - 24px);
     max-width: 320px;
     max-height: 320px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .phase-switch-bar {
     margin: 22px 10px 12px 10px;
     padding: 4px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
   .phase-tab-btn {
     padding: 8px 4px;
