@@ -1,12 +1,13 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: css/themes.css
- * 作用: 12 款男女高奢主题变量定义与浅色系/深色系高保真自适应对比度
+ * 作用: 12 款男女高奢主题变量定义与浅色系/深色系全视口背景穿透与高保真自适应对比度
  */
 
 /* ================= 🌌 基础语义变量定义 (默认深色星河基线) ================= */
 :root {
   --bg-primary: #090d16;
+  --theme-bg-gradient: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 45%, #070a14 100%);
   --bg-card: rgba(15, 23, 42, 0.75);
   --border-card: rgba(245, 158, 11, 0.35);
   --card-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15);
@@ -50,9 +51,27 @@
   --drawer-active-title: #fde68a;
 }
 
+/* ================= 🖼️ 全局视口背景与 Body 深度绑定 (解决电脑端大屏背景发黑) ================= */
+html,
+body,
+.universe-body {
+  background-color: var(--bg-primary, #090d16) !important;
+  transition: background-color 0.4s ease;
+}
+
+.universe-bg-layer {
+  background-color: var(--bg-primary, #090d16);
+  background-image: var(--theme-bg-gradient);
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  transition: background-color 0.4s ease, background-image 0.4s ease;
+}
+
 /* ================= 👦 男生 6 套深色主题 ================= */
 body.theme-sunset-twilight {
   --bg-primary: #090d16;
+  --theme-bg-gradient: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 45%, #070a14 100%);
   --bg-card: rgba(19, 26, 41, 0.8);
   --border-card: rgba(245, 158, 11, 0.35);
   --text-main: #ffffff;
@@ -62,6 +81,7 @@ body.theme-sunset-twilight {
 
 body.theme-cyber-space {
   --bg-primary: #030712;
+  --theme-bg-gradient: radial-gradient(circle at 50% 20%, #064e3b 0%, #022c22 50%, #030712 100%);
   --bg-card: rgba(6, 78, 59, 0.45);
   --border-card: rgba(52, 211, 153, 0.45);
   --text-main: #ecfdf5;
@@ -71,6 +91,7 @@ body.theme-cyber-space {
 
 body.theme-firefly-forest {
   --bg-primary: #020617;
+  --theme-bg-gradient: radial-gradient(circle at 50% 20%, #064e3b 0%, #052e16 50%, #020617 100%);
   --bg-card: rgba(6, 78, 59, 0.5);
   --border-card: rgba(110, 231, 183, 0.4);
   --text-main: #f0fdf4;
@@ -80,6 +101,7 @@ body.theme-firefly-forest {
 
 body.theme-warm-ember {
   --bg-primary: #050101;
+  --theme-bg-gradient: radial-gradient(circle at 50% 20%, #450a0a 0%, #1c0404 50%, #050101 100%);
   --bg-card: rgba(69, 10, 10, 0.55);
   --border-card: rgba(248, 113, 113, 0.4);
   --text-main: #fef2f2;
@@ -89,6 +111,7 @@ body.theme-warm-ember {
 
 body.theme-deep-ocean {
   --bg-primary: #020617;
+  --theme-bg-gradient: radial-gradient(circle at 50% 20%, #0c4a6e 0%, #082f49 50%, #020617 100%);
   --bg-card: rgba(8, 47, 73, 0.55);
   --border-card: rgba(56, 189, 248, 0.4);
   --text-main: #f0f9ff;
@@ -98,6 +121,7 @@ body.theme-deep-ocean {
 
 body.theme-aurora-night {
   --bg-primary: #090d16;
+  --theme-bg-gradient: radial-gradient(circle at 50% 20%, #3b0764 0%, #1e1b4b 50%, #090d16 100%);
   --bg-card: rgba(59, 7, 100, 0.45);
   --border-card: rgba(192, 132, 252, 0.4);
   --text-main: #faf5ff;
@@ -105,9 +129,10 @@ body.theme-aurora-night {
   --accent-gold: #a855f7;
 }
 
-/* ================= 👧 女生 6 套浅色唯美高对比度主题 ================= */
+/* ================= 👧 女生 6 套浅色唯美高对比度主题 (全屏浅色渐变穿透) ================= */
 body.theme-french-cream {
-  --bg-primary: #f5ebe1;
+  --bg-primary: #f7eee4;
+  --theme-bg-gradient: linear-gradient(180deg, #fdfbf7 0%, #f7eee4 40%, #eddcd0 100%);
   --bg-card: rgba(255, 255, 255, 0.92);
   --border-card: rgba(180, 83, 9, 0.35);
   --card-shadow: 0 16px 36px rgba(120, 53, 15, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -130,6 +155,7 @@ body.theme-french-cream {
 
 body.theme-sakura-romance {
   --bg-primary: #fce7f3;
+  --theme-bg-gradient: linear-gradient(180deg, #fff1f2 0%, #fce7f3 45%, #fbcfe8 100%);
   --bg-card: rgba(255, 255, 255, 0.94);
   --border-card: rgba(244, 63, 94, 0.38);
   --card-shadow: 0 16px 36px rgba(159, 18, 57, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -152,6 +178,7 @@ body.theme-sakura-romance {
 
 body.theme-monet-garden {
   --bg-primary: #dcfce7;
+  --theme-bg-gradient: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 45%, #bbf7d0 100%);
   --bg-card: rgba(255, 255, 255, 0.94);
   --border-card: rgba(22, 101, 52, 0.38);
   --card-shadow: 0 16px 36px rgba(20, 83, 45, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -174,6 +201,7 @@ body.theme-monet-garden {
 
 body.theme-morning-dew {
   --bg-primary: #f1f5f9;
+  --theme-bg-gradient: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 45%, #e2e8f0 100%);
   --bg-card: rgba(255, 255, 255, 0.95);
   --border-card: rgba(71, 85, 105, 0.38);
   --card-shadow: 0 16px 36px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -196,6 +224,7 @@ body.theme-morning-dew {
 
 body.theme-sunset-blush {
   --bg-primary: #f3e8ff;
+  --theme-bg-gradient: linear-gradient(180deg, #faf5ff 0%, #f3e8ff 45%, #e9d5ff 100%);
   --bg-card: rgba(255, 255, 255, 0.94);
   --border-card: rgba(168, 85, 247, 0.38);
   --card-shadow: 0 16px 36px rgba(88, 28, 135, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -218,6 +247,7 @@ body.theme-sunset-blush {
 
 body.theme-orange-sea {
   --bg-primary: #ffedd5;
+  --theme-bg-gradient: linear-gradient(180deg, #fff7ed 0%, #ffedd5 45%, #fed7aa 100%);
   --bg-card: rgba(255, 255, 255, 0.94);
   --border-card: rgba(234, 88, 12, 0.38);
   --card-shadow: 0 16px 36px rgba(124, 45, 18, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
