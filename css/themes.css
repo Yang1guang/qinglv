@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: css/themes.css
- * 作用: 12 款男女高奢主题变量定义与浅色系/深色系全视口背景穿透与高保真自适应对比度
+ * 作用: 12 款男女高奢主题变量定义与浅色系/深色系高饱和自适应对比度 (彻底根除文字泛白发虚)
  */
 
 /* ================= 🌌 基础语义变量定义 (默认深色星河基线) ================= */
@@ -51,7 +51,7 @@
   --drawer-active-title: #fde68a;
 }
 
-/* ================= 🖼️ 全局视口背景与 Body 深度绑定 (解决电脑端大屏背景发黑) ================= */
+/* ================= 🖼️ 全局视口背景与 Body 深度绑定 ================= */
 html,
 body,
 .universe-body {
@@ -129,148 +129,148 @@ body.theme-aurora-night {
   --accent-gold: #a855f7;
 }
 
-/* ================= 👧 女生 6 套浅色唯美高对比度主题 (全屏浅色渐变穿透) ================= */
+/* ================= 👧 女生 6 套浅色唯美高饱和/高对比度主题 (彻底消除泛白发虚) ================= */
 body.theme-french-cream {
   --bg-primary: #f7eee4;
   --theme-bg-gradient: linear-gradient(180deg, #fdfbf7 0%, #f7eee4 40%, #eddcd0 100%);
-  --bg-card: rgba(255, 255, 255, 0.92);
-  --border-card: rgba(180, 83, 9, 0.35);
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --border-card: rgba(120, 53, 15, 0.35);
   --card-shadow: 0 16px 36px rgba(120, 53, 15, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #451a03;
   --text-hero-gradient: linear-gradient(135deg, #451a03 0%, #78350f 50%, #9a3412 100%);
-  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.9), 0 0 16px rgba(255, 255, 255, 0.8);
-  --text-subtitle: #5c2406;
+  --text-hero-shadow: none;
+  --text-subtitle: #78350f;
   --text-main: #451a03;
   --text-sub: #78350f;
   --text-muted: #92400e;
   --accent-gold: #b45309;
-  --timer-unit-bg: rgba(254, 243, 199, 0.85);
-  --timer-unit-border: rgba(217, 119, 6, 0.35);
+  --timer-unit-bg: rgba(254, 243, 199, 0.9);
+  --timer-unit-border: rgba(217, 119, 6, 0.4);
   --timer-num-color: #78350f;
   --timer-label-color: #92400e;
   --badge-bg: rgba(180, 83, 9, 0.15);
-  --badge-border: rgba(180, 83, 9, 0.35);
+  --badge-border: rgba(180, 83, 9, 0.4);
   --badge-text: #78350f;
 }
 
 body.theme-sakura-romance {
   --bg-primary: #fce7f3;
   --theme-bg-gradient: linear-gradient(180deg, #fff1f2 0%, #fce7f3 45%, #fbcfe8 100%);
-  --bg-card: rgba(255, 255, 255, 0.94);
-  --border-card: rgba(244, 63, 94, 0.38);
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --border-card: rgba(225, 29, 72, 0.35);
   --card-shadow: 0 16px 36px rgba(159, 18, 57, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #4c0519;
   --text-hero-gradient: linear-gradient(135deg, #4c0519 0%, #881337 50%, #be123c 100%);
-  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 255, 255, 0.85);
-  --text-subtitle: #831843;
+  --text-hero-shadow: none;
+  --text-subtitle: #881337;
   --text-main: #881337;
   --text-sub: #9f1239;
   --text-muted: #be123c;
   --accent-gold: #e11d48;
-  --timer-unit-bg: rgba(255, 228, 230, 0.85);
-  --timer-unit-border: rgba(244, 63, 94, 0.35);
+  --timer-unit-bg: rgba(255, 228, 230, 0.9);
+  --timer-unit-border: rgba(244, 63, 94, 0.4);
   --timer-num-color: #881337;
   --timer-label-color: #9f1239;
-  --badge-bg: rgba(225, 29, 72, 0.12);
-  --badge-border: rgba(225, 29, 72, 0.35);
-  --badge-text: #9f1239;
+  --badge-bg: rgba(225, 29, 72, 0.15);
+  --badge-border: rgba(225, 29, 72, 0.4);
+  --badge-text: #881337;
 }
 
 body.theme-monet-garden {
   --bg-primary: #dcfce7;
   --theme-bg-gradient: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 45%, #bbf7d0 100%);
-  --bg-card: rgba(255, 255, 255, 0.94);
-  --border-card: rgba(22, 101, 52, 0.38);
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --border-card: rgba(22, 101, 52, 0.35);
   --card-shadow: 0 16px 36px rgba(20, 83, 45, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #052e16;
   --text-hero-gradient: linear-gradient(135deg, #052e16 0%, #14532d 50%, #15803d 100%);
-  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 255, 255, 0.85);
+  --text-hero-shadow: none;
   --text-subtitle: #14532d;
   --text-main: #14532d;
   --text-sub: #166534;
   --text-muted: #15803d;
   --accent-gold: #15803d;
-  --timer-unit-bg: rgba(220, 252, 231, 0.85);
-  --timer-unit-border: rgba(34, 197, 94, 0.35);
+  --timer-unit-bg: rgba(220, 252, 231, 0.9);
+  --timer-unit-border: rgba(34, 197, 94, 0.4);
   --timer-num-color: #14532d;
   --timer-label-color: #166534;
-  --badge-bg: rgba(21, 128, 61, 0.12);
-  --badge-border: rgba(21, 128, 61, 0.35);
+  --badge-bg: rgba(21, 128, 61, 0.15);
+  --badge-border: rgba(21, 128, 61, 0.4);
   --badge-text: #14532d;
 }
 
 body.theme-morning-dew {
   --bg-primary: #f1f5f9;
   --theme-bg-gradient: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 45%, #e2e8f0 100%);
-  --bg-card: rgba(255, 255, 255, 0.95);
-  --border-card: rgba(71, 85, 105, 0.38);
+  --bg-card: rgba(255, 255, 255, 0.96);
+  --border-card: rgba(71, 85, 105, 0.35);
   --card-shadow: 0 16px 36px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #0f172a;
   --text-hero-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 255, 255, 0.85);
+  --text-hero-shadow: none;
   --text-subtitle: #334155;
   --text-main: #0f172a;
   --text-sub: #334155;
   --text-muted: #475569;
   --accent-gold: #d97706;
-  --timer-unit-bg: rgba(241, 245, 249, 0.9);
-  --timer-unit-border: rgba(148, 163, 184, 0.4);
+  --timer-unit-bg: rgba(241, 245, 249, 0.95);
+  --timer-unit-border: rgba(148, 163, 184, 0.45);
   --timer-num-color: #0f172a;
   --timer-label-color: #334155;
-  --badge-bg: rgba(15, 23, 42, 0.08);
-  --badge-border: rgba(15, 23, 42, 0.25);
+  --badge-bg: rgba(15, 23, 42, 0.1);
+  --badge-border: rgba(15, 23, 42, 0.3);
   --badge-text: #0f172a;
 }
 
 body.theme-sunset-blush {
   --bg-primary: #f3e8ff;
   --theme-bg-gradient: linear-gradient(180deg, #faf5ff 0%, #f3e8ff 45%, #e9d5ff 100%);
-  --bg-card: rgba(255, 255, 255, 0.94);
-  --border-card: rgba(168, 85, 247, 0.38);
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --border-card: rgba(147, 51, 234, 0.35);
   --card-shadow: 0 16px 36px rgba(88, 28, 135, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #3b0764;
   --text-hero-gradient: linear-gradient(135deg, #3b0764 0%, #581c87 50%, #7e22ce 100%);
-  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 255, 255, 0.85);
+  --text-hero-shadow: none;
   --text-subtitle: #581c87;
   --text-main: #581c87;
   --text-sub: #6b21a8;
   --text-muted: #7e22ce;
   --accent-gold: #9333ea;
-  --timer-unit-bg: rgba(243, 232, 255, 0.9);
-  --timer-unit-border: rgba(192, 132, 252, 0.4);
+  --timer-unit-bg: rgba(243, 232, 255, 0.92);
+  --timer-unit-border: rgba(192, 132, 252, 0.45);
   --timer-num-color: #581c87;
   --timer-label-color: #6b21a8;
-  --badge-bg: rgba(147, 51, 234, 0.12);
-  --badge-border: rgba(147, 51, 234, 0.35);
+  --badge-bg: rgba(147, 51, 234, 0.15);
+  --badge-border: rgba(147, 51, 234, 0.4);
   --badge-text: #581c87;
 }
 
 body.theme-orange-sea {
   --bg-primary: #ffedd5;
   --theme-bg-gradient: linear-gradient(180deg, #fff7ed 0%, #ffedd5 45%, #fed7aa 100%);
-  --bg-card: rgba(255, 255, 255, 0.94);
-  --border-card: rgba(234, 88, 12, 0.38);
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --border-card: rgba(234, 88, 12, 0.35);
   --card-shadow: 0 16px 36px rgba(124, 45, 18, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #431407;
   --text-hero-gradient: linear-gradient(135deg, #431407 0%, #7c2d12 50%, #c2410c 100%);
-  --text-hero-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 16px rgba(255, 255, 255, 0.85);
+  --text-hero-shadow: none;
   --text-subtitle: #7c2d12;
   --text-main: #7c2d12;
   --text-sub: #9a3412;
   --text-muted: #c2410c;
   --accent-gold: #ea580c;
-  --timer-unit-bg: rgba(255, 237, 213, 0.9);
-  --timer-unit-border: rgba(251, 146, 60, 0.4);
+  --timer-unit-bg: rgba(255, 237, 213, 0.92);
+  --timer-unit-border: rgba(251, 146, 60, 0.45);
   --timer-num-color: #7c2d12;
   --timer-label-color: #9a3412;
-  --badge-bg: rgba(234, 88, 12, 0.12);
-  --badge-border: rgba(234, 88, 12, 0.35);
+  --badge-bg: rgba(234, 88, 12, 0.15);
+  --badge-border: rgba(234, 88, 12, 0.4);
   --badge-text: #7c2d12;
 }
 
-/* ================= 🌟 浅色主题全局无障碍对比度适配层 ================= */
+/* ================= 🌟 浅色主题全局无障碍高清晰渲染规则 (彻底剥离白光阴影) ================= */
 body[data-theme-type="light"] {
-  --drawer-bg: rgba(255, 255, 255, 0.95);
+  --drawer-bg: rgba(255, 255, 255, 0.96);
   --drawer-border: rgba(244, 63, 94, 0.35);
   --drawer-item-bg: rgba(0, 0, 0, 0.03);
   --drawer-item-border: rgba(0, 0, 0, 0.06);
@@ -281,38 +281,47 @@ body[data-theme-type="light"] {
   --drawer-active-title: #881337;
 }
 
-body[data-theme-type="light"] .section-title__text {
-  background: var(--text-hero-gradient) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  filter: drop-shadow(0 1px 3px rgba(255, 255, 255, 0.9)) !important;
-}
-
-body[data-theme-type="light"] .section-title__desc {
-  color: var(--text-sub) !important;
-  font-weight: 700 !important;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9) !important;
-}
-
+/* 核心大标题：使用真实微投影取代致盲白光，杜绝镂空发虚 */
 body[data-theme-type="light"] .hero-section__names {
   background: var(--text-hero-gradient) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
-  text-shadow: var(--text-hero-shadow) !important;
+  text-shadow: none !important;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.08)) !important;
 }
 
+/* 契约副标题：纯正高饱和深色，去除致盲白光 */
 body[data-theme-type="light"] .hero-section__subtitle {
   color: var(--text-subtitle) !important;
   font-weight: 700 !important;
-  text-shadow: 0 1px 4px rgba(255, 255, 255, 0.95), 0 0 10px rgba(255, 255, 255, 0.85) !important;
+  text-shadow: none !important;
+  opacity: 0.95;
 }
 
 body[data-theme-type="light"] .hero-section__badge {
   background: var(--badge-bg) !important;
   border-color: var(--badge-border) !important;
   color: var(--badge-text) !important;
+  font-weight: 900 !important;
 }
 
+/* 章节标题与副标题清晰渲染 */
+body[data-theme-type="light"] .section-title__text {
+  background: var(--text-hero-gradient) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.06)) !important;
+}
+
+body[data-theme-type="light"] .section-title__desc {
+  color: var(--text-sub) !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+  opacity: 0.95;
+}
+
+/* 计时器卡片与内部文字强化 */
 body[data-theme-type="light"] .love-timer {
   background: var(--bg-card) !important;
   border-color: var(--border-card) !important;
@@ -321,7 +330,7 @@ body[data-theme-type="light"] .love-timer {
 
 body[data-theme-type="light"] .love-timer__title {
   color: var(--text-sub) !important;
-  font-weight: 800 !important;
+  font-weight: 900 !important;
 }
 
 body[data-theme-type="light"] .love-timer__unit {
@@ -332,11 +341,12 @@ body[data-theme-type="light"] .love-timer__unit {
 body[data-theme-type="light"] .love-timer__num {
   color: var(--timer-num-color) !important;
   text-shadow: none !important;
+  font-weight: 900 !important;
 }
 
 body[data-theme-type="light"] .love-timer__label {
   color: var(--timer-label-color) !important;
-  font-weight: 800 !important;
+  font-weight: 900 !important;
 }
 
 body[data-theme-type="light"] .love-timer__milestone {
@@ -346,6 +356,7 @@ body[data-theme-type="light"] .love-timer__milestone {
   font-weight: 800 !important;
 }
 
+/* 告白信清晰度保证 */
 body[data-theme-type="light"] .confession-card {
   background: var(--bg-card) !important;
   border-color: var(--border-card) !important;
@@ -359,16 +370,17 @@ body[data-theme-type="light"] .confession-card__title {
 
 body[data-theme-type="light"] .confession-card__text {
   color: var(--text-main) !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   line-height: 1.8 !important;
 }
 
 body[data-theme-type="light"] .confession-card__date,
 body[data-theme-type="light"] .confession-card__sign {
   color: var(--text-sub) !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
 }
 
+/* 100 件事清晰度保证 */
 body[data-theme-type="light"] .checklist-card {
   background: var(--bg-card) !important;
   border-color: var(--border-card) !important;
@@ -377,21 +389,22 @@ body[data-theme-type="light"] .checklist-card {
 
 body[data-theme-type="light"] .checklist-card__stats {
   color: var(--text-sub) !important;
-  font-weight: 800 !important;
+  font-weight: 900 !important;
 }
 
 body[data-theme-type="light"] .checklist-item {
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
   border-color: var(--border-card) !important;
 }
 
 body[data-theme-type="light"] .checklist-item__text {
   color: var(--text-main) !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
 }
 
+/* 底部文字 */
 body[data-theme-type="light"] .universe-footer__text {
   color: var(--text-sub) !important;
   font-weight: 800 !important;
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9) !important;
+  text-shadow: none !important;
 }
