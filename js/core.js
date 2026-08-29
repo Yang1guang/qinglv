@@ -1,11 +1,16 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe) 前台核心主控
  * 文件名: js/core.js
- * 作用: 门禁鉴权、软键盘失焦防白屏、打字机、彩蛋与 300DPI 多图拍立得海报生成
+ * 作用: 门禁鉴权、软键盘失焦防白屏、打字机、彩蛋、专属姓名连接符美化与 300DPI 海报生成
  */
 
 document.addEventListener("DOMContentLoaded", () => {
   let config = window.LOVE_CONFIG || {};
+
+  // 原生字符转义防止 XSS
+  function escapeHtml(s) {
+    return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
 
   // 纯原生 RFC 3492 Punycode 逆向解码器 (海报生成中展示纯中文网址)
   function decodePunycodeHost(domainStr) {
@@ -269,7 +274,12 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (_) {}
 
     if (config.meta) {
-      if (dom.heroNames) dom.heroNames.textContent = `${config.meta.boyName || "男孩"} & ${config.meta.girlName || "女孩"}`;
+      if (dom.heroNames) {
+        const boy = escapeHtml(config.meta.boyName || "男孩");
+        const girl = escapeHtml(config.meta.girlName || "女孩");
+        // 升级为浪漫独立连接符结构，赋能优雅排版
+        dom.heroNames.innerHTML = `${boy} <span class="name-connector">&</span> ${girl}`;
+      }
       if (dom.heroSubtitle) dom.heroSubtitle.textContent = config.meta.siteSubtitle || "众水不能熄灭爱情，大水不能淹没 · 一生一世的契约";
       if (config.meta.siteTitle) document.title = config.meta.siteTitle;
     }
