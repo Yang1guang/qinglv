@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/components.css
- * 升级：释放 3D 拍立得手势传递管道，优化 GPU 毛玻璃开销，支持全平台 60FPS 极速贯通滚动
+ * 升级：释放 3D 拍立得手势传递管道，优化文字渲染抗锯齿，支持全平台 60FPS 极速贯通滚动
  */
 
 .universe-canvas,
@@ -178,6 +178,8 @@
   -webkit-text-fill-color: transparent;
   margin-bottom: 6px;
   text-shadow: var(--text-hero-shadow, 0 0 30px var(--rose-gold-glow));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: all 0.3s ease;
 }
 
@@ -339,7 +341,7 @@
   transition: color 0.3s ease;
 }
 
-/* 拍立得时光轴 (优化 GPU 图层混合，彻底消除卡死) */
+/* 拍立得时光轴 */
 .timeline-section { margin-bottom: 45px; contain: layout style; }
 
 .timeline-flow {
