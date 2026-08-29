@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe) 前台核心主控
  * 文件名: js/core.js
- * 作用: 门禁鉴权、软键盘失焦防白屏、打字机、彩蛋、专属姓名连接符美化与 300DPI 海报生成
+ * 作用: 门禁鉴权、软键盘失焦防白屏、打字机、彩蛋、专属姓名连接符美化与 300DPI 标准几何中心拍立得海报生成
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -277,7 +277,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (dom.heroNames) {
         const boy = escapeHtml(config.meta.boyName || "男孩");
         const girl = escapeHtml(config.meta.girlName || "女孩");
-        // 升级为浪漫独立连接符结构，赋能优雅排版
         dom.heroNames.innerHTML = `${boy} <span class="name-connector">&</span> ${girl}`;
       }
       if (dom.heroSubtitle) dom.heroSubtitle.textContent = config.meta.siteSubtitle || "众水不能熄灭爱情，大水不能淹没 · 一生一世的契约";
@@ -376,7 +375,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function unlockMainUniverse(withAnimation = true) {
-    // 1. 强制收起移动端软键盘并复位视口位置（根除 Android 键盘回弹白屏与空白残留）
     if (document.activeElement && typeof document.activeElement.blur === "function") {
       document.activeElement.blur();
     }
@@ -515,7 +513,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ================= 📸 300DPI 多图拍立得、无损保真裁切与专属二维码海报生成 =================
+  // ================= 📸 300DPI 标准拍立得海报生成引擎 =================
   let exportedPosterDataUrl = "";
   if (dom.generatePosterBtn) {
     dom.generatePosterBtn.onclick = () => {
@@ -644,6 +642,87 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.restore();
   }
 
+  // 🎯 核心标准化单张拍立得刚体绘制函数 (几何中心原点旋转，100% 杜绝文字脱节与错位)
+  function drawPolaroidPosterCard(ctx, img, data, cx, cy, w, h, deg, isMain = false) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate((deg * Math.PI) / 180);
+
+    // 1. 卡片外部真实投影与白底相纸
+    ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+    ctx.shadowBlur = isMain ? 35 : 22;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = isMain ? 12 : 8;
+
+    ctx.fillStyle = "#ffffff";
+    const r = 8;
+    const hw = w / 2;
+    const hh = h / 2;
+
+    ctx.beginPath();
+    ctx.moveTo(-hw + r, -hh);
+    ctx.lineTo(hw - r, -hh);
+    ctx.quadraticCurveTo(hw, -hh, hw, -hh + r);
+    ctx.lineTo(hw, hh - r);
+    ctx.quadraticCurveTo(hw, hh, hw - r, hh);
+    ctx.lineTo(-hw + r, hh);
+    ctx.quadraticCurveTo(-hw, hh, -hw, hh - r);
+    ctx.lineTo(-hw, -hh + r);
+    ctx.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.shadowColor = "transparent";
+
+    // 2. 相纸内部照片区域计算
+    const pad = isMain ? 22 : 14;
+    const imgW = w - pad * 2;
+    const bottomSpace = isMain ? 145 : 82;
+    const imgH = h - pad - bottomSpace;
+    const imgX = -hw + pad;
+    const imgY = -hh + pad;
+
+    if (img) {
+      drawImageCover(ctx, img, imgX, imgY, imgW, imgH, 4);
+    } else {
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(imgX, imgY, imgW, imgH);
+    }
+
+    // 3. 严格 1 对 1 绑定对应节点的标题、日期与地点
+    const textYStart = imgY + imgH + (isMain ? 20 : 12);
+    const title = (data?.title || (isMain ? "初见心动" : "美好瞬间")).trim();
+    const date = (data?.date || "2024.05.20").trim();
+    const location = (data?.location || "").trim();
+
+    if (isMain) {
+      // 主拍立得：大字号标题 + 拍摄日期地点
+      ctx.fillStyle = "#1e293b";
+      ctx.font = 'bold 28px "Songti SC", "STSong", "Noto Serif SC", serif, sans-serif';
+      ctx.textAlign = "left";
+      const displayTitle = title.startsWith("“") ? title : `“ ${title} ”`;
+      ctx.fillText(displayTitle, imgX + 6, textYStart + 28, imgW - 12);
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = '600 20px ui-monospace, SFMono-Regular, Menlo, monospace';
+      const locText = location ? `  ·  ${location}` : "";
+      ctx.fillText(`${date}${locText}`, imgX + 6, textYStart + 68, imgW - 12);
+    } else {
+      // 次级拍立得：居中优雅排布，严格限制在相纸内
+      ctx.fillStyle = "#1e293b";
+      ctx.font = 'bold 18px "Songti SC", "STSong", "Noto Serif SC", serif, sans-serif';
+      ctx.textAlign = "center";
+      const displayTitle = title.startsWith("“") ? title : `“ ${title} ”`;
+      ctx.fillText(displayTitle, 0, textYStart + 18, imgW - 8);
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = '600 14px ui-monospace, SFMono-Regular, Menlo, monospace';
+      ctx.fillText(date, 0, textYStart + 42, imgW - 8);
+    }
+
+    ctx.restore();
+  }
+
   async function generatePosterCanvas() {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -671,23 +750,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. 头部品牌徽章与大标题
     ctx.fillStyle = "rgba(245, 158, 11, 0.2)";
-    ctx.fillRect(360, 80, 360, 42);
+    ctx.fillRect(360, 75, 360, 40);
     ctx.strokeStyle = "rgba(245, 158, 11, 0.5)";
-    ctx.strokeRect(360, 80, 360, 42);
+    ctx.strokeRect(360, 75, 360, 40);
     ctx.fillStyle = "#fde68a";
     ctx.font = "bold 20px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("✨ THE SACRED COVENANT ✨", 540, 108);
+    ctx.fillText("✨ THE SACRED COVENANT ✨", 540, 102);
 
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 56px sans-serif";
-    ctx.fillText(`${config.meta?.boyName || "良人"} & ${config.meta?.girlName || "佳偶"}`, 540, 195);
+    ctx.font = 'bold 54px "Songti SC", "STSong", "Noto Serif SC", serif, sans-serif';
+    ctx.fillText(`${config.meta?.boyName || "良人"} & ${config.meta?.girlName || "佳偶"}`, 540, 182);
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "26px sans-serif";
-    ctx.fillText(config.meta?.siteSubtitle || "众水不能熄灭爱情，大水不能淹没 · 一生一世的契约", 540, 245);
+    ctx.font = "24px sans-serif";
+    ctx.fillText(config.meta?.siteSubtitle || "众水不能熄灭爱情，大水不能淹没 · 一生一世的契约", 540, 230);
 
-    // 3. 提取时光轴照片
+    // 3. 提取前 3 张时光轴照片与节点元数据 (严格 1 对 1 绑定)
     const timelineList = config.timeline || [];
     const photoUrls = [
       timelineList[0]?.frontImg || "assets/images/photo_01.jpg",
@@ -705,60 +784,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }));
 
-    // 主拍立得卡片 (大)
-    ctx.save();
-    ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
-    ctx.shadowBlur = 35;
-    ctx.shadowOffsetY = 15;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(80, 310, 580, 680);
-    ctx.shadowColor = "transparent";
+    // 主拍立得卡片 (左侧大卡片：宽 560, 高 690, 中心坐标 cx=350, cy=635)
+    drawPolaroidPosterCard(ctx, loadedImages[0], timelineList[0], 350, 635, 560, 690, 0, true);
 
-    if (loadedImages[0]) {
-      drawImageCover(ctx, loadedImages[0], 105, 335, 530, 520, 8);
-    }
-    ctx.fillStyle = "#1e293b";
-    ctx.font = "bold 28px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(`“ ${timelineList[0]?.title || "初见心动"} ”`, 105, 910);
-    ctx.fillStyle = "#64748b";
-    ctx.font = "22px sans-serif";
-    ctx.fillText(timelineList[0]?.date || "2024.05.20", 105, 950);
-    ctx.restore();
+    // 次拍立得卡片 1 (右上倾斜卡片：宽 350, 高 330, 中心坐标 cx=865, cy=460, 旋转 +2.5度)
+    drawPolaroidPosterCard(ctx, loadedImages[1], timelineList[1], 865, 460, 350, 330, 2.5, false);
 
-    // 次拍立得卡片 1
-    ctx.save();
-    ctx.translate(690, 310);
-    ctx.rotate((3 * Math.PI) / 180);
-    ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
-    ctx.shadowBlur = 25;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, 310, 360);
-    ctx.shadowColor = "transparent";
-    if (loadedImages[1]) {
-      drawImageCover(ctx, loadedImages[1], 15, 15, 280, 270, 6);
-    }
-    ctx.fillStyle = "#334155";
-    ctx.font = "bold 20px sans-serif";
-    ctx.fillText(timelineList[1]?.title || "浪漫日常", 15, 325);
-    ctx.restore();
-
-    // 次拍立得卡片 2
-    ctx.save();
-    ctx.translate(680, 680);
-    ctx.rotate((-2 * Math.PI) / 180);
-    ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
-    ctx.shadowBlur = 25;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, 320, 310);
-    ctx.shadowColor = "transparent";
-    if (loadedImages[2]) {
-      drawImageCover(ctx, loadedImages[2], 15, 15, 290, 230, 6);
-    }
-    ctx.fillStyle = "#334155";
-    ctx.font = "bold 20px sans-serif";
-    ctx.fillText(timelineList[2]?.title || "海边守望", 15, 280);
-    ctx.restore();
+    // 次拍立得卡片 2 (右下倾斜卡片：宽 350, 高 330, 中心坐标 cx=865, cy=815, 旋转 -2度)
+    drawPolaroidPosterCard(ctx, loadedImages[2], timelineList[2], 865, 815, 350, 330, -2, false);
 
     // 4. 核心计时器与天数
     const startTimestamp = new Date(config.meta?.startDate || "2024-05-20").getTime();
@@ -768,46 +801,46 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
     ctx.strokeStyle = "rgba(245, 158, 11, 0.35)";
     ctx.lineWidth = 2;
-    ctx.fillRect(80, 1030, 920, 240);
-    ctx.strokeRect(80, 1030, 920, 240);
+    ctx.fillRect(80, 1025, 920, 240);
+    ctx.strokeRect(80, 1025, 920, 240);
 
     ctx.fillStyle = "#fde68a";
     ctx.font = "bold 96px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(`${totalDays}`, 540, 1145);
+    ctx.fillText(`${totalDays}`, 540, 1140);
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 28px sans-serif";
-    ctx.fillText("DAYS OF COVENANT · 契约同行天数", 540, 1205);
+    ctx.fillText("DAYS OF COVENANT · 契约同行天数", 540, 1200);
 
     ctx.fillStyle = "#94a3b8";
     ctx.font = "22px sans-serif";
-    ctx.fillText(`“ ${config.letter?.title || "致我生命中的唯一"} ” · 故事未完待续`, 540, 1245);
+    ctx.fillText(`“ ${config.letter?.title || "致我生命中的唯一"} ” · 故事未完待续`, 540, 1240);
     ctx.restore();
 
     // 5. 真情告白金句摘录
     ctx.save();
     ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
-    ctx.fillRect(80, 1300, 920, 250);
+    ctx.fillRect(80, 1295, 920, 250);
     ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
-    ctx.strokeRect(80, 1300, 920, 250);
+    ctx.strokeRect(80, 1295, 920, 250);
 
     ctx.fillStyle = "#fbcfe8";
     ctx.font = "bold 26px sans-serif";
     ctx.textAlign = "left";
-    ctx.fillText("💌 恒久誓言摘录：", 110, 1350);
+    ctx.fillText("💌 恒久誓言摘录：", 110, 1345);
 
     ctx.fillStyle = "#e2e8f0";
     ctx.font = "24px sans-serif";
     const vowText1 = "爱情不是讲理的地方，而是理解、包容、接纳、舍己、付出、爱的地方。";
     const vowText2 = "在漫长的一生一世里，众水不能熄灭，大水不能淹没。";
-    ctx.fillText(vowText1, 110, 1410);
-    ctx.fillText(vowText2, 110, 1460);
+    ctx.fillText(vowText1, 110, 1405);
+    ctx.fillText(vowText2, 110, 1455);
 
     ctx.fillStyle = "#94a3b8";
     ctx.font = "italic 22px sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText(`—— ${config.letter?.signature || "爱你的良人"} · ${config.letter?.signDate || "2026.05.20"}`, 970, 1515);
+    ctx.fillText(`—— ${config.letter?.signature || "爱你的良人"} · ${config.letter?.signDate || "2026.05.20"}`, 970, 1510);
     ctx.restore();
 
     // 6. 底部专属独立二维码直连区 (自动解码还原中文网址)
@@ -816,7 +849,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const displayDomainUrl = rawDomainUrl.replace(window.location.hostname, displayHostname);
 
     const qrBoxX = 80;
-    const qrBoxY = 1580;
+    const qrBoxY = 1575;
     const qrBoxW = 920;
     const qrBoxH = 240;
 
@@ -827,27 +860,27 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillRect(qrBoxX, qrBoxY, qrBoxW, qrBoxH);
     ctx.strokeRect(qrBoxX, qrBoxY, qrBoxW, qrBoxH);
 
-    drawDomainQrCode(ctx, 110, 1605, 190, rawDomainUrl);
+    drawDomainQrCode(ctx, 110, 1600, 190, rawDomainUrl);
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 32px sans-serif";
     ctx.textAlign = "left";
-    ctx.fillText("扫码进入我们的专属时空", 330, 1665);
+    ctx.fillText("扫码进入我们的专属时空", 330, 1660);
 
     ctx.fillStyle = "#38bdf8";
     ctx.font = "22px sans-serif";
-    ctx.fillText(`🔗 网址直达: ${displayDomainUrl.replace(/^https?:\/\//, "")}`, 330, 1715);
+    ctx.fillText(`🔗 网址直达: ${displayDomainUrl.replace(/^https?:\/\//, "")}`, 330, 1710);
 
     ctx.fillStyle = "#94a3b8";
     ctx.font = "20px sans-serif";
-    ctx.fillText("微信 / 相机扫一扫 · 开启 3D 沉浸式浪漫空间与真情留言", 330, 1760);
+    ctx.fillText("微信 / 相机扫一扫 · 开启 3D 沉浸式浪漫空间与真情留言", 330, 1755);
     ctx.restore();
 
     // 7. 底部版权标记
     ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
     ctx.font = "20px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("✨ 众水不能熄灭爱情，大水不能淹没 · LOVE UNIVERSE ✨", 540, 1875);
+    ctx.fillText("✨ 众水不能熄灭爱情，大水不能淹没 · LOVE UNIVERSE ✨", 540, 1870);
 
     return canvas.toDataURL("image/jpeg", 0.95);
   }
