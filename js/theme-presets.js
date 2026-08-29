@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/theme-presets.js
- * 作用: 12 套男女双视角高奢主题全量参数与物理粒子引擎定义
+ * 作用: 12 套男女双视角高奢主题全量参数与物理粒子引擎定义 (全量校准浅色系高对比度字色)
  */
 
 window.THEME_PRESETS = {
@@ -105,7 +105,7 @@ window.THEME_PRESETS = {
     }
   ],
 
-  // ================= 👧 女生偏好 · 6 套清透治愈主题 (浅色调 / 奶油 / 樱花 / 莫奈) =================
+  // ================= 👧 女生偏好 · 6 套清透治愈主题 (浅色调 / 高饱和高对比度字色) =================
   girl: [
     {
       id: "french-cream",
@@ -115,11 +115,11 @@ window.THEME_PRESETS = {
       particleType: "sunDust",
       themeType: "light",
       colors: {
-        bg: "radial-gradient(circle at center top, #fffdfa 0%, #f5ebe1 75%, #ebdcd0 100%)",
-        cardBg: "rgba(255, 255, 255, 0.78)",
-        cardBorder: "rgba(120, 83, 56, 0.2)",
-        textMain: "#3e2723",
-        textSub: "#795548",
+        bg: "radial-gradient(circle at center top, #fffdfa 0%, #f7eee4 75%, #ebdcd0 100%)",
+        cardBg: "rgba(255, 255, 255, 0.95)",
+        cardBorder: "rgba(120, 53, 15, 0.35)",
+        textMain: "#451a03",
+        textSub: "#78350f",
         accent: "#b45309"
       }
     },
@@ -132,10 +132,10 @@ window.THEME_PRESETS = {
       themeType: "light",
       colors: {
         bg: "radial-gradient(circle at center top, #fff5f7 0%, #fce7f3 70%, #fbcfe8 100%)",
-        cardBg: "rgba(255, 255, 255, 0.8)",
-        cardBorder: "rgba(244, 63, 94, 0.25)",
-        textMain: "#831843",
-        textSub: "#be185d",
+        cardBg: "rgba(255, 255, 255, 0.95)",
+        cardBorder: "rgba(225, 29, 72, 0.35)",
+        textMain: "#881337",
+        textSub: "#9f1239",
         accent: "#e11d48"
       }
     },
@@ -148,8 +148,8 @@ window.THEME_PRESETS = {
       themeType: "light",
       colors: {
         bg: "radial-gradient(circle at center top, #f0fdf4 0%, #dcfce7 65%, #bbf7d0 100%)",
-        cardBg: "rgba(255, 255, 255, 0.82)",
-        cardBorder: "rgba(22, 101, 52, 0.25)",
+        cardBg: "rgba(255, 255, 255, 0.95)",
+        cardBorder: "rgba(22, 101, 52, 0.35)",
         textMain: "#14532d",
         textSub: "#166534",
         accent: "#15803d"
@@ -164,10 +164,10 @@ window.THEME_PRESETS = {
       themeType: "light",
       colors: {
         bg: "radial-gradient(circle at center top, #fafafc 0%, #f1f5f9 70%, #e2e8f0 100%)",
-        cardBg: "rgba(255, 255, 255, 0.88)",
-        cardBorder: "rgba(148, 163, 184, 0.35)",
+        cardBg: "rgba(255, 255, 255, 0.96)",
+        cardBorder: "rgba(71, 85, 105, 0.35)",
         textMain: "#0f172a",
-        textSub: "#475569",
+        textSub: "#334155",
         accent: "#d97706"
       }
     },
@@ -180,10 +180,10 @@ window.THEME_PRESETS = {
       themeType: "light",
       colors: {
         bg: "radial-gradient(circle at center top, #faf5ff 0%, #f3e8ff 60%, #e9d5ff 100%)",
-        cardBg: "rgba(255, 255, 255, 0.82)",
-        cardBorder: "rgba(168, 85, 247, 0.25)",
+        cardBg: "rgba(255, 255, 255, 0.95)",
+        cardBorder: "rgba(147, 51, 234, 0.35)",
         textMain: "#581c87",
-        textSub: "#7e22ce",
+        textSub: "#6b21a8",
         accent: "#9333ea"
       }
     },
@@ -196,8 +196,8 @@ window.THEME_PRESETS = {
       themeType: "light",
       colors: {
         bg: "radial-gradient(circle at center top, #fff7ed 0%, #ffedd5 60%, #fed7aa 100%)",
-        cardBg: "rgba(255, 255, 255, 0.82)",
-        cardBorder: "rgba(234, 88, 12, 0.25)",
+        cardBg: "rgba(255, 255, 255, 0.95)",
+        cardBorder: "rgba(234, 88, 12, 0.35)",
         textMain: "#7c2d12",
         textSub: "#9a3412",
         accent: "#ea580c"
