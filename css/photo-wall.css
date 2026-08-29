@@ -9,11 +9,12 @@
   top: 0;
   left: 0;
   width: 100%;
+  max-width: 100%;
   min-height: 100%;
   height: auto;
   pointer-events: none;
   z-index: 0;
-  overflow: visible;
+  overflow: hidden; /* 严密锁死照片墙边界，绝不撑开浏览器视口 */
 }
 
 /* ================= 1. 左上角专属固定正立头像 (Avatar Polaroid) ================= */
@@ -143,11 +144,11 @@
     margin-top: 3px;
   }
   .wall-polaroid-item {
-    width: 84px;
-    padding: 5px 5px 14px 5px;
+    width: 78px;
+    padding: 4px 4px 12px 4px;
     opacity: 0.75;
   }
   .wall-polaroid-inner {
-    height: 75px;
+    height: 70px;
   }
 }
