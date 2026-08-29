@@ -20,13 +20,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="雅歌之印">
 
-  <link rel="stylesheet" href="css/base.css?v=2.0">
-  <link rel="stylesheet" href="css/components.css?v=2.0">
-  <link rel="stylesheet" href="css/animations.css?v=2.0">
-  <link rel="stylesheet" href="css/themes.css?v=2.0">
-  <link rel="stylesheet" href="css/photo-wall.css?v=2.0">
-  <link rel="stylesheet" href="css/pet.css?v=2.0">
-  <link rel="stylesheet" href="css/scratch-card.css?v=2.0">
+  <!-- 🚀 核心样式表预加载与非阻塞链路 -->
+  <link rel="stylesheet" href="css/base.css?v=2.1">
+  <link rel="stylesheet" href="css/components.css?v=2.1">
+  <link rel="stylesheet" href="css/animations.css?v=2.1">
+  <link rel="stylesheet" href="css/themes.css?v=2.1">
+  <link rel="stylesheet" href="css/photo-wall.css?v=2.1">
+  <link rel="stylesheet" href="css/pet.css?v=2.1">
+  <link rel="stylesheet" href="css/scratch-card.css?v=2.1">
   <style>
     .perspective-capsule {
       position: fixed;
@@ -38,9 +39,11 @@
       border: 1.5px solid rgba(245, 158, 11, 0.4);
       border-radius: 26px;
       padding: 3.5px;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
     }
     .perspective-btn {
       padding: 7px 15px;
@@ -85,6 +88,8 @@
       border-radius: 20px;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
     }
     .phase-tab-btn {
       flex: 1;
@@ -245,7 +250,7 @@
     <div class="vinyl-player__disc" id="vinyl-disc" title="点击播放/暂停音乐">
       <div class="vinyl-player__center-core">
         <span class="vinyl-player__default-heart">❤️</span>
-        <img id="vinyl-cover" class="vinyl-player__cover" src="" alt="" onerror="this.style.display='none'" onload="this.style.display='block'">
+        <img id="vinyl-cover" class="vinyl-player__cover" src="" alt="" onerror="this.style.display='none'" onload="this.style.display='block'" decoding="async">
       </div>
     </div>
     <div class="vinyl-player__control" style="display:flex; justify-content:center; align-items:center; gap:6px;">
@@ -284,17 +289,17 @@
     </div>
   </div>
 
-  <script src="js/config.js?v=2.0"></script>
-  <script src="js/theme-presets.js?v=2.0"></script>
-  <script src="js/stage-content.js?v=2.0"></script>
-  <script src="js/theme-engine.js?v=2.0"></script>
-  <script src="js/lifecycle.js?v=2.0"></script>
-  <script src="js/photo-wall.js?v=2.0"></script>
-  <script src="js/effects.js?v=2.0"></script>
-  <script src="js/timeline.js?v=2.0"></script>
-  <script src="js/pet.js?v=2.0"></script>
-  <script src="js/export-eternal.js?v=2.0"></script>
-  <script src="js/core.js?v=2.0"></script>
+  <script src="js/config.js?v=2.1"></script>
+  <script src="js/theme-presets.js?v=2.1"></script>
+  <script src="js/stage-content.js?v=2.1"></script>
+  <script src="js/theme-engine.js?v=2.1"></script>
+  <script src="js/lifecycle.js?v=2.1"></script>
+  <script src="js/photo-wall.js?v=2.1"></script>
+  <script src="js/effects.js?v=2.1"></script>
+  <script src="js/timeline.js?v=2.1"></script>
+  <script src="js/pet.js?v=2.1"></script>
+  <script src="js/export-eternal.js?v=2.1"></script>
+  <script src="js/core.js?v=2.1"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       if (window.ThemeEngine) {
