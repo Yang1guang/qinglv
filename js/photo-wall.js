@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe)
  * 文件名: js/photo-wall.js
- * 作用: 「时光留白」自由视差照片墙渲染与全页面流式视差滚动计算 (支持首图正立头像固定与手机端安全避让)
+ * 作用: 「时光留白」自由视差照片墙渲染与全页面流式视差滚动计算 (双端安全边界防溢出定位)
  */
 
 class PhotoWallManager {
@@ -56,13 +56,13 @@ class PhotoWallManager {
         container.appendChild(avatarItem);
       }
 
-      // 2. 其余照片渲染为背景流式倾斜视差照片墙
+      // 2. 其余照片渲染为背景流式倾斜视差照片墙 (严格防左右溢出算法)
       const remainingNodes = photoNodes.slice(1);
       const totalPhotos = remainingNodes.length;
 
       if (totalPhotos > 0) {
         const isMobile = window.innerWidth <= 640;
-        const startTop = isMobile ? 330 : 260; // 移动端充分避让顶部头像、大标题与同行计时器
+        const startTop = isMobile ? 330 : 260; // 移动端避让顶部大标题
         const availableHeight = Math.max(pageHeight - startTop - 200, totalPhotos * 260);
         const verticalGap = availableHeight / Math.max(totalPhotos, 1);
 
@@ -70,16 +70,33 @@ class PhotoWallManager {
           const item = document.createElement("div");
           item.className = "wall-polaroid-item";
 
-          // 左右两侧交错分布 (避开中间文本主体区域)
+          // 左右两侧交错分布 (严格依据左右边界锚定，彻底杜绝右侧突兀出框)
           const isLeft = idx % 2 === 0;
-          const posX = isLeft ? (Math.random() * 5 + 2) : (Math.random() * 5 + 83);
-          const baseTop = startTop + (idx * verticalGap) + (Math.random() * 30);
-          const baseRot = (Math.random() - 0.5) * 18; // 随机轻微倾斜角度
+          if (isMobile) {
+            if (isLeft) {
+              item.style.left = `${Math.random() * 3 + 2}%`;
+              item.style.right = "auto";
+            } else {
+              item.style.right = `${Math.random() * 3 + 2}%`;
+              item.style.left = "auto";
+            }
+          } else {
+            if (isLeft) {
+              item.style.left = `${Math.random() * 4 + 2}%`;
+              item.style.right = "auto";
+            } else {
+              item.style.right = `${Math.random() * 4 + 2}%`;
+              item.style.left = "auto";
+            }
+          }
 
-          // 严格保证负向视差阻尼系数 (-0.04 ~ -0.065)，使向下滚动时照片自然随视口平稳往上走
+          const baseTop = startTop + (idx * verticalGap) + (Math.random() * 30);
+          // 移动端缩小旋转摆动幅度 (最大 10 度)，消除旋转角点刺穿视口边缘
+          const baseRot = (Math.random() - 0.5) * (isMobile ? 10 : 18);
+
+          // 负向视差阻尼系数 (-0.04 ~ -0.065)
           const speed = isLeft ? -0.04 : -0.065;
 
-          item.style.left = `${posX}%`;
           item.style.top = `${baseTop}px`;
           item.style.transform = `translate3d(0, 0, 0) rotate(${baseRot}deg)`;
 
