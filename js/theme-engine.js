@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/theme-engine.js
- * 作用: 多维物理引擎、12 套男女主题切换、双视角胶囊激活联动与独立全高清视口背景图渲染
+ * 作用: 多维物理引擎、12 套男女主题切换、双视角胶囊激活联动与全视口浅色/深色背景智能穿透
  */
 
 class ThemeEngineCore {
@@ -142,10 +142,9 @@ class ThemeEngineCore {
     document.body.setAttribute("data-theme-type", themeType);
     document.documentElement.setAttribute("data-theme-type", themeType);
 
-    // 2. 将高清壁纸精准注入至独立全视口背景层（解决移动端拉伸模糊与裁切问题）
+    // 2. 将高清壁纸精准注入至独立全视口背景层 (未上传自定义壁纸时完全由 CSS 变量 --theme-bg-gradient 呈现)
     const bgLayer = this.ensureBackgroundLayer();
     
-    // 清除可能残留在 body 上的背景样式以防冲突
     document.body.style.backgroundImage = "none";
     document.body.style.backgroundAttachment = "scroll";
 
@@ -154,12 +153,17 @@ class ThemeEngineCore {
         ? "linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4))"
         : "linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45))";
       bgLayer.style.backgroundImage = `${scrim}, url('${customBgUrl}')`;
-    } else if (themeMeta && themeMeta.colors && themeMeta.colors.bg) {
-      bgLayer.style.backgroundImage = themeMeta.colors.bg;
+    } else {
+      // 清空行内 style.backgroundImage，让 CSS 中定义的 --theme-bg-gradient 在电脑端与手机端 100% 完整生效
+      bgLayer.style.backgroundImage = "";
     }
 
-    // 3. 启动物理粒子引擎
-    this.initParticlePhysics(themeMeta.particleType || "meteor");
+    // 3. 启动物理粒子引擎 (浅色模式自动适配梦幻气泡或暖金阳光粒子)
+    let particleType = themeMeta.particleType || "meteor";
+    if (isLight && particleType === "meteor") {
+      particleType = "bubbles";
+    }
+    this.initParticlePhysics(particleType);
 
     if (notify) {
       const msg = `✨ 已切入【${themeMeta.name || "专属"}】时空`;
@@ -181,7 +185,7 @@ class ThemeEngineCore {
     if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
 
     this.particles = [];
-    const count = window.innerWidth < 768 ? 25 : 55;
+    const count = window.innerWidth < 768 ? 25 : 50;
 
     for (let i = 0; i < count; i++) {
       this.particles.push(this.createParticle(type));
