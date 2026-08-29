@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/components.css
- * 升级：释放 3D 拍立得手势传递管道，注入文艺浪漫衬线体与独立「&」连接符优雅排版
+ * 升级：实施方案 C (大字号主角名字置顶 + 精巧时间胶囊居中 + 优雅衬线 & 符号点缀)
  */
 
 .universe-canvas,
@@ -147,37 +147,27 @@
 
 .gatekeeper__btn { width: 100%; padding: 13px 20px; font-size: 15px; }
 
-/* 头部视差区与同行计时器 */
+/* ================= 头部视差区 (方案 C：名字大字号置顶 + 时间胶囊居中) ================= */
 .hero-section {
   text-align: center;
   margin-bottom: 36px;
   padding-top: 10px;
   contain: layout style;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.hero-section__badge {
-  font-size: 10.5px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  color: var(--badge-text, var(--sun-gold));
-  background: var(--badge-bg, rgba(245, 158, 11, 0.12));
-  border: 1px solid var(--badge-border, rgba(245, 158, 11, 0.3));
-  padding: 3px 12px;
-  border-radius: 30px;
-  display: inline-block;
-  margin-bottom: 12px;
-  transition: all 0.3s ease;
-}
-
+/* 名字字符放大并赋予典雅艺术字形 */
 .hero-section__names {
-  font-size: 32px;
+  font-size: 38px;
   font-weight: 900;
-  letter-spacing: 2px;
+  letter-spacing: 2.5px;
   font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", -apple-system, serif;
   background: var(--text-hero-gradient, linear-gradient(135deg, #ffffff 0%, #fecdd3 50%, #fb7185 100%));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
   text-shadow: var(--text-hero-shadow, 0 0 30px var(--rose-gold-glow));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -188,14 +178,14 @@
   transition: all 0.3s ease;
 }
 
-/* 🌟 连接符「&」专属优雅古典衬线与微光高奢点缀 */
+/* 🌟 连接符「&」专属古典衬线倾斜与微光高奢点缀 */
 .name-connector {
   display: inline-block;
   font-family: "Playfair Display", "Baskerville", "Georgia", "Songti SC", serif;
   font-style: italic;
   font-weight: 400;
-  font-size: 0.9em;
-  margin: 0 6px;
+  font-size: 0.88em;
+  margin: 0 8px;
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #f43f5e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -203,8 +193,26 @@
   transition: all 0.3s ease;
 }
 
+/* 契约时间胶囊微缩精致居中置于名字与副标题之间 */
+.hero-section__badge {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2.5px;
+  color: var(--badge-text, var(--sun-gold));
+  background: var(--badge-bg, rgba(245, 158, 11, 0.12));
+  border: 1px solid var(--badge-border, rgba(245, 158, 11, 0.3));
+  padding: 3px 14px;
+  border-radius: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
 .hero-section__subtitle {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-subtitle, var(--text-muted));
   font-weight: 600;
   margin-bottom: 24px;
@@ -220,6 +228,7 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   max-width: 580px;
+  width: 100%;
   margin: 0 auto;
   contain: layout style;
   transition: all 0.3s ease;
@@ -294,7 +303,7 @@
 }
 
 /* 告白信 */
-.confession-section { margin-bottom: 40px; contain: layout style; }
+.confession-section { margin-bottom: 40px; contain: layout style; width: 100%; }
 
 .confession-card {
   background: var(--confession-bg, rgba(255, 253, 245, 0.95));
@@ -362,7 +371,7 @@
 }
 
 /* 拍立得时光轴 */
-.timeline-section { margin-bottom: 45px; contain: layout style; }
+.timeline-section { margin-bottom: 45px; contain: layout style; width: 100%; }
 
 .timeline-flow {
   display: flex;
@@ -635,7 +644,7 @@
 }
 
 /* 100 件事 */
-.checklist-section { margin-bottom: 45px; contain: layout style; }
+.checklist-section { margin-bottom: 45px; contain: layout style; width: 100%; }
 
 .checklist-card {
   background: var(--bg-card, var(--space-card));
@@ -747,7 +756,7 @@
 }
 
 /* 刮刮乐 */
-.scratch-section { margin-bottom: 45px; contain: layout style; }
+.scratch-section { margin-bottom: 45px; contain: layout style; width: 100%; }
 
 .scratch-grid {
   display: grid;
@@ -1112,29 +1121,32 @@
 .poster-modal__tip { font-size: 12px; color: var(--text-sub, var(--text-muted)); margin-top: 10px; }
 .poster-modal__actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
 
-/* ================= 📱 手机端视口深度优化 ================= */
+/* ================= 📱 手机端视口深度优化 (方案 C 紧凑优雅排布) ================= */
 @media (max-width: 640px) {
   .hero-section {
     padding-top: max(76px, calc(env(safe-area-inset-top, 0px) + 72px));
     margin-bottom: 26px;
   }
-  .hero-section__badge {
-    margin-bottom: 8px;
-  }
   .hero-section__names {
-    font-size: 24px;
-    letter-spacing: 1.5px;
+    font-size: 28px;
+    letter-spacing: 1.8px;
     position: relative;
     z-index: 30;
     padding: 0 6px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .name-connector {
-    margin: 0 4px;
+    margin: 0 5px;
     font-size: 0.85em;
   }
+  .hero-section__badge {
+    font-size: 9.5px;
+    letter-spacing: 2px;
+    padding: 2.5px 11px;
+    margin-bottom: 10px;
+  }
   .hero-section__subtitle {
-    font-size: 11.5px;
+    font-size: 12px;
     padding: 0 12px;
     line-height: 1.5;
     margin-bottom: 20px;
