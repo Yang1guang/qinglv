@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/base.css
- * 升级：根除 iOS WebKit 滚动链死锁，彻底解决滑动卡顿与横向晃动
+ * 升级：根除 iOS WebKit 滚动链死锁与右侧贴图溢出，彻底解决滑动卡顿与横向晃动
  */
 
 :root {
@@ -64,6 +64,7 @@ body {
   min-height: 100dvh;
   width: 100%;
   max-width: 100%;
+  overflow-x: hidden;
   position: relative;
   line-height: 1.6;
   padding-bottom: max(24px, env(safe-area-inset-bottom));
@@ -121,6 +122,7 @@ button, input, textarea {
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.8s var(--ease-spring), transform 0.8s var(--ease-spring);
+  overflow-x: hidden;
 }
 
 .main-container--hidden {
