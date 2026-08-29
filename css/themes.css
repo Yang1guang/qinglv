@@ -137,7 +137,7 @@ body.theme-french-cream {
   --border-card: rgba(120, 53, 15, 0.35);
   --card-shadow: 0 16px 36px rgba(120, 53, 15, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #451a03;
-  --text-hero-gradient: linear-gradient(135deg, #451a03 0%, #78350f 50%, #9a3412 100%);
+  --text-hero-gradient: linear-gradient(135deg, #451a03 0%, #78350f 45%, #9a3412 100%);
   --text-hero-shadow: none;
   --text-subtitle: #78350f;
   --text-main: #451a03;
@@ -159,8 +159,8 @@ body.theme-sakura-romance {
   --bg-card: rgba(255, 255, 255, 0.95);
   --border-card: rgba(225, 29, 72, 0.35);
   --card-shadow: 0 16px 36px rgba(159, 18, 57, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
-  --text-hero: #4c0519;
-  --text-hero-gradient: linear-gradient(135deg, #4c0519 0%, #881337 50%, #be123c 100%);
+  --text-hero: #701a75;
+  --text-hero-gradient: linear-gradient(135deg, #701a75 0%, #9f1239 45%, #be123c 100%);
   --text-hero-shadow: none;
   --text-subtitle: #881337;
   --text-main: #881337;
@@ -183,7 +183,7 @@ body.theme-monet-garden {
   --border-card: rgba(22, 101, 52, 0.35);
   --card-shadow: 0 16px 36px rgba(20, 83, 45, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #052e16;
-  --text-hero-gradient: linear-gradient(135deg, #052e16 0%, #14532d 50%, #15803d 100%);
+  --text-hero-gradient: linear-gradient(135deg, #052e16 0%, #14532d 45%, #15803d 100%);
   --text-hero-shadow: none;
   --text-subtitle: #14532d;
   --text-main: #14532d;
@@ -206,7 +206,7 @@ body.theme-morning-dew {
   --border-card: rgba(71, 85, 105, 0.35);
   --card-shadow: 0 16px 36px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #0f172a;
-  --text-hero-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  --text-hero-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #334155 100%);
   --text-hero-shadow: none;
   --text-subtitle: #334155;
   --text-main: #0f172a;
@@ -229,7 +229,7 @@ body.theme-sunset-blush {
   --border-card: rgba(147, 51, 234, 0.35);
   --card-shadow: 0 16px 36px rgba(88, 28, 135, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #3b0764;
-  --text-hero-gradient: linear-gradient(135deg, #3b0764 0%, #581c87 50%, #7e22ce 100%);
+  --text-hero-gradient: linear-gradient(135deg, #3b0764 0%, #581c87 45%, #7e22ce 100%);
   --text-hero-shadow: none;
   --text-subtitle: #581c87;
   --text-main: #581c87;
@@ -252,7 +252,7 @@ body.theme-orange-sea {
   --border-card: rgba(234, 88, 12, 0.35);
   --card-shadow: 0 16px 36px rgba(124, 45, 18, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
   --text-hero: #431407;
-  --text-hero-gradient: linear-gradient(135deg, #431407 0%, #7c2d12 50%, #c2410c 100%);
+  --text-hero-gradient: linear-gradient(135deg, #431407 0%, #7c2d12 45%, #ea580c 100%);
   --text-hero-shadow: none;
   --text-subtitle: #7c2d12;
   --text-main: #7c2d12;
@@ -281,13 +281,25 @@ body[data-theme-type="light"] {
   --drawer-active-title: #881337;
 }
 
-/* 核心大标题：使用真实微投影取代致盲白光，杜绝镂空发虚 */
+/* 核心大标题：宋体衬线 + 玫瑰宝石渐变 + 双层柔和漫射影 */
 body[data-theme-type="light"] .hero-section__names {
+  font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", -apple-system, serif !important;
+  font-weight: 900 !important;
+  letter-spacing: 2.2px !important;
   background: var(--text-hero-gradient) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   text-shadow: none !important;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.08)) !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.06)) 
+          drop-shadow(0 6px 16px rgba(190, 18, 60, 0.16)) !important;
+}
+
+/* 浅色模式连接符高奢独立渐变 */
+body[data-theme-type="light"] .name-connector {
+  background: linear-gradient(135deg, #d97706 0%, #ea580c 50%, #e11d48 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 2px 8px rgba(234, 88, 12, 0.25)) !important;
 }
 
 /* 契约副标题：纯正高饱和深色，去除致盲白光 */
