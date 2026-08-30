@@ -8,8 +8,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=2.0">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png?v=2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2.0">
-  <link rel="stylesheet" href="css/admin.css?v=2.0">
-  <link rel="stylesheet" href="css/themes.css?v=2.0">
+  <link rel="stylesheet" href="css/admin.css?v=2.2">
+  <link rel="stylesheet" href="css/themes.css?v=2.2">
 </head>
 <body>
 
@@ -48,12 +48,13 @@
         <button class="tab-btn" data-tab="tab-gatekeeper">🔒 2. 门禁关卡与防偷窥</button>
         <button class="tab-btn" data-tab="tab-letter">💌 3. 打字机真情告白</button>
         <button class="tab-btn" data-tab="tab-timeline">🪐 4. 时光轴与拍立得</button>
-        <button class="tab-btn" data-tab="tab-checklist">📝 5. 100 件同行清单</button>
-        <button class="tab-btn" data-tab="tab-scratch">🎟️ 6. 舍己与包容刮刮乐</button>
-        <button class="tab-btn" data-tab="tab-audio">🎵 7. 背景音乐与播放列表</button>
-        <button class="tab-btn" data-tab="tab-eggs">🐣 8. 隐藏彩蛋悄悄话</button>
-        <button class="tab-btn" data-tab="tab-theme">🎨 9. 双视角主题陈列室</button>
-        <button class="tab-btn" data-tab="tab-license">💎 10. 契约授权</button>
+        <button class="tab-btn" data-tab="tab-anniversary">📅 5. 倒数与恒久纪念日</button>
+        <button class="tab-btn" data-tab="tab-checklist">📝 6. 100 件同行清单</button>
+        <button class="tab-btn" data-tab="tab-scratch">🎟️ 7. 舍己与包容刮刮乐</button>
+        <button class="tab-btn" data-tab="tab-audio">🎵 8. 背景音乐与播放列表</button>
+        <button class="tab-btn" data-tab="tab-eggs">🐣 9. 隐藏彩蛋悄悄话</button>
+        <button class="tab-btn" data-tab="tab-theme">🎨 10. 双视角主题陈列室</button>
+        <button class="tab-btn" data-tab="tab-license">💎 11. 契约授权</button>
       </nav>
 
       <div class="admin-content">
@@ -123,19 +124,47 @@
           <div id="timelineListContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 5. 100 件事 -->
+        <!-- 🌟 5. 倒数与恒久纪念日管理面板 -->
+        <section id="tab-anniversary" class="tab-pane">
+          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h3>📅 倒数日与恒久纪念日管理</h3>
+              <p style="font-size:12px; color:#94a3b8; margin-top:4px;">支持阳历与阴历农历智能换算、每年重复倒数、同行已过天数、生命羁绊计算及专属照片录音绑定。</p>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-add" onclick="addCustomAnniversaryItem()">➕ 自定义新增</button>
+            </div>
+          </div>
+
+          <!-- 一键快捷模板工具栏 -->
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 14px; margin-bottom: 20px;">
+            <span style="font-size:12px; font-weight:800; color:#fde68a; display:block; margin-bottom:8px;">⚡ 一键快速添加常用纪念日模板：</span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-tool" style="background:rgba(244, 63, 94, 0.2); color:#fecdd3; border-color:rgba(244,63,94,0.35); padding:6px 12px; font-size:12px;" onclick="addPresetAnniversaryTemplate('birthday_girl')">🎂 她的农历生日</button>
+              <button class="btn-tool" style="background:rgba(56, 189, 248, 0.2); color:#7dd3fc; border-color:rgba(56,189,248,0.35); padding:6px 12px; font-size:12px;" onclick="addPresetAnniversaryTemplate('birthday_boy')">🪐 他的公历生日</button>
+              <button class="btn-tool" style="background:rgba(245, 158, 11, 0.2); color:#fde68a; border-color:rgba(245,158,11,0.35); padding:6px 12px; font-size:12px;" onclick="addPresetAnniversaryTemplate('love_start')">💖 恋爱同行起点</button>
+              <button class="btn-tool" style="background:rgba(168, 85, 247, 0.2); color:#e9d5ff; border-color:rgba(168,85,247,0.35); padding:6px 12px; font-size:12px;" onclick="addPresetAnniversaryTemplate('engaged')">💍 订婚盟约之日</button>
+              <button class="btn-tool" style="background:rgba(34, 197, 94, 0.2); color:#bbf7d0; border-color:rgba(34,197,94,0.35); padding:6px 12px; font-size:12px;" onclick="addPresetAnniversaryTemplate('married')">🏠 领证结婚纪念</button>
+              <button class="btn-tool" style="background:rgba(251, 146, 60, 0.2); color:#fed7aa; border-color:rgba(251,146,60,0.35); padding:6px 12px; font-size:12px;" onclick="addPresetAnniversaryTemplate('travel')">✈️ 甜蜜旅行之约</button>
+            </div>
+          </div>
+
+          <div id="anniversariesListContainer" class="dynamic-list"></div>
+        </section>
+
+        <!-- 6. 100 件事 -->
         <section id="tab-checklist" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between;"><div><h3>📝 100 件事</h3></div><button class="btn-add" onclick="addChecklistItem()">➕ 新增</button></div>
           <div id="checklistItemsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 6. 刮刮乐 -->
+        <!-- 7. 刮刮乐 -->
         <section id="tab-scratch" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between;"><div><h3>🎟️ 刮刮乐</h3></div><button class="btn-add" onclick="addScratchCard()">➕ 新增</button></div>
           <div id="scratchCardsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 7. 🎵 背景音乐与多曲目播放列表 -->
+        <!-- 8. 🎵 背景音乐与多曲目播放列表 -->
         <section id="tab-audio" class="tab-pane">
           <div class="pane-header">
             <h3>🎵 背景音乐与多曲目播放列表</h3>
@@ -208,7 +237,7 @@
           </div>
         </section>
 
-        <!-- 8. 隐藏彩蛋 -->
+        <!-- 9. 隐藏彩蛋 -->
         <section id="tab-eggs" class="tab-pane">
           <div class="pane-header"><h3>🐣 隐藏角落彩蛋悄悄话</h3></div>
           <div class="form-grid">
@@ -217,7 +246,7 @@
           </div>
         </section>
 
-        <!-- 9. 双视角主题陈列室 -->
+        <!-- 10. 双视角主题陈列室 -->
         <section id="tab-theme" class="tab-pane">
           <div class="pane-header"><h3>🎨 双视角主题陈列室</h3></div>
           <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 18px; margin-bottom: 24px;">
@@ -246,7 +275,7 @@
           </div>
         </section>
 
-        <!-- 10. 授权 -->
+        <!-- 11. 授权 -->
         <section id="tab-license" class="tab-pane">
           <div class="pane-header"><h3>💎 契约 · 专属授权激活状态</h3></div>
           <div style="background: rgba(3, 7, 18, 0.7); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 22px;">
@@ -264,8 +293,9 @@
   <input type="file" id="globalUploader" style="display:none;">
   <div id="toast" class="admin-toast">✓ 操作成功</div>
 
-  <script src="js/config.js?v=2.0"></script>
-  <script src="js/theme-presets.js?v=2.0"></script>
-  <script src="js/admin.js?v=2.0"></script>
+  <script src="js/config.js?v=2.2"></script>
+  <script src="js/theme-presets.js?v=2.2"></script>
+  <script src="js/anniversary-engine.js?v=2.2"></script>
+  <script src="js/admin.js?v=2.2"></script>
 </body>
 </html>
