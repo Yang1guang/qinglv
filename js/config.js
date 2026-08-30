@@ -112,5 +112,69 @@ window.LOVE_CONFIG = {
       selector: "#egg-paw",
       message: "🐾 踩到猫爪印：今晚为你做一顿可口的晚餐！"
     }
+  ],
+
+  // ================= 7. 倒数日与恒久纪念日 (支持公历/农历/生日/周年/单次目标) =================
+  anniversaries: [
+    {
+      id: "anni_1",
+      title: "初次牵手 · 确立恋爱契约",
+      type: "countup",
+      isLunar: false,
+      isLeapMonth: false,
+      date: "2024-05-20",
+      annualRepeat: false,
+      icon: "💖",
+      tag: "恋爱起点",
+      memo: "那一天的晚风很温柔，牵起你手的那一刻，我知道余生有了归宿。",
+      bgImg: "assets/images/photo_01.jpg",
+      voiceAudio: "",
+      pinToHero: true
+    },
+    {
+      id: "anni_2",
+      title: "她的农历生日",
+      type: "countdown",
+      isLunar: true,
+      isLeapMonth: false,
+      date: "1998-04-15",
+      annualRepeat: true,
+      icon: "🎂",
+      tag: "专属诞辰",
+      memo: "愿你一生被爱，眼里常有星辰大海，笑里全是不染尘埃的纯真。",
+      bgImg: "assets/images/photo_02.jpg",
+      voiceAudio: "",
+      pinToHero: false
+    },
+    {
+      id: "anni_3",
+      title: "他的公历生日",
+      type: "countdown",
+      isLunar: false,
+      isLeapMonth: false,
+      date: "1996-10-24",
+      annualRepeat: true,
+      icon: "🪐",
+      tag: "先生生辰",
+      memo: "感谢你的坚毅与温柔，做我们小家庭永远遮风挡雨的港湾。",
+      bgImg: "",
+      voiceAudio: "",
+      pinToHero: false
+    },
+    {
+      id: "anni_4",
+      title: "预定神圣婚典 · 领证之约",
+      type: "target",
+      isLunar: false,
+      isLeapMonth: false,
+      date: "2026-10-01",
+      annualRepeat: false,
+      icon: "💍",
+      tag: "共赴白头",
+      memo: "在上帝与众人见证下，缔结一生一世不可分开的神圣盟约。",
+      bgImg: "assets/images/photo_03.jpg",
+      voiceAudio: "",
+      pinToHero: false
+    }
   ]
 };
