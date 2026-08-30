@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe)
  * 文件名: js/anniversary.js
- * 作用: 倒数日与恒久纪念日渲染控制器 (视口懒加载、SVG 流转环计算、长按浮现暗纹、折叠情书与声纹播放)
+ * 作用: 倒数日与恒久纪念日渲染控制器 (视口懒加载、SVG 流转环计算、长按浮现暗纹、折叠情书、声纹播放、头部计时器 pinToHero 联动与工具链交互)
  */
 
 class AnniversaryManager {
@@ -32,8 +32,34 @@ class AnniversaryManager {
     if (section) section.style.display = "block";
 
     this.renderCards(container, list);
+    this.updateHeroTimerLinkage(list);
     this.setupIntersectionObserver();
-    this.bindCardInteractions();
+    this.bindCardInteractions(list);
+  }
+
+  /**
+   * 🌟 头部同行计时器 (Hero Timer) 主打倒数日联动
+   */
+  updateHeroTimerLinkage(list) {
+    const milestoneEl = document.getElementById("timer-milestone");
+    if (!milestoneEl || !window.AnniversaryEngine) return;
+
+    // 查找被标记为 pinToHero 的纪念日，若无则默认取列表第一个
+    const pinnedItem = list.find(item => Boolean(item.pinToHero)) || list[0];
+    if (!pinnedItem) return;
+
+    const metrics = window.AnniversaryEngine.calculateAnniversaryMetrics(pinnedItem);
+    if (!metrics) return;
+
+    const title = this.escapeHtml(pinnedItem.title || "契约纪念日");
+
+    if (metrics.mode === "countup") {
+      milestoneEl.innerHTML = `已同行守护【${title}】<span class="love-timer__milestone-days" id="milestone-days">${metrics.totalDays}</span> 天`;
+    } else if (metrics.isToday) {
+      milestoneEl.innerHTML = `🎉 今天正是【${title}】· 愿爱永不止息！`;
+    } else {
+      milestoneEl.innerHTML = `距离【${title}】还有 <span class="love-timer__milestone-days" id="milestone-days">${metrics.daysRemaining}</span> 天`;
+    }
   }
 
   /**
@@ -92,7 +118,6 @@ class AnniversaryManager {
       let orbitHtml = "";
       if (metrics.mode === "annual") {
         const percent = metrics.orbitPercent || 0;
-        // 周长 2 * PI * 22 ≈ 138.23
         const strokeOffset = ((100 - percent) / 100) * 138.23;
         orbitHtml = `
           <div class="anniversary-orbit-box" title="今年已同行 ${metrics.passedCycleDays || 0} / ${metrics.totalCycleDays || 365} 天">
@@ -132,7 +157,7 @@ class AnniversaryManager {
         }
       }
 
-      // D. 生日生命羁绊计算 (如果是生日类型)
+      // D. 生日生命羁绊计算
       let lifeBondHtml = "";
       if (item.type === "countdown" && (item.tag?.includes("生日") || item.tag?.includes("诞辰") || item.title?.includes("生日"))) {
         const bond = window.AnniversaryEngine 
@@ -169,7 +194,7 @@ class AnniversaryManager {
       if (hasMemo) {
         memoBtnHtml = `
           <button class="anniversary-action-btn btn-toggle-memo" data-target="memo-${item.id || index}">
-            <span>💌 专属寄语</span>
+            <span>💌 寄语</span>
           </button>
         `;
         memoBoxHtml = `
@@ -180,6 +205,16 @@ class AnniversaryManager {
           </div>
         `;
       }
+
+      // 🌟 批次三新增：工具链交互按钮 (📅 加到手机日历 + 📸 导出单卡海报)
+      const toolsBtnHtml = `
+        <button class="anniversary-action-btn btn-add-calendar" data-idx="${index}" title="一键导入手机系统日历 (提前3天+当天闹钟提醒)">
+          <span>📅 日历</span>
+        </button>
+        <button class="anniversary-action-btn btn-card-poster" data-idx="${index}" title="生成 300DPI 超清卡片拍立得海报">
+          <span>📸 海报</span>
+        </button>
+      `;
 
       return `
         <div class="${cardClass}" data-bg="${item.bgImg || ''}" data-is-today="${isToday}">
@@ -210,8 +245,9 @@ class AnniversaryManager {
           ${lifeBondHtml}
 
           <div class="anniversary-card__footer">
-            <div style="display:flex; gap:6px; align-items:center;">
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
               ${memoBtnHtml}
+              ${toolsBtnHtml}
             </div>
             ${voicePillHtml}
           </div>
@@ -223,7 +259,6 @@ class AnniversaryManager {
 
     container.innerHTML = cardsHtml;
 
-    // 若当天恰逢纪念日，触发全屏浪漫盛典
     if (hasTodayEvent && !this.hasCelebratedToday) {
       this.triggerTodayCelebration();
     }
@@ -260,9 +295,9 @@ class AnniversaryManager {
   }
 
   /**
-   * 绑定交互手势 (长按照片暗纹浮现、折叠情书展卷、声纹播放)
+   * 绑定交互手势 (情书展卷、声纹播放、日历导出、单卡海报)
    */
-  bindCardInteractions() {
+  bindCardInteractions(list) {
     // 1. 折叠情书展卷动效
     document.querySelectorAll(".btn-toggle-memo").forEach(btn => {
       btn.onclick = (e) => {
@@ -273,7 +308,7 @@ class AnniversaryManager {
         if (memoBox) {
           const isExpanded = memoBox.classList.contains("expanded");
           memoBox.classList.toggle("expanded");
-          btn.innerHTML = isExpanded ? "<span>💌 专属寄语</span>" : "<span>收起 ✕</span>";
+          btn.innerHTML = isExpanded ? "<span>💌 寄语</span>" : "<span>收起 ✕</span>";
         }
       };
     });
@@ -289,7 +324,42 @@ class AnniversaryManager {
       };
     });
 
-    // 3. 移动端长按卡片激活暗纹 (Ghost Memories) 与触觉反馈
+    // 3. 🌟 批次三新增：一键导出手机日历 (.ics)
+    document.querySelectorAll(".btn-add-calendar").forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const idx = parseInt(btn.getAttribute("data-idx"), 10);
+        const targetItem = list[idx];
+        if (targetItem && window.AnniversaryTools) {
+          window.AnniversaryTools.exportIcsCalendar(targetItem, `${targetItem.title || "契约纪念日"}`);
+        }
+      };
+    });
+
+    // 4. 🌟 批次三新增：生成单卡 300DPI 拍立得海报
+    document.querySelectorAll(".btn-card-poster").forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const idx = parseInt(btn.getAttribute("data-idx"), 10);
+        const targetItem = list[idx];
+        if (targetItem && window.AnniversaryTools && window.AnniversaryEngine) {
+          const metrics = window.AnniversaryEngine.calculateAnniversaryMetrics(targetItem);
+          btn.disabled = true;
+          btn.innerHTML = "<span>⚙️ 生成中...</span>";
+
+          window.AnniversaryTools.generateSingleCardPoster(targetItem, metrics).then(dataUrl => {
+            window.AnniversaryTools.showPosterModal(dataUrl);
+          }).finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = "<span>📸 海报</span>";
+          });
+        }
+      };
+    });
+
+    // 5. 移动端长按卡片激活暗纹 (Ghost Memories)
     document.querySelectorAll(".anniversary-card").forEach(card => {
       const hasBg = card.getAttribute("data-bg");
       if (!hasBg) return;
