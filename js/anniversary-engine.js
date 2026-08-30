@@ -8,7 +8,7 @@
   "use strict";
 
   // 1900 - 2100 年农历 24-bit 二进制天文压缩数据表 (紫金山天文台标准)
-  // 结构: 0x[闰月大小][12个月大小][闰月月份]
+  // 数据结构: 0x[闰月大小标志(1位)][12个月大小标志(12位)][闰月月份(4位)]
   const LUNAR_INFO = [
     0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
     0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
@@ -84,7 +84,7 @@
 
       const leapMonth = this.getLunarLeapMonth(lYear);
       if (isLeap && leapMonth !== lMonth) {
-        isLeap = false; // 容错降级
+        isLeap = false;
       }
 
       // 基准时间: 1900年1月31日 为 农历1900年正月初一
@@ -191,11 +191,12 @@
     }
 
     /**
-     * 解析字符串日期为年月日对象
+     * 解析字符串日期为年月日对象 (兼容包含时分秒的字符串，如 "2024-05-20 13:14:00")
      */
     parseDateParts(dateStr) {
       if (!dateStr || typeof dateStr !== "string") return null;
-      const parts = dateStr.split(/[-/.]/).map(n => parseInt(n, 10));
+      const clean = String(dateStr).trim().split(/[ T]/)[0];
+      const parts = clean.split(/[-/.]/).map(n => parseInt(n, 10));
       if (parts.length < 3 || isNaN(parts[0]) || isNaN(parts[1]) || isNaN(parts[2])) {
         return null;
       }
@@ -207,7 +208,7 @@
      */
     calculateCountUp(startDateStr) {
       const p = this.parseDateParts(startDateStr);
-      if (!p) return { totalDays: 0, years: 0, months: 0, days: 0, text: "0天" };
+      if (!p) return { totalDays: 0, years: 0, months: 0, days: 0, summaryText: "0天" };
 
       const now = new Date();
       const currentMidnight = this.getLocalMidnightTimestamp(now.getFullYear(), now.getMonth() + 1, now.getDate());
@@ -215,7 +216,6 @@
 
       const totalDays = Math.max(0, Math.round((currentMidnight - startMidnight) / 86400000));
 
-      // 精确拆解 X年 X月 X天
       let curY = now.getFullYear();
       let curM = now.getMonth() + 1;
       let curD = now.getDate();
@@ -283,42 +283,33 @@
         const prevYearTime = this.getLocalMidnightTimestamp(prevYearTargetSolar.year, prevYearTargetSolar.month, prevYearTargetSolar.day);
 
         let targetSolar = null;
-        let targetTime = 0;
         let cycleStartTime = 0;
         let cycleEndTime = 0;
         let daysRemaining = 0;
         let isToday = false;
 
         if (todayMidnight === thisYearTime) {
-          // 今天正好是纪念日！
           targetSolar = thisYearTargetSolar;
-          targetTime = thisYearTime;
           daysRemaining = 0;
           isToday = true;
           cycleStartTime = prevYearTime;
           cycleEndTime = thisYearTime;
         } else if (todayMidnight < thisYearTime) {
-          // 当年纪念日还没到
           targetSolar = thisYearTargetSolar;
-          targetTime = thisYearTime;
           daysRemaining = Math.round((thisYearTime - todayMidnight) / 86400000);
           cycleStartTime = prevYearTime;
           cycleEndTime = thisYearTime;
         } else {
-          // 当年纪念日已过，自动对齐至次年
           targetSolar = nextYearTargetSolar;
-          targetTime = nextYearTime;
           daysRemaining = Math.round((nextYearTime - todayMidnight) / 86400000);
           cycleStartTime = thisYearTime;
           cycleEndTime = nextYearTime;
         }
 
-        // 计算今年时光流转环百分比 (已陪伴天数 / 总周期天数)
         const totalCycleDays = Math.max(1, Math.round((cycleEndTime - cycleStartTime) / 86400000));
         const passedCycleDays = Math.max(0, Math.round((todayMidnight - cycleStartTime) / 86400000));
         const orbitPercent = isToday ? 100 : Math.min(100, Math.max(0, Math.round((passedCycleDays / totalCycleDays) * 100)));
 
-        // 已经历的周年数
         const pastYears = Math.max(0, curYear - p.year - (todayMidnight < thisYearTime ? 1 : 0));
 
         return {
@@ -418,7 +409,6 @@
         return marriageMap[years] || (years > 0 ? `同行第 ${years} 载春秋` : "契约初启 · 恩典同在");
       }
 
-      // 恋爱阶段徽章
       if (years === 0) return "初见倾心 · 晨曦微露";
       if (years === 1) return "相知相守 · 岁岁常欢";
       if (years === 2) return "风雨同舟 · 默契渐深";
