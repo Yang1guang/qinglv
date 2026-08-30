@@ -1,6 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe) 控制中心主控
  * 文件名: js/admin.js
+ * 作用: 全模块可视化看板、倒数日/纪念日双向数据流、模板一键填充、农历公历联动、R2 独立多媒体上传与全量持久化
  */
 
 let currentConfig = null;
@@ -53,7 +54,7 @@ function decodePunycodeHost(domainStr) {
   }
 }
 
-// 获取认证 Token (严禁留空时盲目回退 521)
+// 获取认证 Token
 function getAuthToken() {
   return (currentAdminToken || localStorage.getItem("love_admin_token") || "").trim();
 }
@@ -67,13 +68,13 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove("show"), 2500);
 }
 
-// 统计播放列表中已上传的本地歌曲数量（以 /raw/ 或 /assets/ 标识）
+// 统计播放列表中已上传的本地歌曲数量
 function getLocalSongCount() {
   const list = currentConfig?.audio?.playlist || [];
   return list.filter(s => s && s.url && (s.url.startsWith("/raw/") || s.url.includes("/assets/"))).length;
 }
 
-// 智能解析文件名中的歌手与歌名 (支持 "周杰伦 - 告白气球.mp3" 等格式)
+// 智能解析文件名中的歌手与歌名
 function parseSongFilename(filename) {
   const clean = filename.replace(/\.[^/.]+$/, "").trim();
   if (clean.includes(" - ")) {
@@ -89,7 +90,7 @@ function parseSongFilename(filename) {
   return { artist: "本地上传", title: clean };
 }
 
-// 深度合并云端配置与本地默认基准
+// 深度合并云端配置与本地默认基准 (含 anniversaries 防御合并)
 function mergeWithDefaultConfig(cloudCfg) {
   const base = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
   if (!cloudCfg || typeof cloudCfg !== "object") return base;
@@ -108,6 +109,7 @@ function mergeWithDefaultConfig(cloudCfg) {
     },
     theme: { ...(base.theme || {}), ...(cloudCfg.theme || {}) },
     lifecycle: { ...(base.lifecycle || {}), ...(cloudCfg.lifecycle || {}) },
+    anniversaries: (Array.isArray(cloudCfg.anniversaries) && cloudCfg.anniversaries.length > 0) ? cloudCfg.anniversaries : (base.anniversaries || []),
     timeline: (Array.isArray(cloudCfg.timeline) && cloudCfg.timeline.length > 0) ? cloudCfg.timeline : (base.timeline || []),
     checklist100: (Array.isArray(cloudCfg.checklist100) && cloudCfg.checklist100.length > 0) ? cloudCfg.checklist100 : (base.checklist100 || []),
     scratchCards: (Array.isArray(cloudCfg.scratchCards) && cloudCfg.scratchCards.length > 0) ? cloudCfg.scratchCards : (base.scratchCards || []),
@@ -117,7 +119,7 @@ function mergeWithDefaultConfig(cloudCfg) {
   };
 }
 
-// 管理员登录校验 (严禁空密码静默放行)
+// 管理员登录校验
 async function verifyAdminLogin() {
   const pwdInput = document.getElementById("adminPwdInput");
   const pwd = pwdInput ? pwdInput.value.trim() : "";
@@ -146,7 +148,7 @@ async function verifyAdminLogin() {
   }
 }
 
-// 从云端拉取配置 (自动执行中文网址逆向解码)
+// 从云端拉取配置
 async function fetchConfigFromCloud(tokenOverride) {
   const token = (tokenOverride || getAuthToken()).trim();
   if (!token) return false;
@@ -178,7 +180,7 @@ async function fetchConfigFromCloud(tokenOverride) {
   }
 }
 
-// 渲染所有表单内容
+// 渲染全站所有表单
 function renderAllForms() {
   if (!currentConfig) return;
 
@@ -213,6 +215,7 @@ function renderAllForms() {
   document.getElementById("letter_content").value = letter.content || "";
 
   renderTimelineList();
+  renderAnniversariesList();
   renderChecklist();
   renderScratchCards();
 
@@ -268,6 +271,273 @@ async function submitDomainLicense() {
   } catch (err) {
     alert("❌ 请求异常: " + err.message);
   }
+}
+
+// ================= 🌟 5. 倒数日与恒久纪念日管理看板 =================
+
+function renderAnniversariesList() {
+  const container = document.getElementById("anniversariesListContainer");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!currentConfig.anniversaries) currentConfig.anniversaries = [];
+  const list = currentConfig.anniversaries;
+
+  if (list.length === 0) {
+    container.innerHTML = `<div style="color:#94a3b8; font-size:12.5px; text-align:center; padding:18px;">🍃 暂无纪念日数据，可点击上方快捷模板一键添加，或点击【➕ 自定义新增】。</div>`;
+    return;
+  }
+
+  list.forEach((item, idx) => {
+    const isCountup = item.type === "countup";
+    const isTarget = item.type === "target";
+    const isCountdown = item.type === "countdown" || (!isCountup && !isTarget);
+    const isLunar = Boolean(item.isLunar);
+    const isLeap = Boolean(item.isLeapMonth);
+    const isPinned = Boolean(item.pinToHero);
+
+    // 实时计算预览天数
+    let previewMetrics = "";
+    if (window.AnniversaryEngine) {
+      const m = window.AnniversaryEngine.calculateAnniversaryMetrics(item);
+      if (m) {
+        if (m.mode === "countup") {
+          previewMetrics = `已同行守护 ${m.totalDays} 天 (${m.summaryText})`;
+        } else if (m.isToday) {
+          previewMetrics = `🎉 正是今天 · 岁岁常相伴`;
+        } else {
+          previewMetrics = `距离下一次还有 ${m.daysRemaining} 天 (${m.targetSolarDate})`;
+        }
+      }
+    }
+
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.style.border = isPinned ? "1.5px solid #f59e0b" : "1px solid var(--border-card)";
+    card.style.boxShadow = isPinned ? "0 0 16px rgba(245, 158, 11, 0.25)" : "none";
+
+    card.innerHTML = `
+      <div class="item-card-header" style="flex-wrap:wrap; gap:8px;">
+        <span class="item-card-title">
+          ${escapeHtml(item.icon || "💖")} #${idx + 1} - ${escapeHtml(item.title || "未命名纪念日")}
+          ${isPinned ? '<span style="font-size:10.5px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; padding:2px 8px; border-radius:10px; margin-left:6px; font-weight:800;">👑 首页主打倒数</span>' : ''}
+          ${previewMetrics ? `<span style="font-size:11px; color:#7dd3fc; margin-left:8px; font-weight:700;">[ ${previewMetrics} ]</span>` : ''}
+        </span>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-tool" style="padding:3px 8px; font-size:11px; ${isPinned ? 'background:#f59e0b; color:#fff;' : ''}" onclick="togglePinAnniversaryToHero(${idx})" title="设为首页顶部主打倒数">${isPinned ? '★ 已主打' : '☆ 设为主打'}</button>
+          <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="moveAnniversaryItem(${idx}, -1)" ${idx === 0 ? "disabled" : ""}>⬆️</button>
+          <button class="btn-tool" style="padding:3px 8px; font-size:11px;" onclick="moveAnniversaryItem(${idx}, 1)" ${idx === list.length - 1 ? "disabled" : ""}>⬇️</button>
+          <button class="btn-del" style="padding:3px 8px; font-size:11px;" onclick="deleteAnniversaryItem(${idx})">🗑️ 删除</button>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>纪念日名称</label><input type="text" class="admin-input" id="anni_title_${idx}" value="${escapeHtml(item.title || "")}" oninput="currentConfig.anniversaries[${idx}].title=this.value"></div>
+        <div class="form-group"><label>图标 Emoji</label><input type="text" class="admin-input" id="anni_icon_${idx}" value="${escapeHtml(item.icon || "💖")}" oninput="currentConfig.anniversaries[${idx}].icon=this.value"></div>
+        <div class="form-group"><label>分类阶段标签 (如: 专属诞辰 / 恋爱起点)</label><input type="text" class="admin-input" id="anni_tag_${idx}" value="${escapeHtml(item.tag || "")}" oninput="currentConfig.anniversaries[${idx}].tag=this.value"></div>
+        
+        <div class="form-group">
+          <label>度量模式</label>
+          <select class="admin-select" id="anni_type_${idx}" onchange="currentConfig.anniversaries[${idx}].type=this.value; renderAnniversariesList();">
+            <option value="countdown" ${isCountdown ? 'selected' : ''}>🔁 每年重复倒数 (生日 / 周年纪念)</option>
+            <option value="countup" ${isCountup ? 'selected' : ''}>⏳ 累积同行天数 (恋爱确认 / 领证结婚)</option>
+            <option value="target" ${isTarget ? 'selected' : ''}>🎯 未来单次目标 (求婚 / 婚礼预定)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>历法系统</label>
+          <select class="admin-select" id="anni_islunar_${idx}" onchange="currentConfig.anniversaries[${idx}].isLunar=(this.value==='true'); renderAnniversariesList();">
+            <option value="false" ${!isLunar ? 'selected' : ''}>☀️ 公历 (阳历)</option>
+            <option value="true" ${isLunar ? 'selected' : ''}>🌙 农历 (阴历)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="${isLunar ? '' : 'display:none;'}">
+          <label>农历闰月属性</label>
+          <select class="admin-select" id="anni_isleap_${idx}" onchange="currentConfig.anniversaries[${idx}].isLeapMonth=(this.value==='true'); renderAnniversariesList();">
+            <option value="false" ${!isLeap ? 'selected' : ''}>平月 (正常月份)</option>
+            <option value="true" ${isLeap ? 'selected' : ''}>闰月 (如闰四月)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>设定日期 (格式: YYYY-MM-DD${isLunar ? '，例如 1998-04-15 代表农历四月十五' : ''})</label>
+          <input type="text" class="admin-input" id="anni_date_${idx}" value="${escapeHtml(item.date || "")}" placeholder="例如: 2024-05-20" oninput="currentConfig.anniversaries[${idx}].date=this.value">
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>专属情书寄语 (Love Memo · 展卷动画呈现)</label>
+          <textarea class="admin-textarea" rows="2" id="anni_memo_${idx}" placeholder="写下一句专属私密寄语..." oninput="currentConfig.anniversaries[${idx}].memo=this.value">${escapeHtml(item.memo || "")}</textarea>
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>专属回忆照片 (长按卡片暗纹浮现与拍立得海报呈现)</label>
+          <div class="upload-input-group">
+            <input type="text" class="admin-input" id="anni_bg_${idx}" value="${escapeHtml(item.bgImg || "")}" placeholder="输入图片直链或点击右侧上传..." oninput="currentConfig.anniversaries[${idx}].bgImg=this.value">
+            <button class="btn-upload" onclick="triggerDirectUpload('anni_bg_${idx}', 'image/*', (url)=>{ currentConfig.anniversaries[${idx}].bgImg=url; })">🖼️ 上传照片</button>
+          </div>
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label style="color:#fbcfe8; font-weight:800;">🎙️ 专属 10 秒声纹录音直链 (微播放胶囊呈现)</label>
+          <div class="upload-input-group">
+            <input type="text" class="admin-input" id="anni_voice_${idx}" value="${escapeHtml(item.voiceAudio || "")}" placeholder="输入音频直链或点击右侧上传 MP3 录音..." oninput="currentConfig.anniversaries[${idx}].voiceAudio=this.value">
+            <button class="btn-upload" style="background:linear-gradient(135deg, #f43f5e 0%, #be123c 100%); color:#fff; border-color:rgba(255,255,255,0.3);" onclick="triggerDirectUpload('anni_voice_${idx}', 'audio/*', (url)=>{ currentConfig.anniversaries[${idx}].voiceAudio=url; })">🎙️ 上传录音</button>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function addCustomAnniversaryItem() {
+  if (!currentConfig.anniversaries) currentConfig.anniversaries = [];
+  currentConfig.anniversaries.push({
+    id: "anni_" + Date.now(),
+    title: "新美好纪念日",
+    type: "countdown",
+    isLunar: false,
+    isLeapMonth: false,
+    date: "2026-05-20",
+    annualRepeat: true,
+    icon: "💖",
+    tag: "专属印记",
+    memo: "在时光的长河里，每一刻都值得铭记。",
+    bgImg: "",
+    voiceAudio: "",
+    pinToHero: false
+  });
+  renderAnniversariesList();
+  showToast("✓ 已添加自定义纪念日");
+}
+
+function addPresetAnniversaryTemplate(templateKey) {
+  if (!currentConfig.anniversaries) currentConfig.anniversaries = [];
+  const templates = {
+    birthday_girl: {
+      title: "她的农历生日",
+      type: "countdown",
+      isLunar: true,
+      isLeapMonth: false,
+      date: "1998-04-15",
+      annualRepeat: true,
+      icon: "🎂",
+      tag: "专属诞辰",
+      memo: "愿你一生被爱，眼里常有星辰大海，笑里全是不染尘埃的纯真。",
+      bgImg: "assets/images/photo_02.jpg",
+      voiceAudio: "",
+      pinToHero: false
+    },
+    birthday_boy: {
+      title: "他的公历生日",
+      type: "countdown",
+      isLunar: false,
+      isLeapMonth: false,
+      date: "1996-10-24",
+      annualRepeat: true,
+      icon: "🪐",
+      tag: "先生生辰",
+      memo: "感谢你的坚毅与温柔，做我们小家庭永远遮风挡雨的港湾。",
+      bgImg: "",
+      voiceAudio: "",
+      pinToHero: false
+    },
+    love_start: {
+      title: "初次牵手 · 恋爱起点",
+      type: "countup",
+      isLunar: false,
+      isLeapMonth: false,
+      date: "2024-05-20",
+      annualRepeat: false,
+      icon: "💖",
+      tag: "恋爱起点",
+      memo: "那一天的晚风很温柔，牵起你手的那一刻，我知道余生有了归宿。",
+      bgImg: "assets/images/photo_01.jpg",
+      voiceAudio: "",
+      pinToHero: true
+    },
+    engaged: {
+      title: "神圣订婚盟约之日",
+      type: "countup",
+      isLunar: false,
+      isLeapMonth: false,
+      date: "2025-05-20",
+      annualRepeat: false,
+      icon: "💍",
+      tag: "盟约确立",
+      memo: "愿得一人心，白首不相离。在爱中彼此坚固。",
+      bgImg: "assets/images/photo_03.jpg",
+      voiceAudio: "",
+      pinToHero: false
+    },
+    married: {
+      title: "领证结婚 · 合为一体",
+      type: "countup",
+      isLunar: false,
+      isLeapMonth: false,
+      date: "2026-10-01",
+      annualRepeat: false,
+      icon: "🏠",
+      tag: "神圣婚典",
+      memo: "在上帝与众人见证下，缔结一生一世不可分开的神圣盟约。",
+      bgImg: "assets/images/photo_03.jpg",
+      voiceAudio: "",
+      pinToHero: false
+    },
+    travel: {
+      title: "海边日落旅行之约",
+      type: "target",
+      isLunar: false,
+      isLeapMonth: false,
+      date: "2026-12-25",
+      annualRepeat: false,
+      icon: "✈️",
+      tag: "浪漫之约",
+      memo: "一起去向往的远方，看最美的海浪与星辰。",
+      bgImg: "assets/images/photo_02.jpg",
+      voiceAudio: "",
+      pinToHero: false
+    }
+  };
+
+  const chosen = templates[templateKey];
+  if (!chosen) return;
+
+  currentConfig.anniversaries.push({
+    id: "anni_" + Date.now(),
+    ...chosen
+  });
+
+  renderAnniversariesList();
+  showToast(`✓ 已成功添加【${chosen.title}】模板！`);
+}
+
+function togglePinAnniversaryToHero(idx) {
+  if (!currentConfig.anniversaries) return;
+  const targetState = !currentConfig.anniversaries[idx].pinToHero;
+  currentConfig.anniversaries.forEach((item, i) => {
+    item.pinToHero = (i === idx) ? targetState : false;
+  });
+  renderAnniversariesList();
+  showToast(targetState ? `✓ 已将 #${idx + 1} 设为首页主打倒数` : "✓ 已取消首页主打倒数");
+}
+
+function deleteAnniversaryItem(idx) {
+  if (confirm("确定删除该纪念日事件吗？")) {
+    currentConfig.anniversaries.splice(idx, 1);
+    renderAnniversariesList();
+  }
+}
+
+function moveAnniversaryItem(idx, direction) {
+  const targetIdx = idx + direction;
+  const list = currentConfig.anniversaries;
+  if (targetIdx < 0 || targetIdx >= list.length) return;
+  const temp = list[idx];
+  list[idx] = list[targetIdx];
+  list[targetIdx] = temp;
+  renderAnniversariesList();
 }
 
 // 热门标签点击快捷搜索
@@ -427,7 +697,7 @@ function addCustomPlaylistItem() {
   renderPlaylist();
 }
 
-// 快捷上传本地 MP3 并直接加入播放列表（限制本地最多 5 首）
+// 快捷上传本地 MP3 并直接加入播放列表
 function triggerDirectUploadLocalSong() {
   if (!currentConfig.audio) currentConfig.audio = {};
   if (!Array.isArray(currentConfig.audio.playlist)) currentConfig.audio.playlist = [];
@@ -634,7 +904,7 @@ async function cleanOrphanR2Cache() {
   } catch (err) { alert("❌ 请求异常: " + err.message); }
 }
 
-// 时光轴渲染 (集成背面录音直链输入与 🎙️ 上传音频)
+// 时光轴渲染
 function renderTimelineList() {
   const container = document.getElementById("timelineListContainer");
   if (!container) return;
@@ -712,7 +982,7 @@ function renderScratchCards() {
 function addScratchCard() { if (!currentConfig.scratchCards) currentConfig.scratchCards = []; currentConfig.scratchCards.push({ id: "card_" + Date.now(), phase: 1, title: "专属心愿卡", content: "无条件兑现一次！", icon: "✨", scratched: false, used: false, usedTime: "" }); renderScratchCards(); }
 function deleteScratchCard(idx) { currentConfig.scratchCards.splice(idx, 1); renderScratchCards(); }
 
-// 全局通用上传调度器 (含 15MB 保护与回调支持)
+// 全局通用上传调度器
 let activeUploadCallback = null;
 let activeUploadInputId = null;
 
@@ -776,7 +1046,7 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
-// 发布全量配置到云端 (全量持久化时光轴 voiceAudio 与全新管理密码)
+// 发布全量配置到云端
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
   const customPwd = (document.getElementById("admin_customPassword")?.value || "521").trim();
@@ -822,6 +1092,7 @@ async function saveAllConfigToCloud() {
     customBgUrlGirl: document.getElementById("theme_customBgUrlGirl")?.value.trim() || ""
   };
 
+  // 1. 同步时光轴节点
   (currentConfig.timeline || []).forEach((node, idx) => {
     node.date = document.getElementById(`tl_date_${idx}`)?.value || "";
     node.tag = document.getElementById(`tl_tag_${idx}`)?.value || "";
@@ -833,6 +1104,21 @@ async function saveAllConfigToCloud() {
     node.frontImg = document.getElementById(`tl_img_${idx}`)?.value || "";
   });
 
+  // 2. 🌟 同步纪念日全量数据
+  (currentConfig.anniversaries || []).forEach((item, idx) => {
+    item.title = document.getElementById(`anni_title_${idx}`)?.value.trim() || item.title || "契约纪念日";
+    item.icon = document.getElementById(`anni_icon_${idx}`)?.value.trim() || item.icon || "💖";
+    item.tag = document.getElementById(`anni_tag_${idx}`)?.value.trim() || item.tag || "";
+    item.type = document.getElementById(`anni_type_${idx}`)?.value || item.type || "countdown";
+    item.isLunar = document.getElementById(`anni_islunar_${idx}`)?.value === "true";
+    item.isLeapMonth = document.getElementById(`anni_isleap_${idx}`)?.value === "true";
+    item.date = document.getElementById(`anni_date_${idx}`)?.value.trim() || item.date || "2026-05-20";
+    item.memo = document.getElementById(`anni_memo_${idx}`)?.value.trim() || item.memo || "";
+    item.bgImg = document.getElementById(`anni_bg_${idx}`)?.value.trim() || item.bgImg || "";
+    item.voiceAudio = document.getElementById(`anni_voice_${idx}`)?.value.trim() || item.voiceAudio || "";
+  });
+
+  // 3. 同步播放列表
   const playlistToSave = (currentConfig.audio?.playlist || []).map((song, idx) => ({
     id: song.id || ("song_" + idx),
     title: document.getElementById(`pl_title_${idx}`)?.value.trim() || song.title || "背景音乐",
@@ -864,7 +1150,7 @@ async function saveAllConfigToCloud() {
     if (data.success) {
       currentAdminToken = customPwd;
       localStorage.setItem("love_admin_token", customPwd);
-      showToast("✨ 全部配置、新管理密码与播放列表已成功发布！");
+      showToast("✨ 全部配置、新管理密码与纪念日数据已成功发布！");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
@@ -913,7 +1199,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
   });
 });
 
-// 初始化鉴权会话 (存在旧缓存时静默验证，若失效则清空缓存并阻断在弹窗)
+// 初始化鉴权会话
 document.addEventListener("DOMContentLoaded", () => {
   const cached = localStorage.getItem("love_admin_token");
   if (cached) {
