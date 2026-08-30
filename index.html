@@ -171,7 +171,7 @@
       </div>
     </header>
 
-    <!-- 🌟 批次二新增：倒数日与恒久纪念日流式渲染看板 -->
+    <!-- 倒数日与恒久纪念日流式渲染看板 -->
     <section class="anniversary-section" id="anniversary-section">
       <div class="section-title">
         <span class="section-title__icon">📅</span>
@@ -290,6 +290,7 @@
     </div>
   </div>
 
+  <!-- 全站大纪念海报预览弹窗 -->
   <div class="poster-modal" id="poster-modal">
     <div class="poster-modal__dialog">
       <div class="poster-modal__preview-box" id="poster-preview-box"></div>
@@ -301,11 +302,24 @@
     </div>
   </div>
 
+  <!-- 🌟 批次三新增：单卡 300DPI 拍立得海报预览弹窗 -->
+  <div class="poster-modal" id="single-poster-modal" style="display:none;">
+    <div class="poster-modal__dialog">
+      <div class="poster-modal__preview-box" id="single-poster-preview-box"></div>
+      <div class="poster-modal__actions">
+        <p class="poster-modal__tip">长按上方图片或点击下方按钮保存</p>
+        <button class="btn-universe btn-universe--primary" id="download-single-poster-btn" onclick="if(window.AnniversaryTools && window.AnniversaryTools.currentPosterDataUrl){ const a=document.createElement('a'); a.download=`契约纪念卡片_${Date.now()}.jpg`; a.href=window.AnniversaryTools.currentPosterDataUrl; a.click(); }">📥 保存海报至相册</button>
+        <button class="btn-universe btn-universe--secondary" onclick="document.getElementById('single-poster-modal').style.display='none';">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/config.js?v=2.2"></script>
   <script src="js/theme-presets.js?v=2.2"></script>
   <script src="js/stage-content.js?v=2.2"></script>
   <script src="js/theme-engine.js?v=2.2"></script>
   <script src="js/anniversary-engine.js?v=2.2"></script>
+  <script src="js/anniversary-tools.js?v=2.2"></script>
   <script src="js/anniversary.js?v=2.2"></script>
   <script src="js/lifecycle.js?v=2.2"></script>
   <script src="js/photo-wall.js?v=2.2"></script>
