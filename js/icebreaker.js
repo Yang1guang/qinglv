@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe)
  * 文件名: js/icebreaker.js
- * 作用: 破冰与情感信号箱客户端主控 (自适应退避轮询、Web Audio 降噪压制、双向状态机握手、和好足迹备忘录与 300DPI 拍立得海报离屏渲染)
+ * 作用: 破冰与情感信号箱客户端主控 (支持 Stage 唤醒刷新、自适应退避轮询、Web Audio 降噪压制、双向状态机握手、和好足迹备忘录与 300DPI 拍立得海报离屏渲染)
  */
 
 class IceBreakerManager {
@@ -30,7 +30,6 @@ class IceBreakerManager {
     return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  // 纯原生 RFC 3492 Punycode 逆向解码器 (海报生成中展示纯中文网址)
   decodePunycodeHost(domainStr) {
     if (!domainStr || typeof domainStr !== "string") return domainStr || "";
     try {
@@ -82,14 +81,21 @@ class IceBreakerManager {
 
     this.renderActionButtons(container);
     this.bindGlobalEvents();
+    this.bindStageLifecycle();
     this.initAudioContext();
     this.startAdaptivePolling();
     this.fetchAndRenderHistory();
   }
 
-  /**
-   * 1. 依据关系生命周期阶段动态渲染安全动作按钮 (严格伦理隔离)
-   */
+  bindStageLifecycle() {
+    window.addEventListener("stage:opened", (e) => {
+      const stageId = e.detail && e.detail.stageId;
+      if (stageId === "icebreaker") {
+        this.fetchAndRenderHistory();
+      }
+    });
+  }
+
   renderActionButtons(container) {
     const phase = this.config.lifecycle?.currentPhase || "dating";
     const allActions = this.config.icebreaker?.actions || {};
@@ -121,9 +127,6 @@ class IceBreakerManager {
     });
   }
 
-  /**
-   * 2. 发送破冰/情感信号
-   */
   async handleSendSignal(actionType) {
     const phase = this.config.lifecycle?.currentPhase || "dating";
     const perspective = (window.ThemeEngine && window.ThemeEngine.currentPerspective) || "boy";
@@ -168,9 +171,6 @@ class IceBreakerManager {
     }
   }
 
-  /**
-   * 3. 自适应退避轮询机制
-   */
   startAdaptivePolling() {
     clearTimeout(this.pollTimer);
 
@@ -199,9 +199,6 @@ class IceBreakerManager {
     this.pollTimer = setTimeout(executePoll, 1000);
   }
 
-  /**
-   * 4. 响应服务端信号分发
-   */
   handleServerSignalResponse(data) {
     const active = data.activeSignal;
 
@@ -211,7 +208,6 @@ class IceBreakerManager {
       return;
     }
 
-    // A. 双方双向奔赴
     if (active.status === "mutual_resolved") {
       this.consecutiveNoChangeCount = 0;
       if (!this.currentActiveSignal || this.currentActiveSignal.status !== "mutual_resolved") {
@@ -222,7 +218,6 @@ class IceBreakerManager {
       return;
     }
 
-    // B. 我自己发出的信号
     if (active.senderDeviceId === this.deviceId) {
       this.consecutiveNoChangeCount = 0;
       if (active.status === "accepted" && !this.hasCelebratedThisSignal) {
@@ -233,7 +228,6 @@ class IceBreakerManager {
       return;
     }
 
-    // C. 对方发来的活跃信号
     if (active.status === "active" || active.status === "viewed" || active.status === "cooling") {
       this.consecutiveNoChangeCount = 0;
       this.currentActiveSignal = active;
@@ -241,9 +235,6 @@ class IceBreakerManager {
     }
   }
 
-  /**
-   * 5. 弹出顶部非侵入微光通知横幅
-   */
   showIncomingBanner(signal) {
     const banner = document.getElementById("icebreaker-banner");
     const textEl = document.getElementById("icebreaker-banner-text");
@@ -272,9 +263,6 @@ class IceBreakerManager {
     if (banner) banner.classList.remove("show");
   }
 
-  /**
-   * 6. 打开沉浸式全屏和解空间
-   */
   openReconciliationModal(signal) {
     const modal = document.getElementById("icebreaker-modal");
     if (!modal) return;
@@ -326,7 +314,9 @@ class IceBreakerManager {
         waitBtn.onclick = () => {
           this.ackSignal("wait_a_bit", signal.signalId, "还在整理心情，很快就好。");
           this.closeModal();
-          if (window.Effects) window.Effects.showMiniToast("已通知对方你正在整理心情...");
+          if (window.Effects && typeof window.Effects.showMiniToast === "function") {
+            window.Effects.showMiniToast("已通知对方你正在整理心情...");
+          }
         };
       }
       if (closeBtn) {
@@ -342,9 +332,6 @@ class IceBreakerManager {
     if (modal) modal.classList.remove("active");
   }
 
-  /**
-   * 7. 回应信号
-   */
   async ackSignal(responseType, signalId, responseText = "") {
     const perspective = (window.ThemeEngine && window.ThemeEngine.currentPerspective) || "girl";
     try {
@@ -362,17 +349,14 @@ class IceBreakerManager {
     } catch (_) {}
   }
 
-  /**
-   * 8. 触发双向奔赴盛典 (MUTUAL_HEAL)
-   */
   showMutualCelebration(signal) {
     this.playGentleChime();
     if (window.Effects) {
-      window.Effects.fireConfetti();
-      if (typeof window.Effects.fireFireworks === "function") {
-        window.Effects.fireFireworks();
+      if (typeof window.Effects.fireConfetti === "function") window.Effects.fireConfetti();
+      if (typeof window.Effects.fireFireworks === "function") window.Effects.fireFireworks();
+      if (typeof window.Effects.showMiniToast === "function") {
+        window.Effects.showMiniToast("✨ 奇妙的默契！你们在同一刻选择了彼此与和好！💖");
       }
-      window.Effects.showMiniToast("✨ 奇妙的默契！你们在同一刻选择了彼此与和好！💖");
     }
 
     const modal = document.getElementById("icebreaker-modal");
@@ -385,17 +369,14 @@ class IceBreakerManager {
     }
   }
 
-  /**
-   * 9. 触发和好达成庆典
-   */
   showAcceptedCelebration(signal) {
     this.playGentleChime();
     if (window.Effects) {
-      window.Effects.fireConfetti();
-      if (typeof window.Effects.fireFireworks === "function") {
-        window.Effects.fireFireworks();
+      if (typeof window.Effects.fireConfetti === "function") window.Effects.fireConfetti();
+      if (typeof window.Effects.fireFireworks === "function") window.Effects.fireFireworks();
+      if (typeof window.Effects.showMiniToast === "function") {
+        window.Effects.showMiniToast("🎉 破冰成功！爱是恒久忍耐又有恩慈，愿爱永不止息。");
       }
-      window.Effects.showMiniToast("🎉 破冰成功！爱是恒久忍耐又有恩慈，愿爱永不止息。");
     }
   }
 
@@ -407,9 +388,6 @@ class IceBreakerManager {
     }
   }
 
-  /**
-   * 10. 🌟 拉取并渲染历史和好足迹备忘录
-   */
   async fetchAndRenderHistory() {
     const historyContainer = document.getElementById("icebreaker-history-container");
     if (!historyContainer) return;
@@ -458,9 +436,6 @@ class IceBreakerManager {
     } catch (_) {}
   }
 
-  /**
-   * 11. 🌟 300DPI 拍立得和好海报离屏渲染引擎
-   */
   async generatePosterForRecord(recordIndex) {
     try {
       const res = await fetch("/api/love/signal/history");
@@ -476,7 +451,6 @@ class IceBreakerManager {
       canvas.width = 1080;
       canvas.height = 1680;
 
-      // 1. 深邃星空与暮光底色
       const bgGradient = ctx.createLinearGradient(0, 0, 0, 1680);
       bgGradient.addColorStop(0, "#090d16");
       bgGradient.addColorStop(0.3, "#1e1b4b");
@@ -495,7 +469,6 @@ class IceBreakerManager {
         ctx.fill();
       }
 
-      // 2. 顶部微标与大标题
       ctx.fillStyle = "rgba(245, 158, 11, 0.2)";
       ctx.fillRect(340, 65, 400, 38);
       ctx.strokeStyle = "rgba(245, 158, 11, 0.5)";
@@ -515,7 +488,6 @@ class IceBreakerManager {
       ctx.font = "22px sans-serif";
       ctx.fillText("爱情胜过死亡，众水不能熄灭，大水不能淹没", 540, 204);
 
-      // 3. 绘制中央和好拍立得相纸刚体 (宽 880, 高 920)
       const cardX = 100;
       const cardY = 245;
       const cardW = 880;
@@ -541,7 +513,6 @@ class IceBreakerManager {
       ctx.fill();
       ctx.shadowColor = "transparent";
 
-      // A. 上半部相纸艺术底框
       const photoPad = 24;
       const photoW = cardW - photoPad * 2;
       const photoH = 460;
@@ -563,7 +534,6 @@ class IceBreakerManager {
       ctx.font = 'bold 30px "Songti SC", "STSong", serif';
       ctx.fillText("爱不是讲理的地方，而是包容与舍己的地方", 540, photoY + 330);
 
-      // B. 拍立得下方和好誓约信息
       const textStartY = photoY + photoH + 40;
       const dateObj = new Date(record.resolvedAt || Date.now());
       const dateStr = `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, "0")}.${String(dateObj.getDate()).padStart(2, "0")} ${String(dateObj.getHours()).padStart(2, "0")}:${String(dateObj.getMinutes()).padStart(2, "0")}`;
@@ -577,7 +547,6 @@ class IceBreakerManager {
       ctx.font = '600 20px ui-monospace, SFMono-Regular, Menlo, monospace';
       ctx.fillText(`和好时刻: ${dateStr}`, photoX + 10, textStartY + 42);
 
-      // 誓约摘要多行排版
       ctx.save();
       ctx.fillStyle = "rgba(244, 63, 94, 0.06)";
       ctx.fillRect(photoX + 6, textStartY + 64, photoW - 12, 240);
@@ -592,7 +561,6 @@ class IceBreakerManager {
 
       ctx.restore();
 
-      // 4. 底部专属独立二维码直达区
       const rawDomainUrl = window.location.href.split("#")[0].split("?")[0];
       const displayHostname = this.decodePunycodeHost(window.location.hostname);
       const displayDomainUrl = rawDomainUrl.replace(window.location.hostname, displayHostname);
@@ -625,7 +593,6 @@ class IceBreakerManager {
       ctx.fillText("微信 / 相机扫一扫 · 爱是永不止息", 320, 1360);
       ctx.restore();
 
-      // 5. 底部版权标记
       ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
       ctx.font = "18px sans-serif";
       ctx.textAlign = "center";
@@ -727,9 +694,6 @@ class IceBreakerManager {
     }
   }
 
-  /**
-   * 12. Web Audio 音频控制器
-   */
   initAudioContext() {
     const unlock = () => {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -806,5 +770,3 @@ class IceBreakerManager {
     });
   }
 }
-
-window.IceBreakerManager = IceBreakerManager;
