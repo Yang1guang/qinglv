@@ -50,12 +50,13 @@
         <button class="tab-btn" data-tab="tab-timeline">🪐 4. 时光轴与拍立得</button>
         <button class="tab-btn" data-tab="tab-anniversary">📅 5. 倒数与恒久纪念日</button>
         <button class="tab-btn" data-tab="tab-icebreaker">🕊️ 6. 破冰与情感信号箱</button>
-        <button class="tab-btn" data-tab="tab-checklist">📝 7. 100 件同行清单</button>
-        <button class="tab-btn" data-tab="tab-scratch">🎟️ 8. 舍己与包容刮刮乐</button>
-        <button class="tab-btn" data-tab="tab-audio">🎵 9. 背景音乐与播放列表</button>
-        <button class="tab-btn" data-tab="tab-eggs">🐣 10. 隐藏彩蛋悄悄话</button>
-        <button class="tab-btn" data-tab="tab-theme">🎨 11. 双视角主题陈列室</button>
-        <button class="tab-btn" data-tab="tab-license">💎 12. 契约授权</button>
+        <button class="tab-btn" data-tab="tab-reminder">🔔 7. 智能提醒与通知中枢</button>
+        <button class="tab-btn" data-tab="tab-checklist">📝 8. 100 件同行清单</button>
+        <button class="tab-btn" data-tab="tab-scratch">🎟️ 9. 舍己与包容刮刮乐</button>
+        <button class="tab-btn" data-tab="tab-audio">🎵 10. 背景音乐与播放列表</button>
+        <button class="tab-btn" data-tab="tab-eggs">🐣 11. 隐藏彩蛋悄悄话</button>
+        <button class="tab-btn" data-tab="tab-theme">🎨 12. 双视角主题陈列室</button>
+        <button class="tab-btn" data-tab="tab-license">💎 13. 契约授权</button>
       </nav>
 
       <div class="admin-content">
@@ -152,7 +153,7 @@
           <div id="anniversariesListContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 🌟 6. 破冰与情感信号箱管理面板 (Batch 4 新增) -->
+        <!-- 6. 破冰与情感信号箱管理面板 -->
         <section id="tab-icebreaker" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <div>
@@ -194,19 +195,88 @@
           <div id="icebreakerActionsContainer" style="display:flex; flex-direction:column; gap:14px;"></div>
         </section>
 
-        <!-- 7. 100 件事 -->
+        <!-- 🌟 7. 智能提醒与通知中枢管理面板 (Batch 3 新增) -->
+        <section id="tab-reminder" class="tab-pane">
+          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h3>🔔 智能全时域提醒与通知中枢</h3>
+              <p style="font-size:12px; color:#94a3b8; margin-top:4px;">基于 Cloudflare Cron 每天北京时间 09:00 自动巡检，结合 Resend 邮件引擎与前台晨光弹窗多维精准触达。</p>
+            </div>
+            <button class="btn-tool" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; padding:6px 14px;" onclick="sendTestReminderEmail()">📧 发送测试邮件</button>
+          </div>
+
+          <div class="form-grid" style="margin-bottom:24px;">
+            <div class="form-group">
+              <label>是否启用云端邮件定时推送</label>
+              <select id="reminder_enabled" class="admin-select">
+                <option value="true">开启提醒 (到达提醒策略时自动发送邮件)</option>
+                <option value="false">关闭邮件通知</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>自定义发件人名称与地址</label>
+              <input type="text" id="reminder_senderEmail" class="admin-input" placeholder="例如: 雅歌之印 <onboarding@resend.dev>">
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1; background:rgba(245, 158, 11, 0.08); padding:16px; border-radius:16px; border:1.5px solid rgba(245, 158, 11, 0.3);">
+              <label style="color:#fde68a; font-weight:800;">🔑 Resend API Key (免费申请直连 · 0成本推送)</label>
+              <input type="password" id="reminder_resendApiKey" class="admin-input" placeholder="输入形如 re_123456789... 的 Resend API Key">
+              <p style="font-size:11.5px; color:#94a3b8; margin:6px 0 0 0;">提示：前往 resend.com 注册即可免费获取 API Key，支持每月 3,000 封极速邮件直发。</p>
+            </div>
+
+            <div class="form-group">
+              <label>👦 男孩通知邮箱 (支持 QQ/163/Gmail/Apple ID)</label>
+              <input type="email" id="reminder_boyEmail" class="admin-input" placeholder="例如: boy@qq.com">
+            </div>
+
+            <div class="form-group">
+              <label>👧 女孩通知邮箱 (支持 QQ/163/Gmail/Apple ID)</label>
+              <input type="email" id="reminder_girlEmail" class="admin-input" placeholder="例如: girl@qq.com">
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1; background:rgba(15, 23, 42, 0.6); padding:16px; border-radius:16px; border:1px solid rgba(56, 189, 248, 0.25);">
+              <label style="color:#7dd3fc; font-weight:800; margin-bottom:10px; display:block;">📅 提前通知策略 (多选勾选生效天数)</label>
+              <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; color:#fff;">
+                  <input type="checkbox" id="reminder_adv_7" value="7" style="accent-color:#f59e0b; width:16px; height:16px;"> 提前 7 天提醒
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; color:#fff;">
+                  <input type="checkbox" id="reminder_adv_3" value="3" style="accent-color:#f59e0b; width:16px; height:16px;"> 提前 3 天提醒
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; color:#fff;">
+                  <input type="checkbox" id="reminder_adv_1" value="1" style="accent-color:#f59e0b; width:16px; height:16px;"> 提前 1 天提醒
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; color:#fff;">
+                  <input type="checkbox" id="reminder_adv_0" value="0" style="accent-color:#f59e0b; width:16px; height:16px;"> 当天 09:00 准时推送
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <div>
+              <h4>📝 专属待办备忘便签管理 (Love Memo Notes)</h4>
+              <p style="font-size:12px; color:#94a3b8; margin-top:2px;">添加日常温馨待办事项，进站时将与重大纪念日一同在晨光提醒浮层呈现。</p>
+            </div>
+            <button class="btn-add" onclick="addReminderMemo()">➕ 新增便签</button>
+          </div>
+          <div id="reminderMemosContainer" class="dynamic-list"></div>
+        </section>
+
+        <!-- 8. 100 件事 -->
         <section id="tab-checklist" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between;"><div><h3>📝 100 件事</h3></div><button class="btn-add" onclick="addChecklistItem()">➕ 新增</button></div>
           <div id="checklistItemsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 8. 刮刮乐 -->
+        <!-- 9. 刮刮乐 -->
         <section id="tab-scratch" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between;"><div><h3>🎟️ 刮刮乐</h3></div><button class="btn-add" onclick="addScratchCard()">➕ 新增</button></div>
           <div id="scratchCardsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 9. 背景音乐与多曲目播放列表 -->
+        <!-- 10. 背景音乐与多曲目播放列表 -->
         <section id="tab-audio" class="tab-pane">
           <div class="pane-header">
             <h3>🎵 背景音乐与多曲目播放列表</h3>
@@ -279,7 +349,7 @@
           </div>
         </section>
 
-        <!-- 10. 隐藏彩蛋 -->
+        <!-- 11. 隐藏彩蛋 -->
         <section id="tab-eggs" class="tab-pane">
           <div class="pane-header"><h3>🐣 隐藏角落彩蛋悄悄话</h3></div>
           <div class="form-grid">
@@ -288,7 +358,7 @@
           </div>
         </section>
 
-        <!-- 11. 双视角主题陈列室 -->
+        <!-- 12. 双视角主题陈列室 -->
         <section id="tab-theme" class="tab-pane">
           <div class="pane-header"><h3>🎨 双视角主题陈列室</h3></div>
           <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 18px; margin-bottom: 24px;">
@@ -317,7 +387,7 @@
           </div>
         </section>
 
-        <!-- 12. 授权 -->
+        <!-- 13. 授权 -->
         <section id="tab-license" class="tab-pane">
           <div class="pane-header"><h3>💎 契约 · 专属授权激活状态</h3></div>
           <div style="background: rgba(3, 7, 18, 0.7); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 22px;">
