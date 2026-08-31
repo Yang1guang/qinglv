@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="css/themes.css?v=2.3">
   <link rel="stylesheet" href="css/anniversary.css?v=2.3">
   <link rel="stylesheet" href="css/icebreaker.css?v=2.3">
+  <link rel="stylesheet" href="css/reminder.css?v=2.3">
   <link rel="stylesheet" href="css/photo-wall.css?v=2.3">
   <link rel="stylesheet" href="css/pet.css?v=2.3">
   <link rel="stylesheet" href="css/scratch-card.css?v=2.3">
@@ -199,7 +200,6 @@
       <div class="icebreaker-card">
         <div class="icebreaker-grid" id="icebreaker-container"></div>
 
-        <!-- 和好足迹备忘录挂载区 -->
         <div class="icebreaker-history-wrap">
           <div class="icebreaker-history-title">
             <span>💑 我们的破冰与和好印记 (永恒备忘录)</span>
@@ -354,7 +354,7 @@
     </div>
   </div>
 
-  <!-- 🌟 破冰和好 300DPI 拍立得海报预览弹窗 (独立 DOM 隔离) -->
+  <!-- 破冰和好 300DPI 拍立得海报预览弹窗 -->
   <div class="poster-modal" id="icebreaker-poster-modal" style="display:none;">
     <div class="poster-modal__dialog">
       <div class="poster-modal__preview-box" id="icebreaker-poster-preview-box"></div>
@@ -362,6 +362,21 @@
         <p class="poster-modal__tip">长按上方图片或点击下方按钮保存</p>
         <button class="btn-universe btn-universe--primary" id="download-icebreaker-poster-btn" onclick="if(window.IceBreakerInstance && window.IceBreakerInstance.currentPosterDataUrl){ const a=document.createElement('a'); a.download=`和好圣约纪念_${Date.now()}.jpg`; a.href=window.IceBreakerInstance.currentPosterDataUrl; a.click(); }">📥 保存和好海报至相册</button>
         <button class="btn-universe btn-universe--secondary" onclick="document.getElementById('icebreaker-poster-modal').style.display='none';">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🌟 批次二新增：晨光智能提醒浮层 (Morning Reminder Modal) -->
+  <div id="reminder-modal" class="reminder-modal" style="display:none;">
+    <div class="reminder-modal__dialog">
+      <div class="reminder-modal__badge">✨ MORNING GRACE · 晨光提醒 ✨</div>
+      <h3 class="reminder-modal__title" id="reminder-modal-title">晨光初现 · 今日恩典与备忘</h3>
+      <p class="reminder-modal__subtitle" id="reminder-modal-subtitle">不错过任何一个与你有关的重要时刻</p>
+      <div class="reminder-list" id="reminder-modal-content"></div>
+      <div style="margin-top: 10px;">
+        <button class="reminder-btn-primary" id="btn-dismiss-reminder">
+          <span>💖 收到心意 · 开启美好一天</span>
+        </button>
       </div>
     </div>
   </div>
@@ -374,6 +389,7 @@
   <script src="js/anniversary-tools.js?v=2.3"></script>
   <script src="js/anniversary.js?v=2.3"></script>
   <script src="js/icebreaker.js?v=2.3"></script>
+  <script src="js/reminder.js?v=2.3"></script>
   <script src="js/lifecycle.js?v=2.3"></script>
   <script src="js/photo-wall.js?v=2.3"></script>
   <script src="js/effects.js?v=2.3"></script>
@@ -393,6 +409,10 @@
       if (window.IceBreakerManager && window.LOVE_CONFIG) {
         window.IceBreakerInstance = new window.IceBreakerManager(window.LOVE_CONFIG);
         window.IceBreakerInstance.init();
+      }
+      if (window.ReminderManager && window.LOVE_CONFIG) {
+        window.ReminderInstance = new window.ReminderManager(window.LOVE_CONFIG);
+        window.ReminderInstance.init();
       }
       if (window.GracePetManager && window.LOVE_CONFIG) {
         const petMgr = new window.GracePetManager(window.LOVE_CONFIG);
