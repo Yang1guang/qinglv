@@ -1,4 +1,3 @@
-
 /**
  * 众水不灭 · 雅歌之印 (Love Universe)
  * 文件名: js/config.js
@@ -35,7 +34,7 @@ window.LOVE_CONFIG = {
     question: "输入我们第一次确认关系的纪念日 (6位数字)：",
     hint: "提示：2024年5月20日 ➔ 240520",
     correctAnswer: "240520",
-    voiceVows: "开心, 喜乐, 永远爱你, 240520",
+    voiceVows: "众水不能熄灭, 我愿一生包容你, 永远爱你, 240520",
     errorTips: [
       "没关系，慢慢想，我一直都在这里等你。",
       "记忆偶尔会迷路，但我们的爱永远是归途。",
@@ -64,7 +63,7 @@ window.LOVE_CONFIG = {
     signature: "永远爱你的 小阳"
   },
 
-  // ================= 5. 时光轴节点 (支持背面 60 秒专属录音直链) =================
+  // ================= 5. 时光轴节点 (节点 #1 自动用作左上角专属情侣头像) =================
   timeline: [
     {
       id: "node_1",
@@ -182,10 +181,9 @@ window.LOVE_CONFIG = {
   // ================= 🌟 8. 破冰与情感信号箱 (严格三阶段伦理边界与避风港契约) =================
   icebreaker: {
     enabled: true,
-    cooldownMinutes: 15, // 情绪冷静期冷却时长
+    cooldownMinutes: 15,
     soundEnabled: true,
     actions: {
-      // 🌿 恋爱期：坚守圣洁界限，严禁同居与室内私密行为引导
       dating: [
         {
           id: "calm_down",
@@ -223,7 +221,6 @@ window.LOVE_CONFIG = {
           desc: "隔空送你一朵云朵拥抱和一杯热可可，不要再生气啦。"
         }
       ],
-      // 💍 订婚期：盟约预备，化解现实筹备焦虑，不涉同居
       engaged: [
         {
           id: "calm_down",
@@ -261,7 +258,6 @@ window.LOVE_CONFIG = {
           desc: "再多繁杂的事情我们一起扛，别怕，有我在你身边。"
         }
       ],
-      // 🏠 结婚期：合为一体，实体避风港，不可含怒到日落
       married: [
         {
           id: "calm_down",
