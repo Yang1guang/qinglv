@@ -203,7 +203,7 @@
         <h2 class="hub-dock__title">星轨功能中枢 · 契约秘境</h2>
       </div>
       <div class="hub-grid">
-        <div class="hub-btn" data-open-stage="timeline">
+        <div class="hub-btn" data-open-stage="timeline" onclick="window.StageManager.openStage('timeline')">
           <div class="hub-btn__glow"></div>
           <span class="hub-btn__icon">🪐</span>
           <div class="hub-btn__info">
@@ -212,7 +212,7 @@
           </div>
         </div>
 
-        <div class="hub-btn" data-open-stage="anniversary">
+        <div class="hub-btn" data-open-stage="anniversary" onclick="window.StageManager.openStage('anniversary')">
           <div class="hub-btn__glow"></div>
           <span class="hub-btn__icon">📅</span>
           <div class="hub-btn__info">
@@ -221,7 +221,7 @@
           </div>
         </div>
 
-        <div class="hub-btn" data-open-stage="icebreaker">
+        <div class="hub-btn" data-open-stage="icebreaker" onclick="window.StageManager.openStage('icebreaker')">
           <div class="hub-btn__glow"></div>
           <span class="hub-btn__icon">🕊️</span>
           <div class="hub-btn__info">
@@ -230,7 +230,7 @@
           </div>
         </div>
 
-        <div class="hub-btn" data-open-stage="checklist">
+        <div class="hub-btn" data-open-stage="checklist" onclick="window.StageManager.openStage('checklist')">
           <div class="hub-btn__glow"></div>
           <span class="hub-btn__icon">📝</span>
           <div class="hub-btn__info">
@@ -239,7 +239,7 @@
           </div>
         </div>
 
-        <div class="hub-btn" data-open-stage="scratch">
+        <div class="hub-btn" data-open-stage="scratch" onclick="window.StageManager.openStage('scratch')">
           <div class="hub-btn__glow"></div>
           <span class="hub-btn__icon">🎟️</span>
           <div class="hub-btn__info">
@@ -248,7 +248,7 @@
           </div>
         </div>
 
-        <div class="hub-btn" data-open-stage="poster">
+        <div class="hub-btn" data-open-stage="poster" onclick="window.StageManager.openStage('poster')">
           <div class="hub-btn__glow"></div>
           <span class="hub-btn__icon">📸</span>
           <div class="hub-btn__info">
@@ -265,7 +265,7 @@
   </main>
 
   <!-- ================= 🎪 全屏沉浸分幕容器 (Stage Modals) ================= -->
-  <div id="stage-modal-overlay" class="stage-overlay"></div>
+  <div id="stage-modal-overlay" class="stage-overlay" onclick="window.StageManager.closeStage()"></div>
   <div id="stage-modal-container" class="stage-container">
 
     <!-- 舞台 1: 时光轨迹 · 雅歌印记 -->
@@ -275,7 +275,7 @@
           <span class="stage-modal__icon">🪐</span>
           <h2 class="stage-modal__title">时光轨迹 · 雅歌印记</h2>
         </div>
-        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+        <button class="stage-modal__close-btn" onclick="window.StageManager.closeStage()" title="返回主界面">✕</button>
       </div>
       <div class="stage-modal__body">
         <div class="section-title">
@@ -292,7 +292,7 @@
           <span class="stage-modal__icon">📅</span>
           <h2 class="stage-modal__title">时光刻度 · 恒久倒数</h2>
         </div>
-        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+        <button class="stage-modal__close-btn" onclick="window.StageManager.closeStage()" title="返回主界面">✕</button>
       </div>
       <div class="stage-modal__body">
         <div class="section-title">
@@ -309,7 +309,7 @@
           <span class="stage-modal__icon">🕊️</span>
           <h2 class="stage-modal__title">破冰和解 · 情感信号箱</h2>
         </div>
-        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+        <button class="stage-modal__close-btn" onclick="window.StageManager.closeStage()" title="返回主界面">✕</button>
       </div>
       <div class="stage-modal__body">
         <div class="section-title">
@@ -334,7 +334,7 @@
           <span class="stage-modal__icon">📝</span>
           <h2 class="stage-modal__title" id="checklist-stage-header-title">同行约定 · 待办清单</h2>
         </div>
-        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+        <button class="stage-modal__close-btn" onclick="window.StageManager.closeStage()" title="返回主界面">✕</button>
       </div>
       <div class="stage-modal__body">
         <div class="phase-switch-bar">
@@ -363,7 +363,7 @@
           <span class="stage-modal__icon">🎟️</span>
           <h2 class="stage-modal__title" id="scratch-stage-header-title">舍己与包容特权券</h2>
         </div>
-        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+        <button class="stage-modal__close-btn" onclick="window.StageManager.closeStage()" title="返回主界面">✕</button>
       </div>
       <div class="stage-modal__body">
         <div class="section-title">
@@ -381,7 +381,7 @@
           <span class="stage-modal__icon">📸</span>
           <h2 class="stage-modal__title">导出超清壁纸与数字资产</h2>
         </div>
-        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+        <button class="stage-modal__close-btn" onclick="window.StageManager.closeStage()" title="返回主界面">✕</button>
       </div>
       <div class="stage-modal__body">
         <div class="poster-card" style="display:flex; flex-direction:column; gap:14px; max-width:680px; margin:0 auto;">
@@ -503,6 +503,9 @@
     document.addEventListener("DOMContentLoaded", () => {
       if (window.ThemeEngine) {
         window.ThemeEngine.init();
+      }
+      if (window.StageManager) {
+        window.StageManager.init();
       }
       if (window.AnniversaryManager && window.LOVE_CONFIG) {
         const anniMgr = new window.AnniversaryManager(window.LOVE_CONFIG);
