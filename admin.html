@@ -8,8 +8,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=2.0">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png?v=2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2.0">
-  <link rel="stylesheet" href="css/admin.css?v=2.3">
-  <link rel="stylesheet" href="css/themes.css?v=2.3">
+  <link rel="stylesheet" href="css/admin.css?v=2.4">
+  <link rel="stylesheet" href="css/themes.css?v=2.4">
 </head>
 <body>
 
@@ -96,7 +96,7 @@
             <div class="form-group"><label>正确数字密码</label><input type="text" id="gatekeeper_correctAnswer" class="admin-input"></div>
             <div class="form-group" style="grid-column: 1 / -1; background: rgba(245, 158, 11, 0.1); padding: 14px; border-radius: 14px; border: 1.5px solid rgba(245, 158, 11, 0.35);">
               <label style="color:#fde68a; font-weight:800;">🎙️ 专属语音誓言解锁密码</label>
-              <input type="text" id="gatekeeper_voiceVows" class="admin-input" placeholder="例如: 开心, 喜乐, 永远爱你, 240520">
+              <input type="text" id="gatekeeper_voiceVows" class="admin-input" placeholder="例如: 众水不能熄灭, 我愿一生包容你, 永远爱你, 240520">
             </div>
             <div class="form-group" style="grid-column: 1 / -1;"><label>输错密码提示词</label><textarea id="gatekeeper_errorTips" class="admin-textarea" rows="4"></textarea></div>
           </div>
@@ -118,7 +118,7 @@
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <h3>🪐 时光轴轨迹与拍立得照片墙</h3>
-              <p style="font-size:12px; color:#94a3b8; margin-top:4px;">提示：节点 #1 的正面照片将自动作为网页左上角专属情侣头像固定展示。</p>
+              <p style="font-size:12px; color:#94a3b8; margin-top:4px;">提示：节点 #1 的正面照片将自动作为网页左上角专属情侣头像固定展示（正正摆放与高清渲染）。</p>
             </div>
             <button class="btn-add" onclick="addTimelineNode()">➕ 新增</button>
           </div>
@@ -152,7 +152,7 @@
           <div id="anniversariesListContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 🌟 6. 破冰与情感信号箱管理面板 (Batch 4 新增) -->
+        <!-- 6. 破冰与情感信号箱管理面板 -->
         <section id="tab-icebreaker" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <div>
@@ -335,9 +335,9 @@
   <input type="file" id="globalUploader" style="display:none;">
   <div id="toast" class="admin-toast">✓ 操作成功</div>
 
-  <script src="js/config.js?v=2.3"></script>
-  <script src="js/theme-presets.js?v=2.3"></script>
-  <script src="js/anniversary-engine.js?v=2.3"></script>
-  <script src="js/admin.js?v=2.3"></script>
+  <script src="js/config.js?v=2.4"></script>
+  <script src="js/theme-presets.js?v=2.4"></script>
+  <script src="js/anniversary-engine.js?v=2.4"></script>
+  <script src="js/admin.js?v=2.4"></script>
 </body>
 </html>
