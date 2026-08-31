@@ -21,15 +21,15 @@
   <meta name="apple-mobile-web-app-title" content="雅歌之印">
 
   <!-- 🚀 核心样式表预加载与非阻塞链路 -->
-  <link rel="stylesheet" href="css/base.css?v=2.2">
-  <link rel="stylesheet" href="css/components.css?v=2.2">
-  <link rel="stylesheet" href="css/animations.css?v=2.2">
-  <link rel="stylesheet" href="css/themes.css?v=2.2">
-  <link rel="stylesheet" href="css/anniversary.css?v=2.2">
-  <link rel="stylesheet" href="css/icebreaker.css?v=2.2">
-  <link rel="stylesheet" href="css/photo-wall.css?v=2.2">
-  <link rel="stylesheet" href="css/pet.css?v=2.2">
-  <link rel="stylesheet" href="css/scratch-card.css?v=2.2">
+  <link rel="stylesheet" href="css/base.css?v=2.3">
+  <link rel="stylesheet" href="css/components.css?v=2.3">
+  <link rel="stylesheet" href="css/animations.css?v=2.3">
+  <link rel="stylesheet" href="css/themes.css?v=2.3">
+  <link rel="stylesheet" href="css/anniversary.css?v=2.3">
+  <link rel="stylesheet" href="css/icebreaker.css?v=2.3">
+  <link rel="stylesheet" href="css/photo-wall.css?v=2.3">
+  <link rel="stylesheet" href="css/pet.css?v=2.3">
+  <link rel="stylesheet" href="css/scratch-card.css?v=2.3">
   <style>
     .perspective-capsule {
       position: fixed;
@@ -116,7 +116,7 @@
 </head>
 <body class="universe-body">
 
-  <!-- 🖼️ 独立硬件加速全视口固定背景层 (彻底解决移动端背景模糊与裁切问题) -->
+  <!-- 🖼️ 独立硬件加速全视口固定背景层 -->
   <div id="universe-bg-layer" class="universe-bg-layer"></div>
 
   <!-- 顶部非侵入微光通知胶囊横幅 -->
@@ -189,7 +189,7 @@
       <div class="anniversary-grid" id="anniversary-container"></div>
     </section>
 
-    <!-- 🌟 批次二新增：破冰与情感信号箱交互面板 -->
+    <!-- 破冰与情感信号箱交互面板 (含和好足迹备忘录) -->
     <section class="icebreaker-section" id="icebreaker-section">
       <div class="section-title">
         <span class="section-title__icon">🕊️</span>
@@ -198,6 +198,14 @@
       </div>
       <div class="icebreaker-card">
         <div class="icebreaker-grid" id="icebreaker-container"></div>
+
+        <!-- 和好足迹备忘录挂载区 -->
+        <div class="icebreaker-history-wrap">
+          <div class="icebreaker-history-title">
+            <span>💑 我们的破冰与和好印记 (永恒备忘录)</span>
+          </div>
+          <div class="icebreaker-history-list" id="icebreaker-history-container"></div>
+        </div>
       </div>
     </section>
 
@@ -334,7 +342,7 @@
     </div>
   </div>
 
-  <!-- 🌟 批次二新增：沉浸式全屏和解空间覆盖层 (Reconciliation Modal) -->
+  <!-- 沉浸式全屏和解空间覆盖层 -->
   <div id="icebreaker-modal" class="icebreaker-modal">
     <div class="icebreaker-modal__dialog">
       <div id="icebreaker-modal-badge" class="icebreaker-modal__badge">SACRED COVENANT</div>
@@ -346,21 +354,33 @@
     </div>
   </div>
 
-  <script src="js/config.js?v=2.2"></script>
-  <script src="js/theme-presets.js?v=2.2"></script>
-  <script src="js/stage-content.js?v=2.2"></script>
-  <script src="js/theme-engine.js?v=2.2"></script>
-  <script src="js/anniversary-engine.js?v=2.2"></script>
-  <script src="js/anniversary-tools.js?v=2.2"></script>
-  <script src="js/anniversary.js?v=2.2"></script>
-  <script src="js/icebreaker.js?v=2.2"></script>
-  <script src="js/lifecycle.js?v=2.2"></script>
-  <script src="js/photo-wall.js?v=2.2"></script>
-  <script src="js/effects.js?v=2.2"></script>
-  <script src="js/timeline.js?v=2.2"></script>
-  <script src="js/pet.js?v=2.2"></script>
-  <script src="js/export-eternal.js?v=2.2"></script>
-  <script src="js/core.js?v=2.2"></script>
+  <!-- 🌟 破冰和好 300DPI 拍立得海报预览弹窗 (独立 DOM 隔离) -->
+  <div class="poster-modal" id="icebreaker-poster-modal" style="display:none;">
+    <div class="poster-modal__dialog">
+      <div class="poster-modal__preview-box" id="icebreaker-poster-preview-box"></div>
+      <div class="poster-modal__actions">
+        <p class="poster-modal__tip">长按上方图片或点击下方按钮保存</p>
+        <button class="btn-universe btn-universe--primary" id="download-icebreaker-poster-btn" onclick="if(window.IceBreakerInstance && window.IceBreakerInstance.currentPosterDataUrl){ const a=document.createElement('a'); a.download=`和好圣约纪念_${Date.now()}.jpg`; a.href=window.IceBreakerInstance.currentPosterDataUrl; a.click(); }">📥 保存和好海报至相册</button>
+        <button class="btn-universe btn-universe--secondary" onclick="document.getElementById('icebreaker-poster-modal').style.display='none';">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js?v=2.3"></script>
+  <script src="js/theme-presets.js?v=2.3"></script>
+  <script src="js/stage-content.js?v=2.3"></script>
+  <script src="js/theme-engine.js?v=2.3"></script>
+  <script src="js/anniversary-engine.js?v=2.3"></script>
+  <script src="js/anniversary-tools.js?v=2.3"></script>
+  <script src="js/anniversary.js?v=2.3"></script>
+  <script src="js/icebreaker.js?v=2.3"></script>
+  <script src="js/lifecycle.js?v=2.3"></script>
+  <script src="js/photo-wall.js?v=2.3"></script>
+  <script src="js/effects.js?v=2.3"></script>
+  <script src="js/timeline.js?v=2.3"></script>
+  <script src="js/pet.js?v=2.3"></script>
+  <script src="js/export-eternal.js?v=2.3"></script>
+  <script src="js/core.js?v=2.3"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       if (window.ThemeEngine) {
@@ -371,8 +391,8 @@
         anniMgr.init();
       }
       if (window.IceBreakerManager && window.LOVE_CONFIG) {
-        const iceMgr = new window.IceBreakerManager(window.LOVE_CONFIG);
-        iceMgr.init();
+        window.IceBreakerInstance = new window.IceBreakerManager(window.LOVE_CONFIG);
+        window.IceBreakerInstance.init();
       }
       if (window.GracePetManager && window.LOVE_CONFIG) {
         const petMgr = new window.GracePetManager(window.LOVE_CONFIG);
