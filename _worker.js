@@ -1,320 +1,12 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 架构: 单源多租户路由、云端 Cron 定时巡检、Resend 浪漫邮件推送引擎、农历公历对齐计算、破冰信号状态机、多源流式音频转发、严格独立鉴权、HMAC 授权验证
+ * 架构: 单源多租户路由、破冰和好信号队列状态机(双向奔赴MUTUAL_HEAL)、多源流式音频转发、严格租户独立鉴权(彻底封堵521后门)、免密灵宠通道、圣洁言语过滤、HMAC 授权验证
+ * 核心变更: 彻底移除云端 Cron 邮件引擎依赖，全面拥抱全端纯前端提醒机制 (Web Notification + 晨光 DOM 弹窗)。
  */
 
-// 1900 - 2100 年农历 24-bit 二进制天文压缩数据表 (紫金山天文台标准)
-const LUNAR_INFO = [
-  0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
-  0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
-  0x04970, 0x0a4b0, 0x0b4b5, 0x06a50, 0x06d40, 0x1ab54, 0x02b60, 0x09570, 0x052f2, 0x04970,
-  0x06566, 0x0d4a0, 0x0ea50, 0x06e95, 0x05ad0, 0x02b60, 0x186e3, 0x092e0, 0x1c8d7, 0x0c950,
-  0x0d4a0, 0x1d8a6, 0x0b550, 0x056a0, 0x1a5b4, 0x025d0, 0x092d0, 0x0d2b2, 0x0a950, 0x0b557,
-  0x06ca0, 0x0b550, 0x15355, 0x04da0, 0x0a5b0, 0x14573, 0x052b0, 0x0a9a8, 0x0e950, 0x06aa0,
-  0x0aea6, 0x0ab50, 0x04b60, 0x0aae4, 0x0a570, 0x05260, 0x0f263, 0x0d950, 0x05b57, 0x056a0,
-  0x096d0, 0x04dd5, 0x04ad0, 0x0a4d0, 0x0d4d4, 0x0d250, 0x0d558, 0x0b540, 0x0b6a0, 0x195a6,
-  0x095b0, 0x049b0, 0x0a974, 0x0a4b0, 0x0b27a, 0x06a50, 0x06d40, 0x1af46, 0x0ab60, 0x09570,
-  0x04af5, 0x04970, 0x064b0, 0x074a3, 0x0ea50, 0x06b58, 0x05ac0, 0x0ab60, 0x096e5, 0x092e0,
-  0x0c960, 0x0d954, 0x0d4a0, 0x0da50, 0x07552, 0x056a0, 0x0abb7, 0x025d0, 0x092d0, 0x0cab5,
-  0x0a950, 0x0b4a0, 0x0baa4, 0x0ad50, 0x055d9, 0x04ba0, 0x0a5b0, 0x15176, 0x052b0, 0x0a930,
-  0x07954, 0x06aa0, 0x0ad50, 0x05b52, 0x04b60, 0x0a6e6, 0x0a4e0, 0x0d260, 0x0ea65, 0x0d530,
-  0x05aa0, 0x076a3, 0x096d0, 0x04bd7, 0x04ad0, 0x0a4d0, 0x1d0b6, 0x0d250, 0x0d520, 0x0dd45,
-  0x0b5a0, 0x056d0, 0x055b2, 0x049b0, 0x0a577, 0x0a4b0, 0x0aa50, 0x1b255, 0x06d20, 0x0ada0,
-  0x14b63, 0x09370, 0x049f8, 0x04970, 0x064b0, 0x168a6, 0x0ea50, 0x06aa0, 0x1a6c4, 0x0aae0,
-  0x092e0, 0x0d2e3, 0x0c960, 0x0d557, 0x0d4a0, 0x0da50, 0x05d55, 0x056a0, 0x0a6d0, 0x055d4,
-  0x052d0, 0x0a9b8, 0x0a950, 0x0b4a0, 0x0b6a6, 0x0ad50, 0x055a0, 0x0aba4, 0x0a5b0, 0x052b0,
-  0x0b273, 0x06930, 0x07337, 0x06aa0, 0x0ad50, 0x14b55, 0x04b60, 0x0a570, 0x054e4, 0x0d160,
-  0x0e968, 0x0d520, 0x0daa0, 0x16aa6, 0x056d0, 0x04ae0, 0x0a9d4, 0x0a2d0, 0x0d150, 0x0f252,
-  0x0d520
-];
-
-const CN_MONTHS = ["正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊"];
-const CN_DAYS = [
-  "初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
-  "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
-  "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"
-];
-
-// 云端农历转换工具函数
-function getLunarLeapMonth(year) {
-  if (year < 1900 || year > 2100) return 0;
-  return LUNAR_INFO[year - 1900] & 0xf;
-}
-
-function getLunarLeapDays(year) {
-  if (getLunarLeapMonth(year) === 0) return 0;
-  return (LUNAR_INFO[year - 1900] & 0x10000) ? 30 : 29;
-}
-
-function getLunarMonthDays(year, month) {
-  if (year < 1900 || year > 2100 || month < 1 || month > 12) return 30;
-  return (LUNAR_INFO[year - 1900] & (0x10000 >> month)) ? 30 : 29;
-}
-
-function getLunarYearDays(year) {
-  let sum = 348;
-  for (let i = 0x8000; i > 0x8; i >>= 1) {
-    sum += (LUNAR_INFO[year - 1900] & i) ? 1 : 0;
-  }
-  return sum + getLunarLeapDays(year);
-}
-
-function workerLunarToSolar(lYear, lMonth, lDay, isLeap = false) {
-  if (lYear < 1900 || lYear > 2100) return null;
-  const leapMonth = getLunarLeapMonth(lYear);
-  if (isLeap && leapMonth !== lMonth) isLeap = false;
-
-  let offset = 0;
-  for (let y = 1900; y < lYear; y++) offset += getLunarYearDays(y);
-  for (let m = 1; m < lMonth; m++) {
-    offset += getLunarMonthDays(lYear, m);
-    if (leapMonth === m) offset += getLunarLeapDays(lYear);
-  }
-  if (isLeap) offset += getLunarMonthDays(lYear, lMonth);
-  offset += (lDay - 1);
-
-  const baseDate = new Date(Date.UTC(1900, 0, 31));
-  const targetTime = baseDate.getTime() + offset * 86400000;
-  const targetDate = new Date(targetTime);
-
-  return {
-    year: targetDate.getUTCFullYear(),
-    month: targetDate.getUTCMonth() + 1,
-    day: targetDate.getUTCDate(),
-    dateStr: `${targetDate.getUTCFullYear()}-${String(targetDate.getUTCMonth() + 1).padStart(2, "0")}-${String(targetDate.getUTCDate()).padStart(2, "0")}`
-  };
-}
-
-function parseDateParts(dateStr) {
-  if (!dateStr || typeof dateStr !== "string") return null;
-  const clean = String(dateStr).trim().split(/[ T]/)[0];
-  const parts = clean.split(/[-/.]/).map(n => parseInt(n, 10));
-  if (parts.length < 3 || isNaN(parts[0]) || isNaN(parts[1]) || isNaN(parts[2])) return null;
-  return { year: parts[0], month: parts[1], day: parts[2] };
-}
-
-// 统一邮件 HTML 模板合成引擎
-function buildRomanticEmailHtml({ siteTitle, boyName, girlName, eventTitle, daysText, dateMeta, memo, hostUrl }) {
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${eventTitle}</title>
-    </head>
-    <body style="margin: 0; padding: 0; background-color: #090d16; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #ffffff;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 30px auto; background: #0f172a; border-radius: 20px; border: 1.5px solid rgba(245, 158, 11, 0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.6); overflow: hidden;">
-        <tr>
-          <td style="padding: 30px 24px 20px 24px; text-align: center; background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(244, 63, 94, 0.15) 100%); border-bottom: 1px solid rgba(255,255,255,0.08);">
-            <div style="display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 2px; color: #fde68a; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); padding: 3px 12px; border-radius: 20px; margin-bottom: 12px;">✨ THE SACRED COVENANT ✨</div>
-            <h1 style="margin: 0 0 6px 0; font-size: 26px; font-weight: 900; color: #ffffff;">${boyName} & ${girlName}</h1>
-            <p style="margin: 0; font-size: 13px; color: #94a3b8;">${siteTitle || "众水不能熄灭爱情，大水不能淹没 · 一生一世的契约"}</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding: 30px 24px;">
-            <div style="background: rgba(3, 7, 18, 0.6); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 22px 18px; text-align: center; margin-bottom: 24px;">
-              <span style="font-size: 13px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 6px;">💌 恒久契约 · 专属提醒</span>
-              <h2 style="margin: 0 0 12px 0; font-size: 22px; font-weight: 900; color: #fde68a;">${eventTitle}</h2>
-              <div style="font-size: 42px; font-weight: 900; font-family: ui-monospace, monospace; color: #f43f5e; line-height: 1.2; margin-bottom: 6px;">${daysText}</div>
-              <span style="font-size: 12px; color: #38bdf8; font-family: ui-monospace, monospace;">${dateMeta}</span>
-            </div>
-
-            ${memo ? `
-              <div style="background: #fffdfa; border: 1.5px dashed rgba(244, 63, 94, 0.4); border-radius: 14px; padding: 16px; margin-bottom: 24px; color: #374151;">
-                <p style="margin: 0; font-size: 13.5px; line-height: 1.7; font-style: italic; font-weight: 600;">“ ${memo} ”</p>
-              </div>
-            ` : ""}
-
-            <div style="text-align: center; margin-top: 10px;">
-              <a href="${hostUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 800; padding: 12px 28px; border-radius: 25px; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);">🌟 进入我们的专属时空</a>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding: 18px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(3, 7, 18, 0.4);">
-            <p style="margin: 0; font-size: 11px; color: #64748b;">众水不能熄灭爱情，大水不能淹没 · LOVE UNIVERSE</p>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `;
-}
-
-// 统一 Resend API 邮件发送函数
-async function sendResendEmail({ apiKey, fromEmail, toEmails, subject, htmlContent }) {
-  if (!apiKey || !toEmails || toEmails.length === 0) return { success: false, error: "缺少发信参数" };
-
-  const validRecipients = toEmails.filter(e => e && typeof e === "string" && e.includes("@"));
-  if (validRecipients.length === 0) return { success: false, error: "收件人邮箱无效" };
-
-  const sender = fromEmail && fromEmail.includes("@") ? fromEmail : "雅歌之印 <onboarding@resend.dev>";
-
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey.trim()}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        from: sender,
-        to: validRecipients,
-        subject: subject,
-        html: htmlContent
-      })
-    });
-
-    const data = await res.json();
-    if (res.ok && data.id) {
-      return { success: true, id: data.id };
-    }
-    return { success: false, error: data.message || JSON.stringify(data) };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
-}
-
 export default {
-  // ================= 1. Cloudflare Cron 定时巡检处理器 =================
-  async scheduled(event, env, ctx) {
-    const bucket = env.R2 || env.BUCKET || env.PAN || env.MY_BUCKET || env.FILE_BUCKET;
-    if (!bucket) return;
-
-    // 强制构建东八区北京时间 (UTC+8)
-    const nowBJT = new Date(Date.now() + 8 * 3600 * 1000);
-    const bjtYear = nowBJT.getUTCFullYear();
-    const bjtMonth = nowBJT.getUTCMonth() + 1;
-    const bjtDay = nowBJT.getUTCDate();
-    const todayMidnightUTC = Date.UTC(bjtYear, bjtMonth - 1, bjtDay);
-
-    // 遍历 R2 中的所有租户配置文件
-    const listed = await bucket.list({ prefix: "" });
-    const configKeys = listed.objects.map(o => o.key).filter(k => k.endsWith("/config.json") || k === "config.json");
-
-    for (const cfgKey of configKeys) {
-      try {
-        const tenantDir = cfgKey.includes("/") ? cfgKey.split("/")[0] : "default";
-        const signalsKey = `${tenantDir}/signals.json`;
-
-        const cfgObj = await bucket.get(cfgKey);
-        if (!cfgObj) continue;
-        const config = JSON.parse(await cfgObj.text());
-
-        const reminderCfg = config.reminder || {};
-        if (reminderCfg.enabled === false || !reminderCfg.resendApiKey) continue;
-
-        const boyEmail = reminderCfg.boyEmail?.trim();
-        const girlEmail = reminderCfg.girlEmail?.trim();
-        const recipients = [boyEmail, girlEmail].filter(Boolean);
-        if (recipients.length === 0) continue;
-
-        const advanceDays = Array.isArray(reminderCfg.advanceDays) && reminderCfg.advanceDays.length > 0 
-          ? reminderCfg.advanceDays 
-          : [7, 3, 1, 0];
-
-        // 读取信号与发信锁字典
-        let signalData = { reminderLog: {} };
-        try {
-          const sObj = await bucket.get(signalsKey);
-          if (sObj) signalData = JSON.parse(await sObj.text());
-        } catch (_) {}
-        if (!signalData.reminderLog) signalData.reminderLog = {};
-
-        const anniversaries = Array.isArray(config.anniversaries) ? config.anniversaries : [];
-        let hasNewSentLock = false;
-
-        for (const item of anniversaries) {
-          if (!item || !item.date) continue;
-          const p = parseDateParts(item.date);
-          if (!p) continue;
-
-          const isLunar = Boolean(item.isLunar);
-          const isAnnual = item.type === "countdown" || Boolean(item.annualRepeat);
-          const isLeap = Boolean(item.isLeapMonth);
-
-          let targetSolar = null;
-          if (isAnnual) {
-            let thisYearSolar = isLunar 
-              ? workerLunarToSolar(bjtYear, p.month, p.day, isLeap) 
-              : { year: bjtYear, month: p.month, day: p.day };
-            let nextYearSolar = isLunar 
-              ? workerLunarToSolar(bjtYear + 1, p.month, p.day, isLeap) 
-              : { year: bjtYear + 1, month: p.month, day: p.day };
-
-            if (!thisYearSolar) continue;
-            const thisYearTime = Date.UTC(thisYearSolar.year, thisYearSolar.month - 1, thisYearSolar.day);
-            const nextYearTime = nextYearSolar ? Date.UTC(nextYearSolar.year, nextYearSolar.month - 1, nextYearSolar.day) : thisYearTime;
-
-            targetSolar = (todayMidnightUTC <= thisYearTime) ? thisYearSolar : nextYearSolar;
-          } else {
-            targetSolar = { year: p.year, month: p.month, day: p.day };
-          }
-
-          if (!targetSolar) continue;
-          const targetTime = Date.UTC(targetSolar.year, targetSolar.month - 1, targetSolar.day);
-          const diffDays = Math.round((targetTime - todayMidnightUTC) / 86400000);
-
-          // 判定是否命中提醒天数策略 (如 7天、3天、1天、0天)
-          if (advanceDays.includes(diffDays) && diffDays >= 0) {
-            const lockKey = `lock_${item.id || item.title}_${targetSolar.year}_d${diffDays}`;
-            if (signalData.reminderLog[lockKey]) {
-              continue; // 幂等防刷：已发送过直接跳过
-            }
-
-            let daysText = diffDays === 0 ? "🎉 正是今天" : `还剩 ${diffDays} 天`;
-            let subject = diffDays === 0 
-              ? `🎉【今日纪念日】${item.title || "契约纪念日"} · 愿爱永不止息`
-              : `💌【纪念日倒数】距离 ${item.title || "契约纪念日"} 仅剩 ${diffDays} 天！`;
-
-            const dateMeta = isLunar 
-              ? `目标公历: ${targetSolar.year}-${String(targetSolar.month).padStart(2, "0")}-${String(targetSolar.day).padStart(2, "0")} (农历${isLeap ? "闰" : ""}${CN_MONTHS[p.month - 1] || p.month}月${CN_DAYS[p.day - 1] || p.day})`
-              : `目标日期: ${targetSolar.year}-${String(targetSolar.month).padStart(2, "0")}-${String(targetSolar.day).padStart(2, "0")}`;
-
-            const hostUrl = `https://${tenantDir.replace(/_/g, ".")}`;
-            const emailHtml = buildRomanticEmailHtml({
-              siteTitle: config.meta?.siteTitle,
-              boyName: config.meta?.boyName || "良人",
-              girlName: config.meta?.girlName || "佳偶",
-              eventTitle: `${item.icon || "💖"} ${item.title || "契约纪念日"}`,
-              daysText,
-              dateMeta,
-              memo: item.memo || "",
-              hostUrl
-            });
-
-            const sendRes = await sendResendEmail({
-              apiKey: reminderCfg.resendApiKey,
-              fromEmail: reminderCfg.senderEmail,
-              toEmails: recipients,
-              subject,
-              htmlContent: emailHtml
-            });
-
-            if (sendRes.success) {
-              signalData.reminderLog[lockKey] = {
-                sentAt: new Date().toISOString(),
-                recipients,
-                diffDays
-              };
-              hasNewSentLock = true;
-            }
-          }
-        }
-
-        if (hasNewSentLock) {
-          await bucket.put(signalsKey, JSON.stringify(signalData, null, 2), {
-            httpMetadata: { contentType: "application/json; charset=utf-8" }
-          });
-        }
-      } catch (_) {}
-    }
-  },
-
-  // ================= 2. 全站 HTTP 路由分发 =================
+  // ================= 1. 全站 HTTP 路由分发 =================
   async fetch(request, env) {
     const url = new URL(request.url);
     const bucket = env.R2 || env.BUCKET || env.PAN || env.MY_BUCKET || env.FILE_BUCKET;
@@ -340,6 +32,7 @@ export default {
       });
     }
 
+    // 多租户隔离机制：自动将 Punycode/英文字符归一化为独立存储目录
     const rawHost = (url.hostname || "default.local").toLowerCase();
     const tenantDir = rawHost.replace(/[^a-z0-9.-]/g, "_");
     const CONFIG_KEY = `${tenantDir}/config.json`;
@@ -348,6 +41,7 @@ export default {
     const ADMIN_PASSWORD = String(env.ADMIN_PASSWORD || env.SECRET_PWD || env.ADMIN_PWD || "521").trim();
     const MASTER_LICENSE_SECRET = String(env.MASTER_LICENSE_SECRET || "SACRED_UNQUENCHABLE_LOVE_2026_KEY").trim();
 
+    // 严格管理鉴权：租户自定义密码具有最高优先级，彻底消除 521 越权后门
     async function verifyAdminAuth(req) {
       const headerAuth = req.headers.get("x-admin-auth") || req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
       const queryAuth = url.searchParams.get("auth");
@@ -355,15 +49,18 @@ export default {
 
       if (!token) return false;
 
+      // 1. 如果环境变量配置了非 521 的全局超级密钥，允许作为运维直通
       if (env.ADMIN_PASSWORD && env.ADMIN_PASSWORD !== "521" && token === String(env.ADMIN_PASSWORD).trim()) {
         return true;
       }
 
+      // 2. 检查租户专属 R2 存储中的配置密码
       if (bucket) {
         try {
           const obj = await bucket.get(CONFIG_KEY);
           if (obj) {
             const cfg = JSON.parse(await obj.text());
+            // 只要租户配置了自定义管理密码，必须严格匹配该密码，绝不放行 521
             if (cfg.adminSecurity && cfg.adminSecurity.password) {
               return token === String(cfg.adminSecurity.password).trim();
             }
@@ -371,6 +68,7 @@ export default {
         } catch (_) {}
       }
 
+      // 3. 仅在站点尚未进行任何自定义配置时，才允许默认初始密码 521
       return token === "521" || token === ADMIN_PASSWORD;
     }
 
@@ -379,6 +77,7 @@ export default {
       return !profanityRegex.test(contentString);
     }
 
+    // 🌟 阶段安全与伦理边界硬过滤 (服务端强制执行，严禁恋爱期出现同居或室内私密文案)
     function getStageSafeContent(stage, actionType, userCustomText) {
       const standardDict = {
         dating: {
@@ -410,12 +109,16 @@ export default {
 
       if (userCustomText && typeof userCustomText === "string" && userCustomText.trim().length > 0) {
         const text = userCustomText.trim().slice(0, 150);
+        // 恋爱期严禁越界词汇 (同居、私密室内、同室照料)
         if (validStage === "dating") {
           const forbiddenDatingRegex = /(同居|睡觉|同房|开房|上床|床头|我家|你家|家里|做饭|切水果|洗碗|家务|同睡|书房)/i;
-          if (forbiddenDatingRegex.test(text)) return fallback;
+          if (forbiddenDatingRegex.test(text)) {
+            return fallback;
+          }
         }
         return text;
       }
+
       return fallback;
     }
 
@@ -488,7 +191,7 @@ export default {
         return jsonResponse({ success: true, custom: false, domain: rawHost, config: null, isAdmin });
       }
 
-      // 2. 保存并发布配置 (POST /api/love/config)
+      // 2. 保存并发布配置 (POST /api/love/config) (严格按租户目录隔离)
       if (url.pathname === "/api/love/config" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
         
@@ -534,51 +237,9 @@ export default {
         });
       }
 
-      // 🌟 3. 智能提醒邮件即时测试接口 (POST /api/love/reminder/test)
-      if (url.pathname === "/api/love/reminder/test" && request.method === "POST") {
-        const isAuthed = await verifyAdminAuth(request);
-        if (!isAuthed) return jsonResponse({ success: false, error: "未授权" }, 401);
+      // ================= 🌟 3. 破冰与情感信号箱状态机系统 =================
 
-        let body = {};
-        try { body = await request.json(); } catch (_) {
-          return jsonResponse({ success: false, error: "数据格式错误" }, 400);
-        }
-
-        const reminderCfg = body.reminderConfig || {};
-        const apiKey = reminderCfg.resendApiKey;
-        const boyEmail = reminderCfg.boyEmail?.trim();
-        const girlEmail = reminderCfg.girlEmail?.trim();
-        const recipients = [boyEmail, girlEmail].filter(Boolean);
-
-        if (!apiKey) return jsonResponse({ success: false, error: "请先配置 Resend API Key" }, 400);
-        if (recipients.length === 0) return jsonResponse({ success: false, error: "请至少填写一个通知邮箱" }, 400);
-
-        const emailHtml = buildRomanticEmailHtml({
-          siteTitle: "众水不灭 · 雅歌之印",
-          boyName: "张小阳",
-          girlName: "李小光",
-          eventTitle: "✨ 智能提醒通知通道测试成功",
-          daysText: "测试连通",
-          dateMeta: `测试时刻: ${new Date(Date.now() + 8 * 3600 * 1000).toISOString().replace("T", " ").slice(0, 19)} (北京时间)`,
-          memo: "这条测试消息证明您的 Resend 邮件引擎已完美连接！在每一个重要的纪念日与生日前夕，爱的心意都将准时送达。",
-          hostUrl: `https://${rawHost}`
-        });
-
-        const sendResult = await sendResendEmail({
-          apiKey,
-          fromEmail: reminderCfg.senderEmail,
-          toEmails: recipients,
-          subject: "💌【雅歌之印】智能提醒邮件通道测试成功",
-          htmlContent: emailHtml
-        });
-
-        if (sendResult.success) {
-          return jsonResponse({ success: true, message: "🎉 测试邮件发送成功，请前往收件箱查收！" });
-        }
-        return jsonResponse({ success: false, error: sendResult.error || "发信失败" }, 500);
-      }
-
-      // 4. 破冰信号状态机系统 (GET /api/love/signal)
+      // A. 获取当前租户最新信号与和好状态 (GET /api/love/signal)
       if (url.pathname === "/api/love/signal" && request.method === "GET") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -589,6 +250,7 @@ export default {
         } catch (_) {}
 
         const now = Date.now();
+        // 自动清理超过 24 小时的未响应活跃信号
         if (signalData.activeSignal) {
           const isExpired = (now - signalData.activeSignal.createdAt) > 24 * 60 * 60 * 1000;
           if (isExpired && signalData.activeSignal.status === "active") {
@@ -604,7 +266,7 @@ export default {
         });
       }
 
-      // 5. 发射破冰信号 (POST /api/love/signal)
+      // B. 发射破冰信号 (POST /api/love/signal)
       if (url.pathname === "/api/love/signal" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -632,6 +294,7 @@ export default {
           if (obj) signalData = JSON.parse(await obj.text());
         } catch (_) {}
 
+        // 1. 冷静期时间锁判定 (防止狂点施压)
         const currentSig = signalData.activeSignal;
         if (currentSig && currentSig.status === "active") {
           if (currentSig.senderDeviceId === senderDeviceId && currentSig.cooldownUntil && currentSig.cooldownUntil > now) {
@@ -643,6 +306,8 @@ export default {
             }, 429);
           }
 
+          // 2. 🌟 双向奔赴 (MUTUAL_HEAL) 并发冲突自动消除算法
+          // 若对方在 5 分钟内也发起了和好/想念/道歉，双向奔赴达成，免除等待直接和解
           const isFromOtherSide = currentSig.senderGender !== senderGender;
           const isCurrentPeaceAction = ["break_ice", "apology", "miss_you", "warm_hug"].includes(actionType);
           const isPrevPeaceAction = ["break_ice", "apology", "miss_you", "warm_hug"].includes(currentSig.actionType);
@@ -677,6 +342,7 @@ export default {
           }
         }
 
+        // 3. 构建全新信号
         const cooldownMs = actionType === "calm_down" ? (15 * 60 * 1000) : (60 * 1000);
         const newActiveSignal = {
           signalId: `sig_${now}_${Math.random().toString(36).substring(2, 6)}`,
@@ -704,7 +370,7 @@ export default {
         });
       }
 
-      // 6. 响应破冰信号 (POST /api/love/signal/ack)
+      // C. 响应与处理破冰信号 (POST /api/love/signal/ack)
       if (url.pathname === "/api/love/signal/ack" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -716,7 +382,7 @@ export default {
         const signalId = String(body.signalId || "").trim();
         const responderGender = String(body.responderGender || "girl");
         const responderDeviceId = String(body.responderDeviceId || "").trim();
-        const responseType = String(body.responseType || "accept");
+        const responseType = String(body.responseType || "accept"); // "accept" | "wait_a_bit" | "viewed"
         const responseText = String(body.responseText || "").trim();
 
         if (!sanitizeSanctity(responseText)) {
@@ -736,12 +402,15 @@ export default {
 
         const now = Date.now();
 
+        // 1. 已读标记
         if (responseType === "viewed") {
           if (currentSig.status === "active") {
             currentSig.status = "viewed";
             currentSig.viewedAt = now;
           }
-        } else if (responseType === "accept") {
+        } 
+        // 2. 接纳和好
+        else if (responseType === "accept") {
           currentSig.status = "accepted";
           currentSig.resolvedAt = now;
           currentSig.response = {
@@ -763,7 +432,9 @@ export default {
             resolvedAt: now
           });
           if (signalData.history.length > 30) signalData.history = signalData.history.slice(0, 30);
-        } else if (responseType === "wait_a_bit") {
+        } 
+        // 3. 还在整理情绪 (撒娇等待)
+        else if (responseType === "wait_a_bit") {
           currentSig.status = "cooling";
           currentSig.response = {
             responderGender,
@@ -778,10 +449,14 @@ export default {
           httpMetadata: { contentType: "application/json; charset=utf-8" }
         });
 
-        return jsonResponse({ success: true, message: "✓ 响应已同步！", signal: currentSig });
+        return jsonResponse({
+          success: true,
+          message: "✓ 响应已同步！",
+          signal: currentSig
+        });
       }
 
-      // 7. 查看历史和好足迹备忘录 (GET /api/love/signal/history)
+      // D. 查看历史和好足迹备忘录 (GET /api/love/signal/history)
       if (url.pathname === "/api/love/signal/history" && request.method === "GET") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -791,10 +466,13 @@ export default {
           if (obj) signalData = JSON.parse(await obj.text());
         } catch (_) {}
 
-        return jsonResponse({ success: true, history: signalData.history || [] });
+        return jsonResponse({
+          success: true,
+          history: signalData.history || []
+        });
       }
 
-      // 8. 重置信号队列 (POST /api/love/signal/clear)
+      // E. 重置/清空信号队列 (POST /api/love/signal/clear)
       if (url.pathname === "/api/love/signal/clear" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -805,16 +483,15 @@ export default {
         } catch (_) {}
 
         signalData.activeSignal = null;
-        signalData.reminderLog = {};
 
         await bucket.put(SIGNALS_KEY, JSON.stringify(signalData, null, 2), {
           httpMetadata: { contentType: "application/json; charset=utf-8" }
         });
 
-        return jsonResponse({ success: true, message: "已重置信号状态与提醒日志" });
+        return jsonResponse({ success: true, message: "已重置信号状态" });
       }
 
-      // 9. 上传多媒体附件 (POST /api/love/upload)
+      // 4. 上传多媒体附件 (MP3 音频、壁纸与拍立得照片)
       if (url.pathname === "/api/love/upload" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
         
@@ -835,7 +512,7 @@ export default {
         return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
-      // 10. 恩典灵宠通道
+      // 5. 恩典灵宠通道
       if (url.pathname === "/api/love/pet") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
 
@@ -875,7 +552,7 @@ export default {
         }
       }
 
-      // 11. 门禁校验
+      // 6. 门禁校验 (严格根据自定义管理密码判定 isAdmin，彻底封堵 521 漏洞)
       if (url.pathname === "/api/love/verify-gatekeeper" && request.method === "POST") {
         let reqData = {};
         try { reqData = await request.json(); } catch (_) {}
@@ -899,6 +576,7 @@ export default {
           } catch (_) {}
         }
 
+        // 仅当输入密码与当前租户自定义密码完全相符时才判定为管理员
         let isAdmin = false;
         if (customAdminPwd) {
           if (inputPwd === customAdminPwd || (env.ADMIN_PASSWORD && env.ADMIN_PASSWORD !== "521" && inputPwd === String(env.ADMIN_PASSWORD).trim().toLowerCase())) {
@@ -910,12 +588,19 @@ export default {
           }
         }
 
-        if (isAdmin) return jsonResponse({ success: true, isAdmin: true });
-        if (inputPwd === correctPwd) return jsonResponse({ success: true, isAdmin: false });
-        return jsonResponse({ success: false, message: "口令错误" }, 403);
+        if (isAdmin) {
+          return jsonResponse({ success: true, isAdmin: true });
+        }
+
+        // 访客门禁校验
+        if (inputPwd === correctPwd) {
+          return jsonResponse({ success: true, isAdmin: false });
+        } else {
+          return jsonResponse({ success: false, message: "口令错误" }, 403);
+        }
       }
 
-      // 12. 域名专属授权兑换
+      // 7. 域名专属授权兑换
       if (url.pathname === "/api/love/verify-license" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "存储服务不可用" }, 500);
 
@@ -925,7 +610,9 @@ export default {
         const incomingConfig = reqData.currentConfig;
 
         const isValid = await verifyDomainLicense(rawHost, code);
-        if (!isValid) return jsonResponse({ success: false, message: "⚠️ 授权激活码无效或与当前域名不匹配！" }, 403);
+        if (!isValid) {
+          return jsonResponse({ success: false, message: "⚠️ 授权激活码无效或与当前域名不匹配！" }, 403);
+        }
 
         let currentCfg = {};
         try {
@@ -950,7 +637,7 @@ export default {
         return jsonResponse({ success: true, message: `✨ 星河契约已鉴证！【${rawHost}】专属高级隐藏福泽已永久解锁。` });
       }
 
-      // 13. 清理废弃文件
+      // 8. 清理废弃文件
       if (url.pathname === "/api/love/cleanup" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
         
@@ -991,7 +678,7 @@ export default {
         });
       }
 
-      // 14. 在线音乐检索 (酷狗官方接口)
+      // 9. 在线音乐检索 (酷狗官方接口，透传元数据确保流式降级命中率)
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
         const keyword = (url.searchParams.get("keyword") || "").trim();
         const songs = [];
@@ -1028,7 +715,7 @@ export default {
         return jsonResponse({ success: true, songs });
       }
 
-      // 15. 音频流式代理
+      // 10. 🎵 音频流式代理 (多引擎无损/高保真解析，严格拒绝偷梁换柱，全部失败直接抛出标准 404)
       if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
         const hash = url.searchParams.get("hash");
         const albumId = url.searchParams.get("album_id") || "0";
@@ -1037,6 +724,7 @@ export default {
         let targetAudioUrl = "";
 
         if (hash) {
+          // 通道 1: 移动端接口解析
           try {
             const kgInfoRes = await fetch(`https://m.kugou.com/app/i/getSongInfo.php?cmd=playInfo&hash=${hash}`, {
               headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)" }
@@ -1049,6 +737,7 @@ export default {
             }
           } catch (_) {}
 
+          // 通道 2: 网页端接口备用解析
           if (!targetAudioUrl) {
             try {
               const kgWebRes = await fetch(`https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&album_id=${albumId}&dfid=-&mid=-&platid=4&_=${Date.now()}`, {
@@ -1066,6 +755,7 @@ export default {
           }
         }
 
+        // 通道 3: 若单平台版权拦截且具备歌曲名/歌手，聚合公共开放库同名匹配同一首歌曲
         if (!targetAudioUrl && (title || hash)) {
           try {
             const querySong = `${title} ${artist}`.trim();
@@ -1081,7 +771,9 @@ export default {
                   });
                   if (kwPlayRes.ok) {
                     const directUrl = (await kwPlayRes.text()).trim();
-                    if (directUrl && directUrl.startsWith("http")) targetAudioUrl = directUrl;
+                    if (directUrl && directUrl.startsWith("http")) {
+                      targetAudioUrl = directUrl;
+                    }
                   }
                 }
               }
@@ -1089,30 +781,49 @@ export default {
           } catch (_) {}
         }
 
+        // 解析失败直接返回 404，绝不偷换歌曲
         if (!targetAudioUrl || !targetAudioUrl.startsWith("http")) {
-          return new Response("Audio Source Unavailable Due To Copyright", { status: 404, headers: corsHeaders });
+          return new Response("Audio Source Unavailable Due To Copyright", {
+            status: 404,
+            headers: corsHeaders
+          });
         }
 
+        // 服务端流式转发，抹除 Referer，带上标准 CORS 与 Range 协议
         try {
           const range = request.headers.get("Range");
-          const forwardHeaders = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Referer": "" };
+          const forwardHeaders = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "Referer": ""
+          };
           if (range) forwardHeaders["Range"] = range;
 
-          const streamRes = await fetch(targetAudioUrl, { headers: forwardHeaders, redirect: "follow" });
+          const streamRes = await fetch(targetAudioUrl, {
+            headers: forwardHeaders,
+            redirect: "follow"
+          });
+
           if (streamRes.ok || streamRes.status === 206) {
             const responseHeaders = new Headers(corsHeaders);
             responseHeaders.set("Content-Type", streamRes.headers.get("Content-Type") || "audio/mpeg");
             responseHeaders.set("Accept-Ranges", "bytes");
-            if (streamRes.headers.get("Content-Length")) responseHeaders.set("Content-Length", streamRes.headers.get("Content-Length"));
-            if (streamRes.headers.get("Content-Range")) responseHeaders.set("Content-Range", streamRes.headers.get("Content-Range"));
-            return new Response(streamRes.body, { status: streamRes.status, headers: responseHeaders });
+            if (streamRes.headers.get("Content-Length")) {
+              responseHeaders.set("Content-Length", streamRes.headers.get("Content-Length"));
+            }
+            if (streamRes.headers.get("Content-Range")) {
+              responseHeaders.set("Content-Range", streamRes.headers.get("Content-Range"));
+            }
+            return new Response(streamRes.body, {
+              status: streamRes.status,
+              headers: responseHeaders
+            });
           }
         } catch (_) {}
 
         return Response.redirect(targetAudioUrl, 302);
       }
 
-      // 16. 静态文件流式输出 (/raw/*)
+      // 11. 静态文件流式输出 (/raw/*)
       if (url.pathname.startsWith("/raw/")) {
         if (!bucket) return new Response("Bucket Not Found", { status: 500 });
         const key = decodeURIComponent(url.pathname.replace(/^\/raw\//, ""));
