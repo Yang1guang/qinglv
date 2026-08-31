@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe) 前台核心主控
  * 文件名: js/core.js
- * 作用: 门禁鉴权、软键盘失焦防白屏、打字机、彩蛋、专属姓名连接符美化与 300DPI 标准几何中心拍立得海报生成
+ * 作用: 门禁鉴权、软键盘失焦防白屏、打字机、彩蛋、专属姓名连接符美化、中枢舞台唤醒与 300DPI 标准几何中心拍立得海报生成
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -285,6 +285,10 @@ document.addEventListener("DOMContentLoaded", () => {
       window.ThemeEngine.init();
     }
 
+    if (window.StageManager) {
+      window.StageManager.init();
+    }
+
     if (window.PhotoWallManager) {
       const photoWall = new window.PhotoWallManager(config);
       photoWall.init();
@@ -404,6 +408,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 50);
     }
 
+    // 唤醒并确保舞台管理器就绪
+    if (window.StageManager) {
+      window.StageManager.init();
+    }
+
     if (window.LifecycleEngine) {
       const lifecycleMgr = new window.LifecycleEngine(config);
       lifecycleMgr.init();
@@ -511,7 +520,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ================= 📸 300DPI 标准拍立得海报生成引擎 =================
   let exportedPosterDataUrl = "";
   if (dom.generatePosterBtn) {
     dom.generatePosterBtn.onclick = () => {
