@@ -7,12 +7,10 @@
 document.addEventListener("DOMContentLoaded", () => {
   let config = window.LOVE_CONFIG || {};
 
-  // 原生字符转义防止 XSS
   function escapeHtml(s) {
     return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  // 纯原生 RFC 3492 Punycode 逆向解码器 (海报生成中展示纯中文网址)
   function decodePunycodeHost(domainStr) {
     if (!domainStr || typeof domainStr !== "string") return domainStr || "";
     try {
@@ -545,7 +543,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // 辅助函数: Canvas 智能等比裁切（模拟 object-fit: cover 杜绝变形拉伸）
   function drawImageCover(ctx, img, x, y, w, h, radius = 0) {
     if (!img || !img.complete || img.naturalWidth === 0) {
       ctx.fillStyle = "#1e293b";
@@ -587,7 +584,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.restore();
   }
 
-  // 辅助函数: 绘制专属真实二维码
   function drawDomainQrCode(ctx, qrX, qrY, qrSize, targetUrl) {
     ctx.save();
     ctx.fillStyle = "#ffffff";
@@ -642,13 +638,11 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.restore();
   }
 
-  // 🎯 核心标准化单张拍立得刚体绘制函数 (几何中心原点旋转，100% 杜绝文字脱节与错位)
   function drawPolaroidPosterCard(ctx, img, data, cx, cy, w, h, deg, isMain = false) {
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate((deg * Math.PI) / 180);
 
-    // 1. 卡片外部真实投影与白底相纸
     ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
     ctx.shadowBlur = isMain ? 35 : 22;
     ctx.shadowOffsetX = 0;
@@ -674,7 +668,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ctx.shadowColor = "transparent";
 
-    // 2. 相纸内部照片区域计算
     const pad = isMain ? 22 : 14;
     const imgW = w - pad * 2;
     const bottomSpace = isMain ? 145 : 82;
@@ -689,14 +682,12 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.fillRect(imgX, imgY, imgW, imgH);
     }
 
-    // 3. 严格 1 对 1 绑定对应节点的标题、日期与地点
     const textYStart = imgY + imgH + (isMain ? 20 : 12);
     const title = (data?.title || (isMain ? "初见心动" : "美好瞬间")).trim();
     const date = (data?.date || "2024.05.20").trim();
     const location = (data?.location || "").trim();
 
     if (isMain) {
-      // 主拍立得：大字号标题 + 拍摄日期地点
       ctx.fillStyle = "#1e293b";
       ctx.font = 'bold 28px "Songti SC", "STSong", "Noto Serif SC", serif, sans-serif';
       ctx.textAlign = "left";
@@ -708,7 +699,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const locText = location ? `  ·  ${location}` : "";
       ctx.fillText(`${date}${locText}`, imgX + 6, textYStart + 68, imgW - 12);
     } else {
-      // 次级拍立得：居中优雅排布，严格限制在相纸内
       ctx.fillStyle = "#1e293b";
       ctx.font = 'bold 18px "Songti SC", "STSong", "Noto Serif SC", serif, sans-serif';
       ctx.textAlign = "center";
@@ -729,7 +719,6 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.width = 1080;
     canvas.height = 1920;
 
-    // 1. 深邃星空高奢渐变底色
     const bgGradient = ctx.createLinearGradient(0, 0, 0, 1920);
     bgGradient.addColorStop(0, "#090d16");
     bgGradient.addColorStop(0.3, "#1e1b4b");
@@ -748,7 +737,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.fill();
     }
 
-    // 2. 头部品牌徽章与大标题
     ctx.fillStyle = "rgba(245, 158, 11, 0.2)";
     ctx.fillRect(360, 75, 360, 40);
     ctx.strokeStyle = "rgba(245, 158, 11, 0.5)";
@@ -766,7 +754,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.font = "24px sans-serif";
     ctx.fillText(config.meta?.siteSubtitle || "众水不能熄灭爱情，大水不能淹没 · 一生一世的契约", 540, 230);
 
-    // 3. 提取前 3 张时光轴照片与节点元数据 (严格 1 对 1 绑定)
     const timelineList = config.timeline || [];
     const photoUrls = [
       timelineList[0]?.frontImg || "assets/images/photo_01.jpg",
@@ -784,16 +771,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }));
 
-    // 主拍立得卡片 (左侧大卡片：宽 560, 高 690, 中心坐标 cx=350, cy=635)
     drawPolaroidPosterCard(ctx, loadedImages[0], timelineList[0], 350, 635, 560, 690, 0, true);
-
-    // 次拍立得卡片 1 (右上倾斜卡片：宽 350, 高 330, 中心坐标 cx=865, cy=460, 旋转 +2.5度)
     drawPolaroidPosterCard(ctx, loadedImages[1], timelineList[1], 865, 460, 350, 330, 2.5, false);
-
-    // 次拍立得卡片 2 (右下倾斜卡片：宽 350, 高 330, 中心坐标 cx=865, cy=815, 旋转 -2度)
     drawPolaroidPosterCard(ctx, loadedImages[2], timelineList[2], 865, 815, 350, 330, -2, false);
 
-    // 4. 核心计时器与天数
     const startTimestamp = new Date(config.meta?.startDate || "2024-05-20").getTime();
     const totalDays = Math.floor((Date.now() - startTimestamp) / (1000 * 60 * 60 * 24));
 
@@ -818,7 +799,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillText(`“ ${config.letter?.title || "致我生命中的唯一"} ” · 故事未完待续`, 540, 1240);
     ctx.restore();
 
-    // 5. 真情告白金句摘录
     ctx.save();
     ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
     ctx.fillRect(80, 1295, 920, 250);
@@ -843,7 +823,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillText(`—— ${config.letter?.signature || "爱你的良人"} · ${config.letter?.signDate || "2026.05.20"}`, 970, 1510);
     ctx.restore();
 
-    // 6. 底部专属独立二维码直连区 (自动解码还原中文网址)
     const rawDomainUrl = window.location.href.split("#")[0].split("?")[0];
     const displayHostname = decodePunycodeHost(window.location.hostname);
     const displayDomainUrl = rawDomainUrl.replace(window.location.hostname, displayHostname);
@@ -876,7 +855,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillText("微信 / 相机扫一扫 · 开启 3D 沉浸式浪漫空间与真情留言", 330, 1755);
     ctx.restore();
 
-    // 7. 底部版权标记
     ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
     ctx.font = "20px sans-serif";
     ctx.textAlign = "center";
