@@ -1,3 +1,4 @@
+
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/base.css
@@ -47,14 +48,15 @@
 
 html {
   font-size: 16px;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   -webkit-text-size-adjust: 100%;
   background-color: var(--space-dark);
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
   position: relative;
-  touch-action: manipulation;
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 body {
@@ -66,11 +68,13 @@ body {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
   line-height: 1.6;
   padding-bottom: max(24px, env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  overscroll-behavior-y: contain;
 }
 
 /* 🔒 iOS 滚动穿透锁定专用样式 */
@@ -99,7 +103,6 @@ body.body--locked {
   pointer-events: none;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
-  will-change: transform, background-image;
   transition: background-image 0.4s ease;
 }
 
