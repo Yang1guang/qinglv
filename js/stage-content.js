@@ -1,3 +1,4 @@
+
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/stage-content.js
@@ -232,7 +233,7 @@ window.STAGE_CONTENT = {
       }
     ]
   }
-};[cite: 5]
+};
 
 // ================= 2. 星轨中枢舞台生命周期控制器 (StageManager) =================
 class StageManager {
