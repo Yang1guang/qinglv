@@ -298,14 +298,11 @@ window.LOVE_CONFIG = {
     }
   },
 
-  // ================= 🌟 9. 智能全时域提醒中枢数据契约 (Cron + Resend + 晨光弹窗) =================
+  // ================= 🌟 9. 纯端侧全维智能提醒中枢 (0请求/0云端依赖) =================
   reminder: {
-    enabled: true,
-    resendApiKey: "",
-    senderEmail: "雅歌之印 <onboarding@resend.dev>",
-    boyEmail: "",
-    girlEmail: "",
-    advanceDays: [7, 3, 1, 0], // 提前 7天、3天、1天以及当天09:00准时推送
+    enabled: true,              // 是否启用全端提醒引擎
+    enableNativePush: true,     // 是否允许向操作系统申请原生 Web Notification 权限 (支持桌面/部分安卓横幅)
+    advanceDays: [7, 3, 1, 0],  // 本地推算提前触发天数策略
     memos: [
       {
         id: "memo_1",
