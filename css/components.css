@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/components.css
- * 升级：实施方案 C (大字号主角名字置顶 + 精巧时间胶囊居中 + 优雅衬线 & 符号点缀)
+ * 升级：星轨中枢导航网格 (Navigation Dock) + 全屏沉浸分幕系统 (Stage Modals) + 完整组件集
  */
 
 .universe-canvas,
@@ -61,7 +61,7 @@
   -webkit-backdrop-filter: blur(8px);
 }
 
-/* 门禁层 */
+/* ================= 门禁层 ================= */
 .gatekeeper {
   position: fixed;
   inset: 0;
@@ -147,10 +147,10 @@
 
 .gatekeeper__btn { width: 100%; padding: 13px 20px; font-size: 15px; }
 
-/* ================= 头部视差区 (方案 C：名字大字号置顶 + 时间胶囊居中) ================= */
+/* ================= 头部视差区 ================= */
 .hero-section {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: 30px;
   padding-top: 10px;
   contain: layout style;
   display: flex;
@@ -158,7 +158,6 @@
   align-items: center;
 }
 
-/* 名字字符放大并赋予典雅艺术字形 */
 .hero-section__names {
   font-size: 38px;
   font-weight: 900;
@@ -178,7 +177,6 @@
   transition: all 0.3s ease;
 }
 
-/* 🌟 连接符「&」专属古典衬线倾斜与微光高奢点缀 */
 .name-connector {
   display: inline-block;
   font-family: "Playfair Display", "Baskerville", "Georgia", "Songti SC", serif;
@@ -193,7 +191,6 @@
   transition: all 0.3s ease;
 }
 
-/* 契约时间胶囊微缩精致居中置于名字与副标题之间 */
 .hero-section__badge {
   font-size: 10px;
   font-weight: 900;
@@ -215,7 +212,7 @@
   font-size: 13.5px;
   color: var(--text-subtitle, var(--text-muted));
   font-weight: 600;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
   transition: color 0.3s ease;
 }
 
@@ -223,7 +220,7 @@
   background: var(--bg-card, var(--space-card));
   border: 1.5px solid var(--border-card, var(--glass-border));
   border-radius: 24px;
-  padding: 22px 18px;
+  padding: 20px 18px;
   box-shadow: var(--card-shadow, var(--glass-shadow));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -240,7 +237,7 @@
   color: var(--text-sub, var(--text-muted));
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   transition: color 0.3s ease;
 }
 
@@ -302,14 +299,14 @@
   padding: 0 2px;
 }
 
-/* 告白信 */
-.confession-section { margin-bottom: 40px; contain: layout style; width: 100%; }
+/* ================= 告白信 ================= */
+.confession-section { margin-bottom: 32px; contain: layout style; width: 100%; }
 
 .confession-card {
   background: var(--confession-bg, rgba(255, 253, 245, 0.95));
   border: 1.5px solid var(--confession-border, transparent);
   border-radius: 24px;
-  padding: 26px 22px;
+  padding: 24px 20px;
   color: var(--confession-text, var(--text-dark));
   box-shadow: var(--card-shadow, 0 16px 36px rgba(0, 0, 0, 0.4));
   max-width: 680px;
@@ -334,7 +331,7 @@
   font-weight: 900;
   color: var(--confession-title, #9f1239);
   text-align: center;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   transition: color 0.3s ease;
 }
 
@@ -342,7 +339,7 @@
   font-size: 14.5px;
   line-height: 1.8;
   color: var(--confession-text, #374151);
-  min-height: 80px;
+  min-height: 70px;
   word-break: break-word;
   position: relative;
   display: inline;
@@ -361,8 +358,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 18px;
-  padding-top: 12px;
+  margin-top: 16px;
+  padding-top: 10px;
   border-top: 1px dashed rgba(244, 63, 94, 0.2);
   font-size: 12px;
   font-weight: 700;
@@ -370,9 +367,250 @@
   transition: color 0.3s ease;
 }
 
-/* 拍立得时光轴 */
-.timeline-section { margin-bottom: 45px; contain: layout style; width: 100%; }
+/* ================= 🌟 星轨功能中枢导航 (Navigation Dock) ================= */
+.hub-dock {
+  background: var(--bg-card, var(--space-card));
+  border: 1.5px solid var(--border-card, var(--glass-border));
+  border-radius: 28px;
+  padding: 26px 20px;
+  box-shadow: var(--card-shadow, var(--glass-shadow)), 0 0 30px rgba(245, 158, 11, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  max-width: 680px;
+  margin: 0 auto 36px;
+  contain: layout style;
+  transition: all 0.3s ease;
+}
 
+.hub-dock__header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.hub-dock__badge {
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--rose-gold);
+  background: rgba(251, 113, 133, 0.12);
+  border: 1px solid rgba(251, 113, 133, 0.3);
+  padding: 2px 10px;
+  border-radius: 16px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+.hub-dock__title {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text-hero, #fde68a);
+  letter-spacing: 1px;
+}
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.hub-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.28s var(--ease-spring);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.hub-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: var(--accent-gold, #f59e0b);
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 20px var(--accent-gold-glow, rgba(245, 158, 11, 0.3));
+}
+
+.hub-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.hub-btn__glow {
+  position: absolute;
+  inset: -100%;
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.25) 0%, transparent 60%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.hub-btn:hover .hub-btn__glow {
+  opacity: 1;
+}
+
+.hub-btn__icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  transition: transform 0.28s var(--ease-spring);
+}
+
+.hub-btn:hover .hub-btn__icon {
+  transform: scale(1.15) rotate(5deg);
+}
+
+.hub-btn__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.hub-btn__title {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: var(--text-main, #ffffff);
+  letter-spacing: 0.5px;
+}
+
+.hub-btn__desc {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.2;
+}
+
+/* ================= 🎪 全屏沉浸分幕系统 (Stage Modals) ================= */
+.stage-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 45000;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s;
+}
+
+.stage-overlay.stage-overlay--active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.stage-container {
+  position: fixed;
+  inset: 0;
+  z-index: 46000;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+
+.stage-modal {
+  position: absolute;
+  inset: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  max-width: 820px;
+  margin: 0 auto;
+  background: var(--bg-card, rgba(15, 23, 42, 0.9));
+  border: 1.5px solid var(--border-card, var(--glass-border));
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(245, 158, 11, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(30px) scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.32s;
+  will-change: transform, opacity;
+}
+
+.stage-modal.stage-modal--active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.stage-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 22px;
+  border-bottom: 1.5px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  background: rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.stage-modal__title-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage-modal__icon {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+}
+
+.stage-modal__title {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text-hero, #ffffff);
+  letter-spacing: 0.5px;
+}
+
+.stage-modal__close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main, #ffffff);
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.stage-modal__close-btn:hover {
+  background: var(--primary-pink);
+  border-color: var(--primary-pink);
+  transform: rotate(90deg) scale(1.1);
+}
+
+.stage-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ================= 拍立得时光轴 ================= */
 .timeline-flow {
   display: flex;
   flex-direction: column;
@@ -523,7 +761,6 @@
 .polaroid-card__back-title { font-size: 16px; font-weight: 800; color: #9f1239; margin-bottom: 10px; }
 .polaroid-card__back-text { font-size: 14px; line-height: 1.8; color: #374151; font-style: italic; }
 
-/* 🎙️ 时光轴背面 60 秒专属语音胶囊组件 */
 .polaroid-card__voice-box {
   margin-top: 14px;
   display: flex;
@@ -643,9 +880,7 @@
   font-weight: 700;
 }
 
-/* 100 件事 */
-.checklist-section { margin-bottom: 45px; contain: layout style; width: 100%; }
-
+/* ================= 100 件事清单 ================= */
 .checklist-card {
   background: var(--bg-card, var(--space-card));
   border: 1.5px solid var(--border-card, var(--glass-border));
@@ -690,7 +925,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 380px;
+  max-height: 480px;
   overflow-y: auto;
   padding-right: 6px;
   -webkit-overflow-scrolling: touch;
@@ -698,7 +933,7 @@
 
 .checklist-item {
   background: var(--drawer-item-bg, rgba(3, 7, 18, 0.5));
-  border: 1px solid var(--border-card, rgba(255, 255, 256, 0.06));
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
   border-radius: 12px;
   padding: 10px 14px;
   transition: all 0.2s ease;
@@ -755,9 +990,7 @@
   opacity: 0.6;
 }
 
-/* 刮刮乐 */
-.scratch-section { margin-bottom: 45px; contain: layout style; width: 100%; }
-
+/* ================= 刮刮乐 ================= */
 .scratch-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -825,7 +1058,7 @@
 .scratch-stamp__status { font-size: 18px; font-weight: 900; color: var(--stamp-red); letter-spacing: 2px; }
 .scratch-stamp__time { font-size: 9.5px; font-weight: 800; color: var(--stamp-red); font-family: ui-monospace, monospace; }
 
-/* 🌟 全局悬浮黑胶唱片机 (层级 55000) */
+/* ================= 🌟 全局悬浮黑胶唱片机 (层级 55000) ================= */
 .vinyl-player {
   position: fixed;
   bottom: max(20px, env(safe-area-inset-bottom, 20px));
@@ -932,7 +1165,7 @@
   border-color: var(--accent-gold);
 }
 
-/* 🎵 隐藏式毛玻璃歌曲列表抽屉 (挂载于左下角唱片正上方，最高交互层级 56000) */
+/* ================= 🎵 歌曲列表抽屉 (层级 56000) ================= */
 .playlist-drawer {
   position: fixed;
   bottom: calc(max(20px, env(safe-area-inset-bottom, 20px)) + 65px);
@@ -1076,7 +1309,7 @@
   line-height: 1.6;
 }
 
-/* 彩蛋与海报 */
+/* ================= 彩蛋与海报 ================= */
 .easter-egg-trigger {
   position: fixed;
   font-size: 20px;
@@ -1121,11 +1354,11 @@
 .poster-modal__tip { font-size: 12px; color: var(--text-sub, var(--text-muted)); margin-top: 10px; }
 .poster-modal__actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
 
-/* ================= 📱 手机端视口深度优化 (方案 C 紧凑优雅排布) ================= */
+/* ================= 📱 移动端视口深度调优 ================= */
 @media (max-width: 640px) {
   .hero-section {
-    padding-top: max(76px, calc(env(safe-area-inset-top, 0px) + 72px));
-    margin-bottom: 26px;
+    padding-top: max(72px, calc(env(safe-area-inset-top, 0px) + 68px));
+    margin-bottom: 22px;
   }
   .hero-section__names {
     font-size: 28px;
@@ -1133,23 +1366,23 @@
     position: relative;
     z-index: 30;
     padding: 0 6px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .name-connector {
     margin: 0 5px;
     font-size: 0.85em;
   }
   .hero-section__badge {
-    font-size: 9.5px;
+    font-size: 9px;
     letter-spacing: 2px;
     padding: 2.5px 11px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   .hero-section__subtitle {
-    font-size: 12px;
+    font-size: 11.5px;
     padding: 0 12px;
-    line-height: 1.5;
-    margin-bottom: 20px;
+    line-height: 1.4;
+    margin-bottom: 16px;
   }
 
   .perspective-capsule {
@@ -1170,24 +1403,65 @@
   }
 
   .love-timer {
-    padding: 16px 10px;
+    padding: 14px 10px;
     border-radius: 20px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
   .love-timer__grid {
-    gap: 5px;
+    gap: 4px;
   }
   .love-timer__unit {
-    min-width: 48px;
-    padding: 8px 4px;
+    min-width: 44px;
+    padding: 7px 4px;
     border-radius: 10px;
   }
   .love-timer__num {
-    font-size: 19px;
+    font-size: 18px;
   }
   .love-timer__label {
+    font-size: 9px;
+  }
+
+  .hub-dock {
+    padding: 18px 12px;
+    border-radius: 22px;
+    margin-bottom: 24px;
+  }
+  .hub-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .hub-btn {
+    padding: 12px 8px;
+    border-radius: 16px;
+  }
+  .hub-btn__icon {
+    font-size: 26px;
+    margin-bottom: 4px;
+  }
+  .hub-btn__title {
+    font-size: 12.5px;
+  }
+  .hub-btn__desc {
     font-size: 9.5px;
+  }
+
+  .stage-container {
+    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)) 8px;
+  }
+  .stage-modal {
+    inset: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)) 8px;
+    border-radius: 22px;
+  }
+  .stage-modal__header {
+    padding: 12px 16px;
+  }
+  .stage-modal__title {
+    font-size: 14.5px;
+  }
+  .stage-modal__body {
+    padding: 16px 12px;
   }
 
   .vinyl-player {
@@ -1220,7 +1494,7 @@
   }
 
   .phase-switch-bar {
-    margin: 22px 10px 12px 10px;
+    margin: 14px 6px 12px 6px;
     padding: 4px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
