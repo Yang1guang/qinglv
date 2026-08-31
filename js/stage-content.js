@@ -382,7 +382,21 @@ class StageManager {
       this.currentStage = stageId;
 
       const bodyWrapper = targetEl.querySelector(".stage-modal__body");
-      if (bodyWrapper) bodyWrapper.scrollTop = 0;
+      if (bodyWrapper) {
+        bodyWrapper.scrollTop = 0;
+        
+        // 🔧 特殊处理 anniversary stage: 将主页面的 anniversary-grid 内容克隆到 modal body
+        if (stageId === "anniversary") {
+          const mainContainer = document.getElementById("anniversary-container");
+          if (mainContainer && mainContainer.children.length > 0) {
+            const clonedContent = mainContainer.cloneNode(true);
+            clonedContent.style.display = "block";
+            clonedContent.style.maxWidth = "100%";
+            bodyWrapper.innerHTML = "";
+            bodyWrapper.appendChild(clonedContent);
+          }
+        }
+      }
     }
   }
 
