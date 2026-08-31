@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、高稳定单曲/多曲目列表播放引擎、隐藏列表抽屉与黑胶唱针联动
+ * 作用: 动效中枢、高稳定单曲/多曲目列表播放引擎、隐藏列表抽屉与黑胶唱针联动 (支持分幕生命周期 GPU 节能休眠)
  */
 
 class EffectsEngine {
@@ -13,6 +13,7 @@ class EffectsEngine {
     this.currentIndex = 0;
     this.playMode = "list-loop"; // "list-loop" | "single-loop" | "random"
     this.isDrawerOpen = false;
+    this.isAnimationSuspended = false;
 
     this.fireworksCanvas = document.getElementById("fireworks-canvas");
     this.fwCtx = this.fireworksCanvas ? this.fireworksCanvas.getContext("2d") : null;
@@ -26,7 +27,6 @@ class EffectsEngine {
     const audioCfg = this.config.audio || {};
     this.playMode = audioCfg.playMode || "list-loop";
 
-    // 默认单曲统一设为二珂版《告白气球》
     const defaultSingleTitle = audioCfg.bgmTitle || "告白气球";
     const defaultSingleArtist = audioCfg.bgmArtist || "二珂";
     const defaultSingleUrl = audioCfg.bgmUrl || "/api/love/music-stream?hash=F4726605D01122AD14206E4EBFD3D2E1&album_id=0&title=%E5%91%8A%E7%99%BD%E6%B0%94%E7%90%83&artist=%E4%BA%8C%E7%8F%82";
@@ -41,7 +41,6 @@ class EffectsEngine {
         cover: item.cover || defaultCover
       }));
     } else {
-      // 列表为空时，统一构建单曲播放条目
       this.playlist = [{
         id: "default_single",
         title: defaultSingleTitle,
@@ -73,10 +72,10 @@ class EffectsEngine {
     this.initAudioPlayer();
     this.initCanvasSize();
     this.initEventListeners();
+    this.bindStageLifecycle();
     this.updateTrackInfoDisplay();
     this.renderDrawerPlaylist();
 
-    // 交互唤醒手势，解除所有浏览器的静音拦截
     const unlockAudio = () => {
       if (this.config.audio && this.config.audio.bgmAutoPlay !== false && !this.isPlaying) {
         this.playBgm();
@@ -89,6 +88,16 @@ class EffectsEngine {
 
     window.addEventListener("resize", () => this.initCanvasSize());
     this.startAnimationLoop();
+  }
+
+  bindStageLifecycle() {
+    window.addEventListener("stage:opened", () => {
+      this.isAnimationSuspended = true;
+    });
+
+    window.addEventListener("stage:closed", () => {
+      this.isAnimationSuspended = false;
+    });
   }
 
   updateConfig(newConfig) {
@@ -116,7 +125,7 @@ class EffectsEngine {
       const currentTrack = this.getCurrentTrack();
       this.bgmAudio = new Audio(currentTrack.url);
       this.bgmAudio.preload = "auto";
-      this.bgmAudio.loop = false; // 采用列表/事件驱动循环
+      this.bgmAudio.loop = false;
 
       this.bgmAudio.addEventListener("play", () => {
         this.isPlaying = true;
@@ -130,12 +139,10 @@ class EffectsEngine {
         this.renderDrawerPlaylist();
       });
 
-      // 歌曲播放完毕，触发自动连播管线
       this.bgmAudio.addEventListener("ended", () => {
         this.handleTrackEnded();
       });
 
-      // 精准拦截音频加载失败，平稳隔离
       this.bgmAudio.addEventListener("error", () => {
         this.isPlaying = false;
         this.setVinylVisualPlaying(false);
@@ -251,7 +258,6 @@ class EffectsEngine {
     }
   }
 
-  // 展开 / 收起隐藏歌曲列表抽屉
   togglePlaylistDrawer() {
     const drawer = document.getElementById("playlist-drawer");
     if (!drawer) return;
@@ -364,7 +370,6 @@ class EffectsEngine {
     if (disc) disc.onclick = () => this.toggleBgm();
     if (toggleBtn) toggleBtn.onclick = () => this.toggleBgm();
     
-    // 精准修复：绑定歌单按钮点击事件，阻断冒泡并呼出抽屉
     if (listBtn) {
       listBtn.onclick = (e) => {
         e.stopPropagation();
@@ -379,7 +384,6 @@ class EffectsEngine {
       };
     }
 
-    // 点击外部区域自动收起抽屉
     document.addEventListener("click", (e) => {
       const drawer = document.getElementById("playlist-drawer");
       const vinylPlayer = document.getElementById("vinyl-player");
@@ -452,49 +456,51 @@ class EffectsEngine {
   startAnimationLoop() {
     const loop = () => {
       if (this.fwCtx) {
-        this.fwCtx.clearRect(0, 0, this.fireworksCanvas.width, this.fireworksCanvas.height);
+        if (!this.isAnimationSuspended) {
+          this.fwCtx.clearRect(0, 0, this.fireworksCanvas.width, this.fireworksCanvas.height);
 
-        for (let i = this.fireworks.length - 1; i >= 0; i--) {
-          const p = this.fireworks[i];
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vy += 0.05;
-          p.alpha -= 0.015;
+          for (let i = this.fireworks.length - 1; i >= 0; i--) {
+            const p = this.fireworks[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.05;
+            p.alpha -= 0.015;
 
-          if (p.alpha <= 0) {
-            this.fireworks.splice(i, 1);
-          } else {
-            this.fwCtx.beginPath();
-            this.fwCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            this.fwCtx.fillStyle = p.color;
-            this.fwCtx.globalAlpha = p.alpha;
-            this.fwCtx.shadowColor = p.color;
-            this.fwCtx.shadowBlur = 8;
-            this.fwCtx.fill();
-            this.fwCtx.shadowBlur = 0;
+            if (p.alpha <= 0) {
+              this.fireworks.splice(i, 1);
+            } else {
+              this.fwCtx.beginPath();
+              this.fwCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+              this.fwCtx.fillStyle = p.color;
+              this.fwCtx.globalAlpha = p.alpha;
+              this.fwCtx.shadowColor = p.color;
+              this.fwCtx.shadowBlur = 8;
+              this.fwCtx.fill();
+              this.fwCtx.shadowBlur = 0;
+            }
           }
-        }
 
-        for (let i = this.confettiParticles.length - 1; i >= 0; i--) {
-          const c = this.confettiParticles[i];
-          c.x += c.vx;
-          c.y += c.vy;
-          c.rotation += c.rotSpeed;
-          c.alpha -= 0.008;
+          for (let i = this.confettiParticles.length - 1; i >= 0; i--) {
+            const c = this.confettiParticles[i];
+            c.x += c.vx;
+            c.y += c.vy;
+            c.rotation += c.rotSpeed;
+            c.alpha -= 0.008;
 
-          if (c.y > window.innerHeight || c.alpha <= 0) {
-            this.confettiParticles.splice(i, 1);
-          } else {
-            this.fwCtx.save();
-            this.fwCtx.translate(c.x, c.y);
-            this.fwCtx.rotate((c.rotation * Math.PI) / 180);
-            this.fwCtx.fillStyle = c.color;
-            this.fwCtx.globalAlpha = c.alpha;
-            this.fwCtx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size * 0.6);
-            this.fwCtx.restore();
+            if (c.y > window.innerHeight || c.alpha <= 0) {
+              this.confettiParticles.splice(i, 1);
+            } else {
+              this.fwCtx.save();
+              this.fwCtx.translate(c.x, c.y);
+              this.fwCtx.rotate((c.rotation * Math.PI) / 180);
+              this.fwCtx.fillStyle = c.color;
+              this.fwCtx.globalAlpha = c.alpha;
+              this.fwCtx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size * 0.6);
+              this.fwCtx.restore();
+            }
           }
+          this.fwCtx.globalAlpha = 1;
         }
-        this.fwCtx.globalAlpha = 1;
       }
       requestAnimationFrame(loop);
     };
@@ -505,5 +511,3 @@ class EffectsEngine {
     return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 }
-
-window.Effects = new EffectsEngine();
