@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe)
  * 文件名: js/photo-wall.js
- * 作用: 「时光留白」自由视差照片墙渲染与全页面流式视差滚动计算 (彻底根除 ResizeObserver 重排死循环，实现 60FPS 极速滚动)
+ * 作用: 「时光留白」自由视差照片墙渲染与全页面流式视差滚动计算 (接入舞台休眠广播，彻底根除 ResizeObserver 死锁，实现 60FPS 节能滚动)
  */
 
 class PhotoWallManager {
@@ -11,6 +11,7 @@ class PhotoWallManager {
     this.ticking = false;
     this.lastScrollY = -1;
     this.resizeTimer = null;
+    this.isSuspended = false; // 舞台分幕打开时自动休眠视差计算，节省 GPU 资源
   }
 
   init() {
@@ -26,7 +27,7 @@ class PhotoWallManager {
       return;
     }
 
-    // 核心布局计算 (严格禁止在滚动期间反复调用重建 DOM)
+    // 核心布局计算 (严格禁止在滚动期间反复重建 DOM)
     const layoutPhotos = () => {
       const mainContainer = document.getElementById("main-container");
       const pageHeight = Math.max(
@@ -119,7 +120,7 @@ class PhotoWallManager {
     // 资源载入后校准一次高度
     window.addEventListener("load", layoutPhotos, { once: true });
 
-    // 仅在窗口尺寸真正发生改变时进行防抖重绘 (彻底剥离 ResizeObserver 避免与滚动产生死锁循环)
+    // 仅在窗口尺寸真正发生改变时进行防抖重绘
     window.addEventListener("resize", () => {
       clearTimeout(this.resizeTimer);
       this.resizeTimer = setTimeout(() => {
@@ -127,8 +128,19 @@ class PhotoWallManager {
       }, 250);
     }, { passive: true });
 
-    // 高性能 RAF 视差驱动 (无位置变动不触发 GPU 写入)
+    // 接入舞台广播：分幕激活时暂停背景视差，分幕关闭时唤醒
+    window.addEventListener("stage:opened", () => {
+      this.isSuspended = true;
+    });
+
+    window.addEventListener("stage:closed", () => {
+      this.isSuspended = false;
+      this.updateParallax(true);
+    });
+
+    // 高性能 RAF 视差驱动 (无位置变动或休眠状态时不触发 GPU 写入)
     window.addEventListener("scroll", () => {
+      if (this.isSuspended) return;
       if (!this.ticking) {
         window.requestAnimationFrame(() => {
           this.updateParallax();
@@ -143,6 +155,8 @@ class PhotoWallManager {
    * 执行负向视差浮动位移 (纯 3D 矩阵计算，不触发 Reflow 重排)
    */
   updateParallax(force = false) {
+    if (this.isSuspended && !force) return;
+
     const scrollY = window.scrollY || window.pageYOffset || 0;
     if (!force && Math.abs(scrollY - this.lastScrollY) < 0.5) return;
     this.lastScrollY = scrollY;
