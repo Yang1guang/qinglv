@@ -178,13 +178,12 @@ window.LOVE_CONFIG = {
     }
   ],
 
-  // ================= 🌟 8. 破冰与情感信号箱 (严格三阶段伦理边界与避风港契约) =================
+  // ================= 8. 破冰与情感信号箱 (严格三阶段伦理边界与避风港契约) =================
   icebreaker: {
     enabled: true,
-    cooldownMinutes: 15, // 情绪冷静期冷却时长
+    cooldownMinutes: 15,
     soundEnabled: true,
     actions: {
-      // 🌿 恋爱期：坚守圣洁界限，严禁同居与室内私密行为引导
       dating: [
         {
           id: "calm_down",
@@ -222,7 +221,6 @@ window.LOVE_CONFIG = {
           desc: "隔空送你一朵云朵拥抱和一杯热可可，不要再生气啦。"
         }
       ],
-      // 💍 订婚期：盟约预备，化解现实筹备焦虑，不涉同居
       engaged: [
         {
           id: "calm_down",
@@ -260,7 +258,6 @@ window.LOVE_CONFIG = {
           desc: "再多繁杂的事情我们一起扛，别怕，有我在你身边。"
         }
       ],
-      // 🏠 结婚期：合为一体，实体避风港，不可含怒到日落
       married: [
         {
           id: "calm_down",
@@ -299,5 +296,23 @@ window.LOVE_CONFIG = {
         }
       ]
     }
+  },
+
+  // ================= 🌟 9. 智能全时域提醒中枢数据契约 (Cron + Resend + 晨光弹窗) =================
+  reminder: {
+    enabled: true,
+    resendApiKey: "",
+    senderEmail: "雅歌之印 <onboarding@resend.dev>",
+    boyEmail: "",
+    girlEmail: "",
+    advanceDays: [7, 3, 1, 0], // 提前 7天、3天、1天以及当天09:00准时推送
+    memos: [
+      {
+        id: "memo_1",
+        title: "准备两周年手写纪念情书与礼物",
+        targetDate: "2026-05-18",
+        done: false
+      }
+    ]
   }
 };
