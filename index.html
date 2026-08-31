@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="css/animations.css?v=2.2">
   <link rel="stylesheet" href="css/themes.css?v=2.2">
   <link rel="stylesheet" href="css/anniversary.css?v=2.2">
+  <link rel="stylesheet" href="css/icebreaker.css?v=2.2">
   <link rel="stylesheet" href="css/photo-wall.css?v=2.2">
   <link rel="stylesheet" href="css/pet.css?v=2.2">
   <link rel="stylesheet" href="css/scratch-card.css?v=2.2">
@@ -118,6 +119,13 @@
   <!-- 🖼️ 独立硬件加速全视口固定背景层 (彻底解决移动端背景模糊与裁切问题) -->
   <div id="universe-bg-layer" class="universe-bg-layer"></div>
 
+  <!-- 顶部非侵入微光通知胶囊横幅 -->
+  <div id="icebreaker-banner" class="icebreaker-banner">
+    <span class="icebreaker-banner__icon">🕊️</span>
+    <span id="icebreaker-banner-text" class="icebreaker-banner__text">收到对方递来的一封信笺...</span>
+    <span class="icebreaker-banner__arrow">查看 ➔</span>
+  </div>
+
   <div class="perspective-capsule" id="perspective-capsule">
     <button class="perspective-btn active" id="btn-perspective-boy" onclick="window.ThemeEngine.switchPerspective('boy')">🪐 他的星河</button>
     <button class="perspective-btn" id="btn-perspective-girl" onclick="window.ThemeEngine.switchPerspective('girl')">🌸 她的花汐</button>
@@ -179,6 +187,18 @@
         <span class="section-title__desc">公历阴历智能校准 · 每一天都铭刻着恩典与守望</span>
       </div>
       <div class="anniversary-grid" id="anniversary-container"></div>
+    </section>
+
+    <!-- 🌟 批次二新增：破冰与情感信号箱交互面板 -->
+    <section class="icebreaker-section" id="icebreaker-section">
+      <div class="section-title">
+        <span class="section-title__icon">🕊️</span>
+        <h2 class="section-title__text">破冰和解 · 情感信号箱</h2>
+        <span class="section-title__desc">爱情不是讲理的地方，而是包容、理解与避风港</span>
+      </div>
+      <div class="icebreaker-card">
+        <div class="icebreaker-grid" id="icebreaker-container"></div>
+      </div>
     </section>
 
     <section class="confession-section">
@@ -302,7 +322,7 @@
     </div>
   </div>
 
-  <!-- 🌟 批次三新增：单卡 300DPI 拍立得海报预览弹窗 -->
+  <!-- 单卡 300DPI 拍立得海报预览弹窗 -->
   <div class="poster-modal" id="single-poster-modal" style="display:none;">
     <div class="poster-modal__dialog">
       <div class="poster-modal__preview-box" id="single-poster-preview-box"></div>
@@ -314,6 +334,18 @@
     </div>
   </div>
 
+  <!-- 🌟 批次二新增：沉浸式全屏和解空间覆盖层 (Reconciliation Modal) -->
+  <div id="icebreaker-modal" class="icebreaker-modal">
+    <div class="icebreaker-modal__dialog">
+      <div id="icebreaker-modal-badge" class="icebreaker-modal__badge">SACRED COVENANT</div>
+      <h3 id="icebreaker-modal-title" class="icebreaker-modal__title">愿爱化解一切 · 我们的避风港</h3>
+      <div class="icebreaker-letter">
+        <p id="icebreaker-modal-letter" class="icebreaker-letter__quote"></p>
+      </div>
+      <div id="icebreaker-modal-actions" class="icebreaker-modal__actions"></div>
+    </div>
+  </div>
+
   <script src="js/config.js?v=2.2"></script>
   <script src="js/theme-presets.js?v=2.2"></script>
   <script src="js/stage-content.js?v=2.2"></script>
@@ -321,6 +353,7 @@
   <script src="js/anniversary-engine.js?v=2.2"></script>
   <script src="js/anniversary-tools.js?v=2.2"></script>
   <script src="js/anniversary.js?v=2.2"></script>
+  <script src="js/icebreaker.js?v=2.2"></script>
   <script src="js/lifecycle.js?v=2.2"></script>
   <script src="js/photo-wall.js?v=2.2"></script>
   <script src="js/effects.js?v=2.2"></script>
@@ -336,6 +369,10 @@
       if (window.AnniversaryManager && window.LOVE_CONFIG) {
         const anniMgr = new window.AnniversaryManager(window.LOVE_CONFIG);
         anniMgr.init();
+      }
+      if (window.IceBreakerManager && window.LOVE_CONFIG) {
+        const iceMgr = new window.IceBreakerManager(window.LOVE_CONFIG);
+        iceMgr.init();
       }
       if (window.GracePetManager && window.LOVE_CONFIG) {
         const petMgr = new window.GracePetManager(window.LOVE_CONFIG);
