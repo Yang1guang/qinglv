@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/base.css
- * 升级：恢复 iOS 原生平滑惯性滚动，优化全屏背景加速图层，彻底杜绝三网与全设备卡顿
+ * 升级：恢复 iOS 原生平滑惯性滚动，建立滚动穿透防御系统，优化全屏背景加速图层
  */
 
 :root {
@@ -73,6 +73,15 @@ body {
   touch-action: pan-y;
 }
 
+/* 🔒 iOS 滚动穿透锁定专用样式 */
+body.body--locked {
+  position: fixed;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  touch-action: none;
+}
+
 /* 🖼️ 独立硬件加速全视口固定背景层 (精准填满视口，消除 100vw 引起的横向滑动) */
 .universe-bg-layer {
   position: fixed;
@@ -116,7 +125,7 @@ button, input, textarea {
 
 .main-container {
   width: 100%;
-  max-width: 1080px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 24px 18px 80px;
   position: relative;
