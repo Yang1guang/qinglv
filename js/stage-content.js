@@ -1,10 +1,12 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/stage-content.js
- * 作用: 独立管理恋爱期、订婚期、结婚期三大阶段专属的待办清单与舍己特权券数据
- * 核心准则: 严格界限隔离，恋爱期绝不出现越界同居或亲密日常
+ * 作用: 
+ *   1. 独立管理恋爱期、订婚期、结婚期三大阶段专属的待办清单与舍己特权券数据[cite: 5]
+ *   2. 提供星轨中枢舞台生命周期管理器 (StageManager)，实现 iOS 滚动锁定、Hash 路由栈与生命周期广播
  */
 
+// ================= 1. 三大阶段核心清单与特权券数据 =================
 window.STAGE_CONTENT = {
   // ================= 🌿 1. 恋爱期 (Dating Phase) =================
   dating: {
@@ -230,4 +232,179 @@ window.STAGE_CONTENT = {
       }
     ]
   }
-};
+};[cite: 5]
+
+// ================= 2. 星轨中枢舞台生命周期控制器 (StageManager) =================
+class StageManager {
+  constructor() {
+    this.currentStage = null;
+    this.lockedScrollY = 0;
+    this.container = null;
+    this.overlay = null;
+    this.isTransitioning = false;
+  }
+
+  init() {
+    this.container = document.getElementById("stage-modal-container");
+    this.overlay = document.getElementById("stage-modal-overlay");
+
+    // 绑定中枢图标点击事件
+    document.querySelectorAll("[data-open-stage]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const stageId = btn.getAttribute("data-open-stage");
+        this.openStage(stageId);
+      });
+    });
+
+    // 绑定分幕内关闭按钮
+    document.querySelectorAll(".stage-modal__close-btn, [data-close-stage]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.closeStage();
+      });
+    });
+
+    // 监听背景遮罩点击关闭
+    if (this.overlay) {
+      this.overlay.addEventListener("click", (e) => {
+        if (e.target === this.overlay) {
+          this.closeStage();
+        }
+      });
+    }
+
+    // 监听浏览器前进/后退/手势侧滑状态栈
+    window.addEventListener("popstate", (e) => {
+      if (e.state && e.state.stage) {
+        this.showStageDom(e.state.stage, false);
+      } else if (this.currentStage) {
+        this.closeStageDom(false);
+      }
+    });
+
+    // 监听键盘 ESC 键关闭
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this.currentStage) {
+        this.closeStage();
+      }
+    });
+
+    // 如果初始 URL 带有 hash，自动打开对应分幕
+    const initialHash = window.location.hash.replace("#", "");
+    if (initialHash && document.getElementById(`stage-${initialHash}`)) {
+      setTimeout(() => {
+        this.openStage(initialHash, false);
+      }, 300);
+    }
+  }
+
+  /**
+   * 打开指定分幕舞台
+   * @param {string} stageId - 舞台ID (如 anniversary, icebreaker, timeline, checklist, scratch, poster)
+   * @param {boolean} pushHistory - 是否压入浏览历史
+   */
+  openStage(stageId, pushHistory = true) {
+    if (this.isTransitioning) return;
+    const stageEl = document.getElementById(`stage-${stageId}`);
+    if (!stageEl) return;
+
+    this.isTransitioning = true;
+
+    // 1. 锁定背景滚动 (防 iOS 滚动穿透)
+    this.lockScroll();
+
+    // 2. 状态栈管理
+    if (pushHistory) {
+      window.history.pushState({ stage: stageId }, "", `#${stageId}`);
+    }
+
+    // 3. 执行 DOM 激活与动效
+    this.showStageDom(stageId);
+
+    // 4. 生命周期广播 (通知下游子模块执行尺寸重绘与 Canvas 唤醒)
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("stage:opened", { detail: { stageId } }));
+      window.dispatchEvent(new Event("resize"));
+      this.isTransitioning = false;
+    }, 280);
+  }
+
+  /**
+   * 关闭当前分幕舞台
+   * @param {boolean} updateHistory - 是否同步回退历史
+   */
+  closeStage(updateHistory = true) {
+    if (!this.currentStage || this.isTransitioning) return;
+    this.isTransitioning = true;
+
+    const closingStageId = this.currentStage;
+
+    // 1. 广播即将关闭事件
+    window.dispatchEvent(new CustomEvent("stage:closing", { detail: { stageId: closingStageId } }));
+
+    // 2. 历史栈回退
+    if (updateHistory && window.location.hash) {
+      window.history.pushState(null, "", window.location.pathname + window.location.search);
+    }
+
+    // 3. 执行 DOM 关闭
+    this.closeStageDom();
+
+    // 4. 恢复背景滚动
+    this.unlockScroll();
+
+    // 5. 广播关闭完毕事件
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("stage:closed", { detail: { stageId: closingStageId } }));
+      this.isTransitioning = false;
+    }, 280);
+  }
+
+  showStageDom(stageId) {
+    // 隐藏其它已开启的 stage
+    document.querySelectorAll(".stage-modal").forEach(el => {
+      el.classList.remove("stage-modal--active");
+    });
+
+    const targetEl = document.getElementById(`stage-${stageId}`);
+    if (targetEl) {
+      if (this.container) this.container.classList.add("stage-container--active");
+      if (this.overlay) this.overlay.classList.add("stage-overlay--active");
+      targetEl.classList.add("stage-modal--active");
+      this.currentStage = stageId;
+
+      // 自动滚至舞台顶部
+      const bodyWrapper = targetEl.querySelector(".stage-modal__body");
+      if (bodyWrapper) bodyWrapper.scrollTop = 0;
+    }
+  }
+
+  closeStageDom() {
+    if (this.container) this.container.classList.remove("stage-container--active");
+    if (this.overlay) this.overlay.classList.remove("stage-overlay--active");
+    document.querySelectorAll(".stage-modal").forEach(el => {
+      el.classList.remove("stage-modal--active");
+    });
+    this.currentStage = null;
+  }
+
+  lockScroll() {
+    this.lockedScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.classList.add("body--locked");
+    document.body.style.top = `-${this.lockedScrollY}px`;
+  }
+
+  unlockScroll() {
+    document.body.classList.remove("body--locked");
+    document.body.style.top = "";
+    window.scrollTo(0, this.lockedScrollY);
+  }
+}
+
+// 导出全局单例
+window.StageManager = new StageManager();
+
+document.addEventListener("DOMContentLoaded", () => {
+  window.StageManager.init();
+});
