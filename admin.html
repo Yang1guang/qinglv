@@ -8,8 +8,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=2.0">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png?v=2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2.0">
-  <link rel="stylesheet" href="css/admin.css?v=2.2">
-  <link rel="stylesheet" href="css/themes.css?v=2.2">
+  <link rel="stylesheet" href="css/admin.css?v=2.3">
+  <link rel="stylesheet" href="css/themes.css?v=2.3">
 </head>
 <body>
 
@@ -49,12 +49,13 @@
         <button class="tab-btn" data-tab="tab-letter">💌 3. 打字机真情告白</button>
         <button class="tab-btn" data-tab="tab-timeline">🪐 4. 时光轴与拍立得</button>
         <button class="tab-btn" data-tab="tab-anniversary">📅 5. 倒数与恒久纪念日</button>
-        <button class="tab-btn" data-tab="tab-checklist">📝 6. 100 件同行清单</button>
-        <button class="tab-btn" data-tab="tab-scratch">🎟️ 7. 舍己与包容刮刮乐</button>
-        <button class="tab-btn" data-tab="tab-audio">🎵 8. 背景音乐与播放列表</button>
-        <button class="tab-btn" data-tab="tab-eggs">🐣 9. 隐藏彩蛋悄悄话</button>
-        <button class="tab-btn" data-tab="tab-theme">🎨 10. 双视角主题陈列室</button>
-        <button class="tab-btn" data-tab="tab-license">💎 11. 契约授权</button>
+        <button class="tab-btn" data-tab="tab-icebreaker">🕊️ 6. 破冰与情感信号箱</button>
+        <button class="tab-btn" data-tab="tab-checklist">📝 7. 100 件同行清单</button>
+        <button class="tab-btn" data-tab="tab-scratch">🎟️ 8. 舍己与包容刮刮乐</button>
+        <button class="tab-btn" data-tab="tab-audio">🎵 9. 背景音乐与播放列表</button>
+        <button class="tab-btn" data-tab="tab-eggs">🐣 10. 隐藏彩蛋悄悄话</button>
+        <button class="tab-btn" data-tab="tab-theme">🎨 11. 双视角主题陈列室</button>
+        <button class="tab-btn" data-tab="tab-license">💎 12. 契约授权</button>
       </nav>
 
       <div class="admin-content">
@@ -124,7 +125,7 @@
           <div id="timelineListContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 🌟 5. 倒数与恒久纪念日管理面板 -->
+        <!-- 5. 倒数与恒久纪念日管理面板 -->
         <section id="tab-anniversary" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
             <div>
@@ -136,7 +137,6 @@
             </div>
           </div>
 
-          <!-- 一键快捷模板工具栏 -->
           <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 14px; margin-bottom: 20px;">
             <span style="font-size:12px; font-weight:800; color:#fde68a; display:block; margin-bottom:8px;">⚡ 一键快速添加常用纪念日模板：</span>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -152,19 +152,61 @@
           <div id="anniversariesListContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 6. 100 件事 -->
+        <!-- 🌟 6. 破冰与情感信号箱管理面板 (Batch 4 新增) -->
+        <section id="tab-icebreaker" class="tab-pane">
+          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h3>🕊️ 破冰与情感信号箱控制中心</h3>
+              <p style="font-size:12px; color:#94a3b8; margin-top:4px;">管理三阶段和解台阶文案、情绪冷静期时长、音效反馈与历史和好备忘录重置。</p>
+            </div>
+            <button class="btn-tool" style="background:rgba(239, 68, 68, 0.18); color:#fca5a5; border-color:rgba(239,68,68,0.35);" onclick="clearIcebreakerHistory()">🧹 清空和好历史足迹</button>
+          </div>
+
+          <div class="form-grid" style="margin-bottom:20px;">
+            <div class="form-group">
+              <label>是否启用破冰信号箱</label>
+              <select id="icebreaker_enabled" class="admin-select">
+                <option value="true">开启功能 (前台显示信号箱与和解覆盖层)</option>
+                <option value="false">关闭功能</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>是否启用提示音效 (Web Audio 降噪压制)</label>
+              <select id="icebreaker_soundEnabled" class="admin-select">
+                <option value="true">开启音效 (优雅空灵风铃声)</option>
+                <option value="false">静音模式</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1; background:rgba(56, 189, 248, 0.08); padding:14px; border-radius:14px; border:1px solid rgba(56, 189, 248, 0.25);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label style="color:#7dd3fc; font-weight:800; margin-bottom:0;">⏳ 情绪冷静期倒计时锁时长 (防频繁施压)</label>
+                <span id="icebreaker_cooldown_val" style="font-size:13px; font-weight:900; color:#fde68a; font-family:ui-monospace, monospace;">15 分钟</span>
+              </div>
+              <input type="range" id="icebreaker_cooldownMinutes" min="5" max="60" step="5" value="15" class="admin-input" style="cursor:pointer;" oninput="document.getElementById('icebreaker_cooldown_val').textContent = this.value + ' 分钟';">
+            </div>
+          </div>
+
+          <div class="pane-header" style="margin-top:20px;">
+            <h4>📜 三阶段和解台阶文案管理 (严格恪守伦理边界)</h4>
+          </div>
+          <div id="icebreakerActionsContainer" style="display:flex; flex-direction:column; gap:14px;"></div>
+        </section>
+
+        <!-- 7. 100 件事 -->
         <section id="tab-checklist" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between;"><div><h3>📝 100 件事</h3></div><button class="btn-add" onclick="addChecklistItem()">➕ 新增</button></div>
           <div id="checklistItemsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 7. 刮刮乐 -->
+        <!-- 8. 刮刮乐 -->
         <section id="tab-scratch" class="tab-pane">
           <div class="pane-header" style="display:flex; justify-content:space-between;"><div><h3>🎟️ 刮刮乐</h3></div><button class="btn-add" onclick="addScratchCard()">➕ 新增</button></div>
           <div id="scratchCardsContainer" class="dynamic-list"></div>
         </section>
 
-        <!-- 8. 🎵 背景音乐与多曲目播放列表 -->
+        <!-- 9. 背景音乐与多曲目播放列表 -->
         <section id="tab-audio" class="tab-pane">
           <div class="pane-header">
             <h3>🎵 背景音乐与多曲目播放列表</h3>
@@ -237,7 +279,7 @@
           </div>
         </section>
 
-        <!-- 9. 隐藏彩蛋 -->
+        <!-- 10. 隐藏彩蛋 -->
         <section id="tab-eggs" class="tab-pane">
           <div class="pane-header"><h3>🐣 隐藏角落彩蛋悄悄话</h3></div>
           <div class="form-grid">
@@ -246,7 +288,7 @@
           </div>
         </section>
 
-        <!-- 10. 双视角主题陈列室 -->
+        <!-- 11. 双视角主题陈列室 -->
         <section id="tab-theme" class="tab-pane">
           <div class="pane-header"><h3>🎨 双视角主题陈列室</h3></div>
           <div style="background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 18px; margin-bottom: 24px;">
@@ -275,7 +317,7 @@
           </div>
         </section>
 
-        <!-- 11. 授权 -->
+        <!-- 12. 授权 -->
         <section id="tab-license" class="tab-pane">
           <div class="pane-header"><h3>💎 契约 · 专属授权激活状态</h3></div>
           <div style="background: rgba(3, 7, 18, 0.7); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 18px; padding: 22px;">
@@ -293,9 +335,9 @@
   <input type="file" id="globalUploader" style="display:none;">
   <div id="toast" class="admin-toast">✓ 操作成功</div>
 
-  <script src="js/config.js?v=2.2"></script>
-  <script src="js/theme-presets.js?v=2.2"></script>
-  <script src="js/anniversary-engine.js?v=2.2"></script>
-  <script src="js/admin.js?v=2.2"></script>
+  <script src="js/config.js?v=2.3"></script>
+  <script src="js/theme-presets.js?v=2.3"></script>
+  <script src="js/anniversary-engine.js?v=2.3"></script>
+  <script src="js/admin.js?v=2.3"></script>
 </body>
 </html>
