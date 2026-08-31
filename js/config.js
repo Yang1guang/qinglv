@@ -298,11 +298,14 @@ window.LOVE_CONFIG = {
     }
   },
 
-  // ================= 🌟 9. 纯端侧全维智能提醒中枢 (0请求/0云端依赖) =================
+  // ================= 🌟 9. 智能全端原生通知与进站晨光弹窗调度中枢 =================
   reminder: {
-    enabled: true,              // 是否启用全端提醒引擎
-    enableNativePush: true,     // 是否允许向操作系统申请原生 Web Notification 权限 (支持桌面/部分安卓横幅)
-    advanceDays: [7, 3, 1, 0],  // 本地推算提前触发天数策略
+    enabled: true,
+    enableSystemNotification: true, // 系统原生横幅通知 (Web Notification API)
+    enableMorningModal: true,       // 进站晨光 DOM 浪漫浮层弹窗
+    soundEnabled: true,             // 弹窗与横幅触达时的空灵提示音 (Web Audio API)
+    advanceDays: [7, 3, 1, 0],      // 提前 7天、3天、1天及当天09:00准时调度
+    doNotDisturbHours: 12,          // 每日免打扰锁周期 (小时)
     memos: [
       {
         id: "memo_1",
