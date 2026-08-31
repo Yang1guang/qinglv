@@ -1,7 +1,7 @@
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/components.css
- * 升级：星轨中枢导航网格 (Navigation Dock) + 全屏沉浸分幕系统 (Stage Modals) + 完整组件集
+ * 升级：星轨中枢导航网格 (Navigation Dock) + 全屏沉浸分幕系统 (Stage Modals) + 交互穿透深度修复
  */
 
 .universe-canvas,
@@ -380,6 +380,8 @@
   margin: 0 auto 36px;
   contain: layout style;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 20;
 }
 
 .hub-dock__header {
@@ -427,6 +429,7 @@
   position: relative;
   overflow: hidden;
   user-select: none;
+  pointer-events: auto;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: all 0.28s var(--ease-spring);
@@ -464,6 +467,7 @@
   margin-bottom: 8px;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
   transition: transform 0.28s var(--ease-spring);
+  pointer-events: none;
 }
 
 .hub-btn:hover .hub-btn__icon {
@@ -475,6 +479,7 @@
   flex-direction: column;
   align-items: center;
   gap: 3px;
+  pointer-events: none;
 }
 
 .hub-btn__title {
@@ -520,6 +525,10 @@
   align-items: center;
   justify-content: center;
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+
+.stage-container.stage-container--active {
+  pointer-events: auto;
 }
 
 .stage-modal {
