@@ -5,26 +5,26 @@
  */
 
 .anniversary-section {
-  margin-bottom: 45px;
+  margin-bottom: 24px;
   contain: layout style;
   width: 100%;
 }
 
 .anniversary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
   max-width: 1080px;
   margin: 0 auto;
 }
 
-/* ================= 1. 核心纪念日卡片容器 (开启硬件加速与渲染边界隔离) ================= */
+/* ================= 1. 核心纪念日卡片容器 ================= */
 .anniversary-card {
   position: relative;
   background: var(--bg-card, rgba(15, 23, 42, 0.75));
   border: 1.5px solid var(--border-card, rgba(245, 158, 11, 0.35));
   border-radius: 22px;
-  padding: 22px 20px;
+  padding: 20px 18px;
   box-shadow: var(--card-shadow, 0 16px 36px rgba(0, 0, 0, 0.4));
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -62,14 +62,14 @@
   opacity: 0.22;
 }
 
-/* ================= 3. 卡片头部信息 (图标、标题、阶段标签与时光流转环) ================= */
+/* ================= 3. 卡片头部信息 ================= */
 .anniversary-card__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   position: relative;
   z-index: 5;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .anniversary-card__title-wrap {
@@ -78,19 +78,19 @@
   gap: 10px;
   flex: 1;
   overflow: hidden;
-  margin-right: 12px;
+  margin-right: 10px;
 }
 
 .anniversary-card__icon-box {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-card, rgba(245, 158, 11, 0.3));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
   flex-shrink: 0;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -102,7 +102,7 @@
 }
 
 .anniversary-card__title {
-  font-size: 16px;
+  font-size: 15.5px;
   font-weight: 900;
   color: var(--text-main, #f8fafc);
   white-space: nowrap;
@@ -112,20 +112,20 @@
 }
 
 .anniversary-card__stage-badge {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
   color: var(--accent-gold, #fde68a);
-  margin-top: 3px;
+  margin-top: 2px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
-/* ================= 4. 时光流转环 (SVG Time Orbit Ring) ================= */
+/* ================= 4. 时光流转环 ================= */
 .anniversary-orbit-box {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -149,27 +149,27 @@
   stroke: var(--accent-gold, #f59e0b);
   stroke-width: 4;
   stroke-linecap: round;
-  stroke-dasharray: 138.23; /* 2 * PI * 22 */
+  stroke-dasharray: 138.23;
   stroke-dashoffset: 138.23;
   transition: stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .anniversary-orbit-text {
   position: absolute;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 900;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   color: var(--accent-gold, #fde68a);
 }
 
-/* ================= 5. 卡片主体 (天数巨显与生命羁绊计算) ================= */
+/* ================= 5. 卡片主体 ================= */
 .anniversary-card__body {
   position: relative;
   z-index: 5;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   padding: 10px 14px;
   background: var(--timer-unit-bg, rgba(3, 7, 18, 0.55));
   border: 1px solid var(--timer-unit-border, rgba(255, 255, 255, 0.08));
@@ -182,14 +182,14 @@
 }
 
 .anniversary-days__label {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 800;
   color: var(--text-sub, #94a3b8);
   letter-spacing: 0.5px;
 }
 
 .anniversary-days__date-meta {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--accent-gold, #f59e0b);
   margin-top: 2px;
@@ -203,7 +203,7 @@
 }
 
 .anniversary-days__num {
-  font-size: 34px;
+  font-size: 32px;
   font-weight: 900;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   color: var(--timer-num-color, #fde68a);
@@ -212,22 +212,21 @@
 }
 
 .anniversary-days__unit {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 900;
   color: var(--timer-label-color, #94a3b8);
 }
 
-/* 生命羁绊条 (来到世界的第 N 天) */
 .anniversary-life-bond {
   position: relative;
   z-index: 5;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--text-sub, #94a3b8);
   background: rgba(255, 255, 255, 0.04);
   padding: 6px 10px;
   border-radius: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -237,7 +236,7 @@
   color: var(--accent-gold, #fde68a);
 }
 
-/* ================= 6. 操作工具栏与声纹信物微胶囊 ================= */
+/* ================= 6. 操作工具栏 ================= */
 .anniversary-card__footer {
   position: relative;
   z-index: 5;
@@ -250,10 +249,10 @@
 .anniversary-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 11.5px;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 11px;
   font-weight: 800;
   cursor: pointer;
   background: rgba(255, 255, 255, 0.06);
@@ -269,13 +268,12 @@
   transform: translateY(-1px);
 }
 
-/* 10 秒声纹信物微播放胶囊 */
 .anniversary-voice-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
-  border-radius: 20px;
+  padding: 4px 10px;
+  border-radius: 18px;
   background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(225, 29, 72, 0.25) 100%);
   border: 1px solid rgba(244, 63, 94, 0.4);
   cursor: pointer;
@@ -294,11 +292,11 @@
 }
 
 .anniversary-voice-icon {
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .anniversary-voice-text {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
   color: #fecdd3;
 }
@@ -307,7 +305,7 @@
   color: #ffffff;
 }
 
-/* ================= 7. 折叠情书展卷动效 (Letter Unfold) ================= */
+/* ================= 7. 折叠情书展卷 ================= */
 .anniversary-memo-box {
   position: relative;
   z-index: 5;
@@ -324,7 +322,7 @@
   max-height: 220px;
   opacity: 1;
   transform: perspective(600px) rotateX(0deg);
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .anniversary-memo-inner {
@@ -333,13 +331,13 @@
   border-radius: 14px;
   padding: 12px 14px;
   color: var(--confession-text, #374151);
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.6;
   font-weight: 600;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* ================= 8. 千天里程碑徽章与成就光晕 ================= */
+/* ================= 8. 千天里程碑与成就 ================= */
 .anniversary-card--milestone {
   border-color: #f59e0b !important;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 25px rgba(245, 158, 11, 0.35), inset 0 0 12px rgba(245, 158, 11, 0.15) !important;
@@ -360,7 +358,7 @@
   z-index: 10;
 }
 
-/* ================= 9. 「今日正是纪念日」盛典流金状态 ================= */
+/* ================= 9. 今日正是纪念日 ================= */
 .anniversary-card--today {
   border-color: #f43f5e !important;
   background: linear-gradient(135deg, rgba(244, 63, 94, 0.18) 0%, rgba(245, 158, 11, 0.18) 100%), var(--bg-card) !important;
@@ -381,7 +379,7 @@
   content: "🎉 ";
 }
 
-/* ================= 10. 👧 女生浅色主题高清晰渲染规则 (彻底杜绝发白发虚) ================= */
+/* ================= 10. 女生浅色主题渲染规则 ================= */
 body[data-theme-type="light"] .anniversary-card {
   background: var(--bg-card, rgba(255, 255, 255, 0.95)) !important;
   border-color: var(--border-card, rgba(180, 83, 9, 0.35)) !important;
@@ -437,8 +435,8 @@ body[data-theme-type="light"] .anniversary-orbit-bg {
 @media (max-width: 640px) {
   .anniversary-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 0 6px;
+    gap: 12px;
+    padding: 0 4px;
   }
   .anniversary-card {
     padding: 16px 14px;
