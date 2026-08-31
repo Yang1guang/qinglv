@@ -1,3 +1,4 @@
+
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
@@ -126,6 +127,28 @@ class EffectsEngine {
       this.bgmAudio = new Audio(currentTrack.url);
       this.bgmAudio.preload = "auto";
       this.bgmAudio.loop = false;
+
+      // 🔧 用户手势解锁音频上下文（解决 Autoplay Policy 阻断）
+      this._audioUnlocked = false;
+      const unlockAudio = () => {
+        if (this._audioUnlocked) return;
+        if (this.bgmAudio) {
+          const silencePromise = this.bgmAudio.play();
+          if (silencePromise !== undefined) {
+            silencePromise.then(() => {
+              // 播放成功后立即暂停，仅用于解锁上下文
+              this.bgmAudio.pause();
+              this.bgmAudio.currentTime = 0;
+              this._audioUnlocked = true;
+              console.log("[音频系统] ✅ 音频上下文已通过用户手势解锁");
+            }).catch(() => {});
+          }
+        }
+      };
+
+      // 在所有可能的用户交互元素上绑定一次性解锁
+      document.addEventListener("click", unlockAudio, { once: true });
+      document.addEventListener("touchstart", unlockAudio, { once: true, passive: true });
 
       this.bgmAudio.addEventListener("play", () => {
         this.isPlaying = true;
