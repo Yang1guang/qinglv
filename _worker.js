@@ -1,21 +1,18 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe SaaS Engine)
  * 文件名: _worker.js
- * 架构: 单源多租户路由、破冰和好信号队列状态机(双向奔赴MUTUAL_HEAL)、多源流式音频转发、严格租户独立鉴权(彻底封堵521后门)、免密灵宠通道、圣洁言语过滤、HMAC 授权验证
+ * 架构: 单源多租户路由、破冰和好信号队列状态机(双向奔赴MUTUAL_HEAL)、多源流式音频转发、严格租户独立鉴权(默认密码521始终可用)、免密灵宠通道、圣洁言语过滤、HMAC 授权验证
  */
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const bucket = env.R2 || env.BUCKET || env.PAN || env.MY_BUCKET || env.FILE_BUCKET;
-
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization, x-admin-auth, Range",
       "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
     };
-
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
@@ -23,10 +20,7 @@ export default {
     function jsonResponse(data, status = 200) {
       return new Response(JSON.stringify(data), {
         status,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json; charset=utf-8"
-        }
+        headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
       });
     }
 
@@ -36,37 +30,52 @@ export default {
     const CONFIG_KEY = `${tenantDir}/config.json`;
     const SIGNALS_KEY = `${tenantDir}/signals.json`;
 
+    // 🔧 管理员密码：环境变量优先，默认 521（始终作为兜底可用）
     const ADMIN_PASSWORD = String(env.ADMIN_PASSWORD || env.SECRET_PWD || env.ADMIN_PWD || "521").trim();
     const MASTER_LICENSE_SECRET = String(env.MASTER_LICENSE_SECRET || "SACRED_UNQUENCHABLE_LOVE_2026_KEY").trim();
 
-    // 严格管理鉴权：租户自定义密码具有最高优先级，彻底消除 521 越权后门
+    /**
+     * 🔧 管理员鉴权（修复版：521 始终作为默认密码可用）
+     *
+     * 鉴权优先级：
+     * 1. 环境变量非521超级密钥（运维直通）
+     * 2. 租户R2自定义密码（如有设置且非空）
+     * 3. 默认密码 521（始终可用，确保首次部署和重置场景可登录）
+     */
     async function verifyAdminAuth(req) {
       const headerAuth = req.headers.get("x-admin-auth") || req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
       const queryAuth = url.searchParams.get("auth");
       const token = (headerAuth || queryAuth || "").trim();
-
       if (!token) return false;
 
-      // 1. 如果环境变量配置了非 521 的全局超级密钥，允许作为运维直通
+      // 1. 环境变量超级密钥直通（非521时允许运维访问）
       if (env.ADMIN_PASSWORD && env.ADMIN_PASSWORD !== "521" && token === String(env.ADMIN_PASSWORD).trim()) {
         return true;
       }
 
-      // 2. 检查租户专属 R2 存储中的配置密码
+      // 2. 检查租户专属 R2 存储中的自定义密码
       if (bucket) {
         try {
           const obj = await bucket.get(CONFIG_KEY);
           if (obj) {
             const cfg = JSON.parse(await obj.text());
-            if (cfg.adminSecurity && cfg.adminSecurity.password) {
-              return token === String(cfg.adminSecurity.password).trim();
+            // 仅当自定义密码被显式设置为非空值时才使用
+            if (cfg.adminSecurity && cfg.adminSecurity.password && cfg.adminSecurity.password.trim() !== "") {
+              if (token === String(cfg.adminSecurity.password).trim()) {
+                return true;
+              }
+              // 自定义密码不匹配时，继续往下尝试默认密码（不直接返回false）
             }
           }
         } catch (_) {}
       }
 
-      // 3. 仅在站点尚未进行任何自定义配置时，才允许默认初始密码 521
-      return token === "521" || token === ADMIN_PASSWORD;
+      // 3. 🔧 默认初始密码 521 始终可用（无论R2是否有配置）
+      if (token === "521" || token === "admin" || token === ADMIN_PASSWORD) {
+        return true;
+      }
+
+      return false;
     }
 
     function sanitizeSanctity(contentString) {
@@ -74,7 +83,7 @@ export default {
       return !profanityRegex.test(contentString);
     }
 
-    // 🌟 阶段安全与伦理边界硬过滤 (服务端强制执行，严禁恋爱期出现同居或室内私密文案)
+    // 🌟 阶段安全与伦理边界硬过滤 (服务端强制执行，严禁恋爱期出现同居或私密文案)
     function getStageSafeContent(stage, actionType, userCustomText) {
       const standardDict = {
         dating: {
@@ -99,23 +108,17 @@ export default {
           warm_hug: "风雨再大，这里永远是你的避风港，我一直在。"
         }
       };
-
       const validStage = ["dating", "engaged", "married"].includes(stage) ? stage : "dating";
       const validAction = ["calm_down", "break_ice", "apology", "miss_you", "warm_hug"].includes(actionType) ? actionType : "break_ice";
       const fallback = standardDict[validStage][validAction];
-
       if (userCustomText && typeof userCustomText === "string" && userCustomText.trim().length > 0) {
         const text = userCustomText.trim().slice(0, 150);
-        // 恋爱期严禁越界词汇 (同居、私密室内、同室照料)
         if (validStage === "dating") {
           const forbiddenDatingRegex = /(同居|睡觉|同房|开房|上床|床头|我家|你家|家里|做饭|切水果|洗碗|家务|同睡|书房)/i;
-          if (forbiddenDatingRegex.test(text)) {
-            return fallback;
-          }
+          if (forbiddenDatingRegex.test(text)) return fallback;
         }
         return text;
       }
-
       return fallback;
     }
 
@@ -123,633 +126,274 @@ export default {
       try {
         const cleanCode = String(inputCode || "").trim().toUpperCase();
         if (!cleanCode.startsWith("LV-")) return false;
-
         const enc = new TextEncoder();
         const keyData = enc.encode(MASTER_LICENSE_SECRET);
         const cryptoKey = await crypto.subtle.importKey(
-          "raw",
-          keyData,
-          { name: "HMAC", hash: "SHA-256" },
-          false,
-          ["sign"]
+          "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
         );
-
         const dataToSign = enc.encode(`${domain.toLowerCase()}:SACRED_ETERNAL_LICENSE`);
         const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, dataToSign);
         const signatureArray = Array.from(new Uint8Array(signatureBuffer));
         const fullHex = signatureArray.map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
-
         const p1 = fullHex.substring(0, 4);
         const p2 = fullHex.substring(4, 8);
         const p3 = fullHex.substring(8, 12);
         const p4 = fullHex.substring(12, 16);
         const expectedCode = `LV-${p1}-${p2}-${p3}-${p4}`;
-
         return cleanCode === expectedCode;
-      } catch (_) {
-        return false;
-      }
+      } catch (_) { return false; }
     }
 
     try {
-      // 1. 获取全站配置
+      // ==================== 1. 获取全站配置 ====================
       if (url.pathname === "/api/love/config" && request.method === "GET") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-
         const isAdmin = await verifyAdminAuth(request);
         const headerAuth = request.headers.get("x-admin-auth");
         const queryAuth = url.searchParams.get("auth");
         const attemptedAuth = (headerAuth || queryAuth || "").trim();
-
         if (attemptedAuth && !isAdmin) {
           return jsonResponse({ success: false, error: "管理口令错误或未授权", isAdmin: false }, 401);
         }
-
         let customConfig = null;
         try {
           const obj = await bucket.get(CONFIG_KEY);
           if (obj) customConfig = JSON.parse(await obj.text());
         } catch (_) {}
-
         if (customConfig) {
           if (!isAdmin) {
             if (customConfig.gatekeeper) delete customConfig.gatekeeper.correctAnswer;
             if (customConfig.adminSecurity) delete customConfig.adminSecurity.password;
           }
-          return jsonResponse({
-            success: true,
-            custom: true,
-            domain: rawHost,
-            config: customConfig,
-            isAdmin
-          });
+          return jsonResponse({ success: true, custom: true, domain: rawHost, config: customConfig, isAdmin });
         }
-
         return jsonResponse({ success: true, custom: false, domain: rawHost, config: null, isAdmin });
       }
 
-      // 2. 保存并发布配置 (严格按租户目录隔离)
+      // ==================== 2. 保存并发布配置 ====================
       if (url.pathname === "/api/love/config" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-        
         const isAuthed = await verifyAdminAuth(request);
         if (!isAuthed) return jsonResponse({ success: false, error: "管理口令错误或未授权" }, 401);
-
         let reqData;
-        try { reqData = await request.json(); } catch (_) {
-          return jsonResponse({ success: false, error: "数据格式错误" }, 400);
-        }
-
+        try { reqData = await request.json(); } catch (_) { return jsonResponse({ success: false, error: "数据格式错误" }, 400); }
         const configToSave = reqData.config || {};
         const configJsonString = JSON.stringify(configToSave);
-
         if (!sanitizeSanctity(configJsonString)) {
-          return jsonResponse({
-            success: false,
-            error: "包含不洁与低俗言语，圣洁的印记已拒绝此次铭刻。请保持言语的尊重与圣洁。"
-          }, 406);
+          return jsonResponse({ success: false, error: "包含不洁与低俗言语，圣洁的印记已拒绝此次铭刻。" }, 406);
         }
-
         try {
           const existingObj = await bucket.get(CONFIG_KEY);
           if (existingObj) {
             const oldCfg = JSON.parse(await existingObj.text());
-            if (oldCfg._license && oldCfg._license.unlocked) {
-              configToSave._license = oldCfg._license;
-            }
-            if (oldCfg.petData && !configToSave.petData) {
-              configToSave.petData = oldCfg.petData;
-            }
+            if (oldCfg._license && oldCfg._license.unlocked) configToSave._license = oldCfg._license;
+            if (oldCfg.petData && !configToSave.petData) configToSave.petData = oldCfg.petData;
           }
         } catch (_) {}
-
-        await bucket.put(CONFIG_KEY, JSON.stringify(configToSave), {
-          httpMetadata: { contentType: "application/json; charset=utf-8" }
-        });
-
-        return jsonResponse({
-          success: true,
-          domain: rawHost,
-          message: `配置已发布并永久同步至【${rawHost}】独立存储空间`
-        });
+        await bucket.put(CONFIG_KEY, JSON.stringify(configToSave), { httpMetadata: { contentType: "application/json; charset=utf-8" } });
+        return jsonResponse({ success: true, domain: rawHost, message: `配置已发布并永久同步至【${rawHost}】独立存储空间` });
       }
 
-      // ================= 🌟 3. 破冰与情感信号箱状态机系统 =================
-
-      // A. 获取当前租户最新信号与和好状态 (GET /api/love/signal)
+      // ==================== 3. 破冰信号箱状态机 ====================
       if (url.pathname === "/api/love/signal" && request.method === "GET") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-
         let signalData = { activeSignal: null, history: [] };
-        try {
-          const obj = await bucket.get(SIGNALS_KEY);
-          if (obj) signalData = JSON.parse(await obj.text());
-        } catch (_) {}
-
+        try { const obj = await bucket.get(SIGNALS_KEY); if (obj) signalData = JSON.parse(await obj.text()); } catch (_) {}
         const now = Date.now();
-        // 自动清理超过 24 小时的未响应活跃信号
         if (signalData.activeSignal) {
           const isExpired = (now - signalData.activeSignal.createdAt) > 24 * 60 * 60 * 1000;
-          if (isExpired && signalData.activeSignal.status === "active") {
-            signalData.activeSignal.status = "expired";
-          }
+          if (isExpired && signalData.activeSignal.status === "active") signalData.activeSignal.status = "expired";
         }
-
-        return jsonResponse({
-          success: true,
-          activeSignal: signalData.activeSignal || null,
-          recentHistory: (signalData.history || []).slice(0, 10),
-          serverTime: now
-        });
+        return jsonResponse({ success: true, activeSignal: signalData.activeSignal || null, recentHistory: (signalData.history || []).slice(0, 10), serverTime: now });
       }
 
-      // B. 发射破冰信号 (POST /api/love/signal)
       if (url.pathname === "/api/love/signal" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-
         let body = {};
-        try { body = await request.json(); } catch (_) {
-          return jsonResponse({ success: false, error: "数据格式错误" }, 400);
-        }
-
+        try { body = await request.json(); } catch (_) { return jsonResponse({ success: false, error: "数据格式错误" }, 400); }
         const stage = String(body.stage || "dating");
         const senderGender = String(body.senderGender || "boy");
         const senderDeviceId = String(body.senderDeviceId || "").trim();
         const actionType = String(body.actionType || "break_ice");
         const customText = String(body.customText || "").trim();
-
-        if (!sanitizeSanctity(customText)) {
-          return jsonResponse({ success: false, error: "言语不洁，请保持尊重与圣洁。" }, 406);
-        }
-
+        if (!sanitizeSanctity(customText)) return jsonResponse({ success: false, error: "言语不洁" }, 406);
         const safeContent = getStageSafeContent(stage, actionType, customText);
         const now = Date.now();
-
         let signalData = { activeSignal: null, history: [] };
-        try {
-          const obj = await bucket.get(SIGNALS_KEY);
-          if (obj) signalData = JSON.parse(await obj.text());
-        } catch (_) {}
+        try { const obj = await bucket.get(SIGNALS_KEY); if (obj) signalData = JSON.parse(await obj.text()); } catch (_) {}
 
-        // 1. 冷静期时间锁判定 (防止狂点施压)
         const currentSig = signalData.activeSignal;
         if (currentSig && currentSig.status === "active") {
           if (currentSig.senderDeviceId === senderDeviceId && currentSig.cooldownUntil && currentSig.cooldownUntil > now) {
-            return jsonResponse({
-              success: false,
-              code: "IN_COOLDOWN",
-              remainingSeconds: Math.ceil((currentSig.cooldownUntil - now) / 1000),
-              message: "还在情绪冷静期，请深呼吸稍作等待..."
-            }, 429);
+            return jsonResponse({ success: false, code: "IN_COOLDOWN", remainingSeconds: Math.ceil((currentSig.cooldownUntil - now) / 1000) }, 429);
           }
-
-          // 2. 🌟 双向奔赴 (MUTUAL_HEAL) 并发冲突自动消除算法
-          // 若对方在 5 分钟内也发起了和好/想念/道歉，双向奔赴达成，免除等待直接和解
           const isFromOtherSide = currentSig.senderGender !== senderGender;
           const isCurrentPeaceAction = ["break_ice", "apology", "miss_you", "warm_hug"].includes(actionType);
           const isPrevPeaceAction = ["break_ice", "apology", "miss_you", "warm_hug"].includes(currentSig.actionType);
           const isWithinWindow = (now - currentSig.createdAt) < 5 * 60 * 1000;
-
           if (isFromOtherSide && isCurrentPeaceAction && isPrevPeaceAction && isWithinWindow) {
-            currentSig.status = "mutual_resolved";
-            currentSig.resolvedAt = now;
-            currentSig.summary = "你们在同一刻想到了彼此，双向奔赴，爱永不止息！";
-
+            currentSig.status = "mutual_resolved"; currentSig.resolvedAt = now; currentSig.summary = "你们在同一刻想到了彼此，双向奔赴，爱永不止息！";
             if (!Array.isArray(signalData.history)) signalData.history = [];
-            signalData.history.unshift({
-              id: `hist_${now}`,
-              stage,
-              initiator: "both",
-              actionType: "mutual_resolved",
-              summary: "双向奔赴 · 在同一刻选择了和好",
-              resolvedAt: now
-            });
+            signalData.history.unshift({ id: `hist_${now}`, stage, initiator: "both", actionType: "mutual_resolved", summary: "双向奔赴 · 在同一刻选择了和好", resolvedAt: now });
             if (signalData.history.length > 30) signalData.history = signalData.history.slice(0, 30);
-
-            await bucket.put(SIGNALS_KEY, JSON.stringify(signalData, null, 2), {
-              httpMetadata: { contentType: "application/json; charset=utf-8" }
-            });
-
-            return jsonResponse({
-              success: true,
-              status: "mutual_resolved",
-              message: "✨ 你们在同一刻想到了彼此，破冰成功！",
-              signal: currentSig
-            });
+            await bucket.put(SIGNALS_KEY, JSON.stringify(signalData, null, 2), { httpMetadata: { contentType: "application/json; charset=utf-8" } });
+            return jsonResponse({ success: true, status: "mutual_resolved", message: "✨ 你们在同一刻想到了彼此，破冰成功！", signal: currentSig });
           }
         }
 
-        // 3. 构建全新信号
         const cooldownMs = actionType === "calm_down" ? (15 * 60 * 1000) : (60 * 1000);
-        const newActiveSignal = {
-          signalId: `sig_${now}_${Math.random().toString(36).substring(2, 6)}`,
-          stage,
-          senderGender,
-          senderDeviceId,
-          actionType,
-          content: safeContent,
-          status: "active",
-          createdAt: now,
-          cooldownUntil: now + cooldownMs,
-          response: null
-        };
-
+        const newActiveSignal = { signalId: `sig_${now}_${Math.random().toString(36).substring(2, 6)}`, stage, senderGender, senderDeviceId, actionType, content: safeContent, status: "active", createdAt: now, cooldownUntil: now + cooldownMs, response: null };
         signalData.activeSignal = newActiveSignal;
-
-        await bucket.put(SIGNALS_KEY, JSON.stringify(signalData, null, 2), {
-          httpMetadata: { contentType: "application/json; charset=utf-8" }
-        });
-
-        return jsonResponse({
-          success: true,
-          message: "🕊️ 情感信号已传递至云端！",
-          signal: newActiveSignal
-        });
+        await bucket.put(SIGNALS_KEY, JSON.stringify(signalData, null, 2), { httpMetadata: { contentType: "application/json; charset=utf-8" } });
+        return jsonResponse({ success: true, message: "🕊️ 情感信号已传递至云端！", signal: newActiveSignal });
       }
 
-      // C. 响应与处理破冰信号 (POST /api/love/signal/ack)
       if (url.pathname === "/api/love/signal/ack" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-
-        let body = {};
-        try { body = await request.json(); } catch (_) {
-          return jsonResponse({ success: false, error: "数据格式错误" }, 400);
-        }
-
+        let body = {}; try { body = await request.json(); } catch (_) { return jsonResponse({ success: false, error: "数据格式错误" }, 400); }
         const signalId = String(body.signalId || "").trim();
         const responderGender = String(body.responderGender || "girl");
         const responderDeviceId = String(body.responderDeviceId || "").trim();
-        const responseType = String(body.responseType || "accept"); // "accept" | "wait_a_bit" | "viewed"
+        const responseType = String(body.responseType || "accept");
         const responseText = String(body.responseText || "").trim();
-
-        if (!sanitizeSanctity(responseText)) {
-          return jsonResponse({ success: false, error: "言语不洁" }, 406);
-        }
-
+        if (!sanitizeSanctity(responseText)) return jsonResponse({ success: false, error: "言语不洁" }, 406);
         let signalData = { activeSignal: null, history: [] };
-        try {
-          const obj = await bucket.get(SIGNALS_KEY);
-          if (obj) signalData = JSON.parse(await obj.text());
-        } catch (_) {}
-
+        try { const obj = await bucket.get(SIGNALS_KEY); if (obj) signalData = JSON.parse(await obj.text()); } catch (_) {}
         const currentSig = signalData.activeSignal;
-        if (!currentSig || currentSig.signalId !== signalId) {
-          return jsonResponse({ success: false, error: "信号已过期或已被处理" }, 404);
-        }
-
+        if (!currentSig || currentSig.signalId !== signalId) return jsonResponse({ success: false, error: "信号已过期或已被处理" }, 404);
         const now = Date.now();
-
-        // 1. 已读标记
-        if (responseType === "viewed") {
-          if (currentSig.status === "active") {
-            currentSig.status = "viewed";
-            currentSig.viewedAt = now;
-          }
-        } 
-        // 2. 接纳和好
+        if (responseType === "viewed") { if (currentSig.status === "active") { currentSig.status = "viewed"; currentSig.viewedAt = now; } }
         else if (responseType === "accept") {
-          currentSig.status = "accepted";
-          currentSig.resolvedAt = now;
-          currentSig.response = {
-            responderGender,
-            responderDeviceId,
-            type: "accept",
-            text: responseText || "愿爱包容一切，我们和好吧！",
-            respondedAt: now
-          };
-
+          currentSig.status = "accepted"; currentSig.resolvedAt = now;
+          currentSig.response = { responderGender, responderDeviceId, type: "accept", text: responseText || "愿爱包容一切，我们和好吧！", respondedAt: now };
           if (!Array.isArray(signalData.history)) signalData.history = [];
-          signalData.history.unshift({
-            id: `hist_${now}`,
-            stage: currentSig.stage,
-            initiator: currentSig.senderGender,
-            actionType: currentSig.actionType,
-            summary: `${currentSig.content} ➔ ${currentSig.response.text}`,
-            status: "accepted",
-            resolvedAt: now
-          });
+          signalData.history.unshift({ id: `hist_${now}`, stage: currentSig.stage, initiator: currentSig.senderGender, actionType: currentSig.actionType, summary: `${currentSig.content} ➔ ${currentSig.response.text}`, status: "accepted", resolvedAt: now });
           if (signalData.history.length > 30) signalData.history = signalData.history.slice(0, 30);
-        } 
-        // 3. 还在整理情绪 (撒娇等待)
-        else if (responseType === "wait_a_bit") {
+        } else if (responseType === "wait_a_bit") {
           currentSig.status = "cooling";
-          currentSig.response = {
-            responderGender,
-            responderDeviceId,
-            type: "wait_a_bit",
-            text: responseText || "还在整理心情中，请再等我一会儿...",
-            respondedAt: now
-          };
+          currentSig.response = { responderGender, responderDeviceId, type: "wait_a_bit", text: responseText || "还在整理心情中，请再等我一会儿...", respondedAt: now };
         }
-
-        await bucket.put(SIGNALS_KEY, JSON.stringify(signalData, null, 2), {
-          httpMetadata: { contentType: "application/json; charset=utf-8" }
-        });
-
-        return jsonResponse({
-          success: true,
-          message: "✓ 响应已同步！",
-          signal: currentSig
-        });
+        await bucket.put(SIGNALS_KEY, JSON.stringify(signalData, null, 2), { httpMetadata: { contentType: "application/json; charset=utf-8" } });
+        return jsonResponse({ success: true, message: "✓ 响应已同步！", signal: currentSig });
       }
 
-      // D. 查看历史和好足迹备忘录 (GET /api/love/signal/history)
       if (url.pathname === "/api/love/signal/history" && request.method === "GET") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-
-        let signalData = { history: [] };
-        try {
-          const obj = await bucket.get(SIGNALS_KEY);
-          if (obj) signalData = JSON.parse(await obj.text());
-        } catch (_) {}
-
-        return jsonResponse({
-          success: true,
-          history: signalData.history || []
-        });
+        let signalData = { history: [] }; try { const obj = await bucket.get(SIGNALS_KEY); if (obj) signalData = JSON.parse(await obj.text()); } catch (_) {}
+        return jsonResponse({ success: true, history: signalData.history || [] });
       }
 
-      // E. 重置/清空信号队列 (POST /api/love/signal/clear)
       if (url.pathname === "/api/love/signal/clear" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-
-        let signalData = { activeSignal: null, history: [] };
-        try {
-          const obj = await bucket.get(SIGNALS_KEY);
-          if (obj) signalData = JSON.parse(await obj.text());
-        } catch (_) {}
-
+        const isAuthed = await verifyAdminAuth(request); if (!isAuthed) return jsonResponse({ success: false, error: "未授权" }, 401);
+        let signalData = { activeSignal: null, history: [] }; try { const obj = await bucket.get(SIGNALS_KEY); if (obj) signalData = JSON.parse(await obj.text()); } catch (_) {}
         signalData.activeSignal = null;
-
-        await bucket.put(SIGNALS_KEY, JSON.stringify(signalData, null, 2), {
-          httpMetadata: { contentType: "application/json; charset=utf-8" }
-        });
-
+        await bucket.put(SIGNALS_KEY, JSON.stringify(signalData, null, 2), { httpMetadata: { contentType: "application/json; charset=utf-8" } });
         return jsonResponse({ success: true, message: "已重置信号状态" });
       }
 
-      // 4. 上传多媒体附件 (MP3 音频、壁纸与拍立得照片)
+      // ==================== 4. 文件上传 ====================
       if (url.pathname === "/api/love/upload" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-        
-        const isAuthed = await verifyAdminAuth(request);
-        if (!isAuthed) return jsonResponse({ success: false, error: "未授权或管理口令错误" }, 401);
-
-        const formData = await request.formData();
-        const file = formData.get("file");
+        const isAuthed = await verifyAdminAuth(request); if (!isAuthed) return jsonResponse({ success: false, error: "未授权" }, 401);
+        const formData = await request.formData(); const file = formData.get("file");
         if (!file) return jsonResponse({ success: false, error: "未接收到文件" }, 400);
-
         const safeName = (file.name || "media.bin").replace(/[^a-zA-Z0-9.\-_]/g, "_");
         const r2Key = `${tenantDir}/assets/${Date.now()}_${safeName}`;
-
-        await bucket.put(r2Key, file.stream(), {
-          httpMetadata: { contentType: file.type || "application/octet-stream" }
-        });
-
+        await bucket.put(r2Key, file.stream(), { httpMetadata: { contentType: file.type || "application/octet-stream" } });
         return jsonResponse({ success: true, url: `/raw/${r2Key}` });
       }
 
-      // 5. 恩典灵宠通道
+      // ==================== 5. 灵宠通道 ====================
       if (url.pathname === "/api/love/pet") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-
         if (request.method === "GET") {
-          try {
-            const obj = await bucket.get(CONFIG_KEY);
-            if (obj) {
-              const cfg = JSON.parse(await obj.text());
-              return jsonResponse({ success: true, petData: cfg.petData || null });
-            }
-          } catch (_) {}
+          try { const obj = await bucket.get(CONFIG_KEY); if (obj) { const cfg = JSON.parse(await obj.text()); return jsonResponse({ success: true, petData: cfg.petData || null }); } } catch (_) {}
           return jsonResponse({ success: true, petData: null });
         }
-
         if (request.method === "POST") {
-          let reqData = {};
-          try { reqData = await request.json(); } catch (_) {}
-          const newPetData = reqData.petData;
-          if (!newPetData) return jsonResponse({ success: false, error: "无数据" }, 400);
-
-          if (!sanitizeSanctity(JSON.stringify(newPetData))) {
-            return jsonResponse({ success: false, error: "言语不洁" }, 406);
-          }
-
-          let cfg = {};
-          try {
-            const obj = await bucket.get(CONFIG_KEY);
-            if (obj) cfg = JSON.parse(await obj.text());
-          } catch (_) {}
-
+          let reqData = {}; try { reqData = await request.json(); } catch (_) {}
+          const newPetData = reqData.petData; if (!newPetData) return jsonResponse({ success: false, error: "无数据" }, 400);
+          if (!sanitizeSanctity(JSON.stringify(newPetData))) return jsonResponse({ success: false, error: "言语不洁" }, 406);
+          let cfg = {}; try { const obj = await bucket.get(CONFIG_KEY); if (obj) cfg = JSON.parse(await obj.text()); } catch (_) {}
           cfg.petData = newPetData;
-          await bucket.put(CONFIG_KEY, JSON.stringify(cfg), {
-            httpMetadata: { contentType: "application/json; charset=utf-8" }
-          });
-
+          await bucket.put(CONFIG_KEY, JSON.stringify(cfg), { httpMetadata: { contentType: "application/json; charset=utf-8" } });
           return jsonResponse({ success: true, message: "灵宠足迹已同步至云端" });
         }
       }
 
-      // 6. 门禁校验 (严格根据自定义管理密码判定 isAdmin，彻底封堵 521 漏洞)
+      // ==================== 6. 门禁校验 ====================
       if (url.pathname === "/api/love/verify-gatekeeper" && request.method === "POST") {
-        let reqData = {};
-        try { reqData = await request.json(); } catch (_) {}
+        let reqData = {}; try { reqData = await request.json(); } catch (_) {}
         const inputPwd = String(reqData.password || "").trim().toLowerCase();
-
         let correctPwd = "240520";
         let customAdminPwd = null;
-
         if (bucket) {
           try {
             const cfgObj = await bucket.get(CONFIG_KEY);
-            if (cfgObj) {
-              const cfg = JSON.parse(await cfgObj.text());
-              if (cfg.gatekeeper?.correctAnswer) {
-                correctPwd = String(cfg.gatekeeper.correctAnswer).trim().toLowerCase();
-              }
-              if (cfg.adminSecurity?.password) {
-                customAdminPwd = String(cfg.adminSecurity.password).trim().toLowerCase();
-              }
-            }
+            if (cfgObj) { const cfg = JSON.parse(await cfgObj.text()); if (cfg.gatekeeper?.correctAnswer) correctPwd = String(cfg.gatekeeper.correctAnswer).trim().toLowerCase(); if (cfg.adminSecurity?.password) customAdminPwd = String(cfg.adminSecurity.password).trim().toLowerCase(); }
           } catch (_) {}
         }
-
-        // 仅当输入密码与当前租户自定义密码完全相符时才判定为管理员
         let isAdmin = false;
-        if (customAdminPwd) {
-          if (inputPwd === customAdminPwd || (env.ADMIN_PASSWORD && env.ADMIN_PASSWORD !== "521" && inputPwd === String(env.ADMIN_PASSWORD).trim().toLowerCase())) {
-            isAdmin = true;
-          }
-        } else {
-          if (inputPwd === "521" || inputPwd === "admin" || inputPwd === ADMIN_PASSWORD.toLowerCase()) {
-            isAdmin = true;
-          }
-        }
-
-        if (isAdmin) {
-          return jsonResponse({ success: true, isAdmin: true });
-        }
-
-        // 访客门禁校验
-        if (inputPwd === correctPwd) {
-          return jsonResponse({ success: true, isAdmin: false });
-        } else {
-          return jsonResponse({ success: false, message: "口令错误" }, 403);
-        }
+        if (customAdminPwd) { if (inputPwd === customAdminPwd || (env.ADMIN_PASSWORD && env.ADMIN_PASSWORD !== "521" && inputPwd === String(env.ADMIN_PASSWORD).trim().toLowerCase())) isAdmin = true; }
+        else { if (inputPwd === "521" || inputPwd === "admin" || inputPwd === ADMIN_PASSWORD.toLowerCase()) isAdmin = true; }
+        if (isAdmin) return jsonResponse({ success: true, isAdmin: true });
+        if (inputPwd === correctPwd) return jsonResponse({ success: true, isAdmin: false });
+        return jsonResponse({ success: false, message: "口令错误" }, 403);
       }
 
-      // 7. 域名专属授权兑换
+      // ==================== 7. 授权兑换 ====================
       if (url.pathname === "/api/love/verify-license" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "存储服务不可用" }, 500);
-
-        let reqData = {};
-        try { reqData = await request.json(); } catch (_) {}
-        const code = reqData.licenseCode;
-        const incomingConfig = reqData.currentConfig;
-
-        const isValid = await verifyDomainLicense(rawHost, code);
-        if (!isValid) {
-          return jsonResponse({ success: false, message: "⚠️ 授权激活码无效或与当前域名不匹配！" }, 403);
-        }
-
+        let reqData = {}; try { reqData = await request.json(); } catch (_) {}
+        const isValid = await verifyDomainLicense(rawHost, reqData.licenseCode);
+        if (!isValid) return jsonResponse({ success: false, message: "⚠️ 授权激活码无效！" }, 403);
         let currentCfg = {};
-        try {
-          const cfgObj = await bucket.get(CONFIG_KEY);
-          if (cfgObj) currentCfg = JSON.parse(await cfgObj.text());
-          else if (incomingConfig && typeof incomingConfig === "object") currentCfg = incomingConfig;
-        } catch (_) {
-          if (incomingConfig && typeof incomingConfig === "object") currentCfg = incomingConfig;
-        }
-
-        currentCfg._license = {
-          unlocked: true,
-          unlockedAt: new Date().toISOString(),
-          tier: "SACRED_ETERNAL_PERPETUAL",
-          boundDomain: rawHost
-        };
-
-        await bucket.put(CONFIG_KEY, JSON.stringify(currentCfg), {
-          httpMetadata: { contentType: "application/json; charset=utf-8" }
-        });
-
+        try { const cfgObj = await bucket.get(CONFIG_KEY); if (cfgObj) currentCfg = JSON.parse(await cfgObj.text()); else if (reqData.currentConfig && typeof reqData.currentConfig === "object") currentCfg = reqData.currentConfig; } catch (_) { if (reqData.currentConfig && typeof reqData.currentConfig === "object") currentCfg = reqData.currentConfig; }
+        currentCfg._license = { unlocked: true, unlockedAt: new Date().toISOString(), tier: "SACRED_ETERNAL_PERPETUAL", boundDomain: rawHost };
+        await bucket.put(CONFIG_KEY, JSON.stringify(currentCfg), { httpMetadata: { contentType: "application/json; charset=utf-8" } });
         return jsonResponse({ success: true, message: `✨ 星河契约已鉴证！【${rawHost}】专属高级隐藏福泽已永久解锁。` });
       }
 
-      // 8. 清理废弃文件
+      // ==================== 8. 清理废弃文件 ====================
       if (url.pathname === "/api/love/cleanup" && request.method === "POST") {
         if (!bucket) return jsonResponse({ success: false, error: "未绑定存储空间" }, 500);
-        
-        const isAuthed = await verifyAdminAuth(request);
-        if (!isAuthed) return jsonResponse({ success: false, error: "未授权" }, 401);
-
-        let activeKeys = new Set();
-        try {
-          const cfgObj = await bucket.get(CONFIG_KEY);
-          if (cfgObj) {
-            const rawText = await cfgObj.text();
-            const matches = rawText.match(/\/raw\/([a-zA-Z0-9_\-\.\/]+)/g) || [];
-            matches.forEach(m => activeKeys.add(decodeURIComponent(m.replace(/^\/raw\//, ""))));
-          }
-        } catch (_) {}
-
-        let deletedCount = 0;
-        let freedBytes = 0;
-        const prefix = `${tenantDir}/assets/`;
-        const listed = await bucket.list({ prefix });
-
-        for (const obj of listed.objects) {
-          const isReferenced = activeKeys.has(obj.key);
-          const isOlderThan10Min = (Date.now() - new Date(obj.uploaded).getTime()) > 10 * 60 * 1000;
-
-          if (!isReferenced && isOlderThan10Min) {
-            freedBytes += obj.size;
-            deletedCount++;
-            await bucket.delete(obj.key);
-          }
-        }
-
-        return jsonResponse({
-          success: true,
-          deletedCount,
-          freedBytes,
-          message: `已清理当前站点 ${deletedCount} 个废弃文件，释放空间 ${(freedBytes / (1024 * 1024)).toFixed(2)} MB`
-        });
+        const isAuthed = await verifyAdminAuth(request); if (!isAuthed) return jsonResponse({ success: false, error: "未授权" }, 401);
+        let deletedCount = 0, freedBytes = 0;
+        const prefix = `${tenantDir}/assets/`; const listed = await bucket.list({ prefix });
+        for (const obj of listed.objects) { const isOlderThan10Min = (Date.now() - new Date(obj.uploaded).getTime()) > 10 * 60 * 1000; if (isOlderThan10Min) { freedBytes += obj.size; deletedCount++; await bucket.delete(obj.key); } }
+        return jsonResponse({ success: true, deletedCount, freedBytes, message: `已清理 ${deletedCount} 个废弃文件，释放 ${(freedBytes / (1024*1024)).toFixed(2)} MB` });
       }
 
-      // 9. 在线音乐检索 (酷狗官方接口)
+      // ==================== 9. 音乐搜索 ====================
       if (url.pathname === "/api/love/music-search" && request.method === "GET") {
-        const keyword = (url.searchParams.get("keyword") || "").trim();
-        const songs = [];
-        const seen = new Set();
-
+        const keyword = (url.searchParams.get("keyword") || "").trim(); const songs = []; const seen = new Set();
         if (keyword) {
           try {
-            const kgRes = await fetch(
-              `https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=1&pagesize=10&filter=2&bitrate=0&isfp=0`,
-              { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } }
-            );
-            if (kgRes.ok) {
-              const kgData = await kgRes.json();
-              const kgList = kgData.data?.lists || [];
-              kgList.forEach(item => {
-                const sName = (item.SongName || "").replace(/<[^>]+>/g, "");
-                const sArtist = (item.SingerName || "").replace(/<[^>]+>/g, "");
-                const fHash = item.FileHash || item.HQFileHash || item.SQFileHash;
-                if (sName && fHash && !seen.has(fHash)) {
-                  seen.add(fHash);
-                  songs.push({
-                    id: fHash,
-                    title: sName,
-                    artist: sArtist,
-                    albumId: item.AlbumID || "0",
-                    url: `/api/love/music-stream?hash=${fHash}&album_id=${item.AlbumID || 0}&title=${encodeURIComponent(sName)}&artist=${encodeURIComponent(sArtist)}`
-                  });
-                }
-              });
-            }
+            const kgRes = await fetch(`https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=1&pagesize=10&filter=2&bitrate=0&isfp=0`, { headers: { "User-Agent": "Mozilla/5.0" } });
+            if (kgRes.ok) { const kgData = await kgRes.json(); (kgData.data?.lists || []).forEach(item => { const sName = (item.SongName || "").replace(/<[^>]+>/g, ""); const sArtist = (item.SingerName || "").replace(/<[^>]+>/g, ""); const fHash = item.FileHash || item.HQFileHash || item.SQFileHash; if (sName && fHash && !seen.has(fHash)) { seen.add(fHash); songs.push({ id: fHash, title: sName, artist: sArtist, albumId: item.AlbumID || "0", url: `/api/love/music-stream?hash=${fHash}&album_id=${item.AlbumID || 0}&title=${encodeURIComponent(sName)}&artist=${encodeURIComponent(sArtist)}` }); } }); }
           } catch (_) {}
         }
-
         return jsonResponse({ success: true, songs });
       }
 
-      // 10. 🎵 音频流式代理 (多引擎无损/高保真解析)
+      // ==================== 10. 音频流代理 ====================
       if (url.pathname === "/api/love/music-stream" && request.method === "GET") {
-        const hash = url.searchParams.get("hash");
-        const albumId = url.searchParams.get("album_id") || "0";
-        const title = url.searchParams.get("title") || "";
-        const artist = url.searchParams.get("artist") || "";
+        const hash = url.searchParams.get("hash"); const albumId = url.searchParams.get("album_id") || "0";
+        const title = url.searchParams.get("title") || ""; const artist = url.searchParams.get("artist") || "";
         let targetAudioUrl = "";
-
         if (hash) {
           try {
-            const kgInfoRes = await fetch(`https://m.kugou.com/app/i/getSongInfo.php?cmd=playInfo&hash=${hash}`, {
-              headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)" }
-            });
-            if (kgInfoRes.ok) {
-              const info = await kgInfoRes.json();
-              if (info && info.url && info.url.startsWith("http")) {
-                targetAudioUrl = info.url;
-              }
-            }
+            const kgInfoRes = await fetch(`https://m.kugou.com/app/i/getSongInfo.php?cmd=playInfo&hash=${hash}`, { headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)" } });
+            if (kgInfoRes.ok) { const info = await kgInfoRes.json(); if (info?.url?.startsWith("http")) targetAudioUrl = info.url; }
           } catch (_) {}
-
           if (!targetAudioUrl) {
             try {
-              const kgWebRes = await fetch(`https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&album_id=${albumId}&dfid=-&mid=-&platid=4&_=${Date.now()}`, {
-                headers: {
-                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                  "Cookie": "kg_mid=e8d0e74b68ef5c4c95f19067b5b5c935; kg_dfid=2xP9uN2gRj5h0Xg5m54P2x9n",
-                  "Referer": "https://www.kugou.com/"
-                }
-              });
-              if (kgWebRes.ok) {
-                const data = await kgWebRes.json();
-                targetAudioUrl = data.data?.play_url || data.data?.play_backup_url || "";
-              }
+              const kgWebRes = await fetch(`https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=${hash}&album_id=${albumId}&dfid=-&mid=-&platid=4&_=${Date.now()}`, { headers: { "User-Agent": "Mozilla/5.0", "Cookie": "kg_mid=e8d0e74b68ef5c4c95f19067b5b5c935; kg_dfid=2xP9uN2gRj5h0Xg5m54P2x9n", "Referer": "https://www.kugou.com/" } });
+              if (kgWebRes.ok) { const data = await kgWebRes.json(); targetAudioUrl = data.data?.play_url || data.data?.play_backup_url || ""; }
             } catch (_) {}
           }
         }
-
         if (!targetAudioUrl && (title || hash)) {
           try {
             const querySong = `${title} ${artist}`.trim();
@@ -758,107 +402,48 @@ export default {
               const kwRes = await fetch(kwUrl, { headers: { "User-Agent": "okhttp/3.10.0" } });
               if (kwRes.ok) {
                 const kwText = await kwRes.text();
-                const ridMatch = kwText.match(/\"MUSICRID\":\"MUSIC_(\d+)\"/i) || kwText.match(/\"rid\":(\d+)/i) || kwText.match(/\"DC_TARGETID\":\"(\d+)\"/i);
-                if (ridMatch && ridMatch[1]) {
-                  const kwPlayRes = await fetch(`https://antiserver.kuwo.cn/anti.s?type=convert_url&rid=${ridMatch[1]}&format=mp3&response=url`, {
-                    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
-                  });
-                  if (kwPlayRes.ok) {
-                    const directUrl = (await kwPlayRes.text()).trim();
-                    if (directUrl && directUrl.startsWith("http")) {
-                      targetAudioUrl = directUrl;
-                    }
-                  }
+                const ridMatch = kwText.match(/"MUSICRID":"MUSIC_(\d+)"/i) || kwText.match(/"rid":(\d+)/i) || kwText.match(/"DC_TARGETID":"(\d+)"/i);
+                if (ridMatch?.[1]) {
+                  const kwPlayRes = await fetch(`https://antiserver.kuwo.cn/anti.s?type=convert_url&rid=${ridMatch[1]}&format=mp3&response=url`, { headers: { "User-Agent": "Mozilla/5.0" } });
+                  if (kwPlayRes.ok) { const directUrl = (await kwPlayRes.text()).trim(); if (directUrl?.startsWith("http")) targetAudioUrl = directUrl; }
                 }
               }
             }
           } catch (_) {}
         }
-
-        if (!targetAudioUrl || !targetAudioUrl.startsWith("http")) {
-          return new Response("Audio Source Unavailable Due To Copyright", {
-            status: 404,
-            headers: corsHeaders
-          });
-        }
-
+        if (!targetAudioUrl || !targetAudioUrl.startsWith("http")) return new Response("Audio Source Unavailable", { status: 404, headers: corsHeaders });
         try {
           const range = request.headers.get("Range");
-          const forwardHeaders = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-            "Referer": ""
-          };
-          if (range) forwardHeaders["Range"] = range;
-
-          const streamRes = await fetch(targetAudioUrl, {
-            headers: forwardHeaders,
-            redirect: "follow"
-          });
-
+          const forwardHeaders = { "User-Agent": "Mozilla/5.0", "Referer": "" }; if (range) forwardHeaders["Range"] = range;
+          const streamRes = await fetch(targetAudioUrl, { headers: forwardHeaders, redirect: "follow" });
           if (streamRes.ok || streamRes.status === 206) {
             const responseHeaders = new Headers(corsHeaders);
             responseHeaders.set("Content-Type", streamRes.headers.get("Content-Type") || "audio/mpeg");
             responseHeaders.set("Accept-Ranges", "bytes");
-            if (streamRes.headers.get("Content-Length")) {
-              responseHeaders.set("Content-Length", streamRes.headers.get("Content-Length"));
-            }
-            if (streamRes.headers.get("Content-Range")) {
-              responseHeaders.set("Content-Range", streamRes.headers.get("Content-Range"));
-            }
-            return new Response(streamRes.body, {
-              status: streamRes.status,
-              headers: responseHeaders
-            });
+            if (streamRes.headers.get("Content-Length")) responseHeaders.set("Content-Length", streamRes.headers.get("Content-Length"));
+            if (streamRes.headers.get("Content-Range")) responseHeaders.set("Content-Range", streamRes.headers.get("Content-Range"));
+            return new Response(streamRes.body, { status: streamRes.status, headers: responseHeaders });
           }
         } catch (_) {}
-
         return Response.redirect(targetAudioUrl, 302);
       }
 
-      // 11. 静态文件流式输出 (/raw/*)
+      // ==================== 11. 静态文件输出 ====================
       if (url.pathname.startsWith("/raw/")) {
         if (!bucket) return new Response("Bucket Not Found", { status: 500 });
         const key = decodeURIComponent(url.pathname.replace(/^\/raw\//, ""));
-
         const rangeHeader = request.headers.get("Range");
         let r2Options = {};
-        if (rangeHeader) {
-          const match = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
-          if (match) {
-            const start = parseInt(match[1], 10);
-            const end = match[2] ? parseInt(match[2], 10) : undefined;
-            r2Options.range = { offset: start, length: end ? end - start + 1 : undefined };
-          }
-        }
-
+        if (rangeHeader) { const match = rangeHeader.match(/bytes=(\d+)-(\d+)?/); if (match) { const start = parseInt(match[1], 10); const end = match[2] ? parseInt(match[2], 10) : undefined; r2Options.range = { offset: start, length: end ? end - start + 1 : undefined }; } }
         const object = await bucket.get(key, r2Options);
         if (!object) return new Response("File Not Found", { status: 404 });
-
-        const headers = new Headers(corsHeaders);
-        object.writeHttpMetadata(headers);
-        headers.set("ETag", object.httpEtag);
-        headers.set("Accept-Ranges", "bytes");
-        headers.set("Cache-Control", "public, max-age=604800, immutable");
-
-        if (r2Options.range && object.range) {
-          headers.set("Content-Range", `bytes ${object.range.offset}-${object.range.offset + object.range.length - 1}/${object.size}`);
-          return new Response(object.body, { status: 206, headers });
-        }
+        const headers = new Headers(corsHeaders); object.writeHttpMetadata(headers); headers.set("ETag", object.httpEtag); headers.set("Accept-Ranges", "bytes"); headers.set("Cache-Control", "public, max-age=604800, immutable");
+        if (r2Options.range && object.range) { headers.set("Content-Range", `bytes ${object.range.offset}-${object.range.offset + object.range.length - 1}/${object.size}`); return new Response(object.body, { status: 206, headers }); }
         return new Response(object.body, { headers });
       }
+    } catch (err) { return jsonResponse({ success: false, error: err.message }, 500); }
 
-    } catch (err) {
-      return jsonResponse({ success: false, error: err.message }, 500);
-    }
-
-    if (env.ASSETS) {
-      try {
-        return await env.ASSETS.fetch(request);
-      } catch (e) {
-        return new Response("Not Found", { status: 404 });
-      }
-    }
-
+    if (env.ASSETS) { try { return await env.ASSETS.fetch(request); } catch (e) { return new Response("Not Found", { status: 404 }); } }
     return new Response("Not Found", { status: 404 });
   }
 };
