@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe)
  * 文件名: js/anniversary.js
- * 作用: 倒数日与恒久纪念日渲染控制器 (视口懒加载、SVG 流转环计算、长按浮现暗纹、折叠情书、声纹播放、头部计时器 pinToHero 联动与工具链交互)
+ * 作用: 倒数日与恒久纪念日渲染控制器 (支持 Stage 唤醒流转环重绘、视口懒加载、SVG 流转环计算、长按浮现暗纹、折叠情书、声纹播放、头部计时器 pinToHero 联动与工具链交互)
  */
 
 class AnniversaryManager {
@@ -35,16 +35,51 @@ class AnniversaryManager {
     this.updateHeroTimerLinkage(list);
     this.setupIntersectionObserver();
     this.bindCardInteractions(list);
+    this.bindStageLifecycle();
   }
 
   /**
-   * 🌟 头部同行计时器 (Hero Timer) 主打倒数日联动
+   * 监听舞台生命周期广播
+   */
+  bindStageLifecycle() {
+    window.addEventListener("stage:opened", (e) => {
+      const stageId = e.detail && e.detail.stageId;
+      if (stageId === "anniversary") {
+        // 分幕激活后，立刻强制重新计算并激活所有 SVG 流转环动画
+        requestAnimationFrame(() => {
+          this.recalculateAllOrbits();
+        });
+      }
+    });
+
+    window.addEventListener("stage:closing", () => {
+      if (this.currentAudio) {
+        this.currentAudio.pause();
+        this.currentAudio = null;
+        this.playingVoiceId = null;
+        document.querySelectorAll(".anniversary-voice-pill").forEach(p => p.classList.remove("playing"));
+        this.resumeGlobalBgm();
+      }
+    });
+  }
+
+  /**
+   * 强制刷新所有流转环
+   */
+  recalculateAllOrbits() {
+    document.querySelectorAll(".anniversary-orbit-progress").forEach(el => {
+      const offset = el.getAttribute("data-offset") || "0";
+      el.style.strokeDashoffset = offset;
+    });
+  }
+
+  /**
+   * 头部同行计时器 (Hero Timer) 主打倒数日联动
    */
   updateHeroTimerLinkage(list) {
     const milestoneEl = document.getElementById("timer-milestone");
     if (!milestoneEl || !window.AnniversaryEngine) return;
 
-    // 查找被标记为 pinToHero 的纪念日，若无则默认取列表第一个
     const pinnedItem = list.find(item => Boolean(item.pinToHero)) || list[0];
     if (!pinnedItem) return;
 
@@ -68,7 +103,6 @@ class AnniversaryManager {
   renderCards(container, rawList) {
     container.innerHTML = "";
 
-    // 1. 调用数学引擎计算每个条目的度量指标
     const computedItems = rawList.map(item => {
       const metrics = window.AnniversaryEngine 
         ? window.AnniversaryEngine.calculateAnniversaryMetrics(item) 
@@ -76,7 +110,6 @@ class AnniversaryManager {
       return { item, metrics };
     }).filter(entry => Boolean(entry.metrics));
 
-    // 2. 智能排序规则：今日纪念日置顶 ➔ 每年倒数日(按剩余天数升序) ➔ 累积同行日 ➔ 未来单次目标
     computedItems.sort((a, b) => {
       if (a.metrics.isToday && !b.metrics.isToday) return -1;
       if (!a.metrics.isToday && b.metrics.isToday) return 1;
@@ -90,7 +123,6 @@ class AnniversaryManager {
       return 0;
     });
 
-    // 3. 构建卡片 HTML
     const startDateStr = this.config.meta?.startDate || "2024-05-20";
     let hasTodayEvent = false;
 
@@ -105,7 +137,6 @@ class AnniversaryManager {
         isMilestone ? "anniversary-card--milestone" : ""
       ].filter(Boolean).join(" ");
 
-      // A. 图标与阶段徽章
       const icon = item.icon || "💖";
       const title = this.escapeHtml(item.title || "契约纪念日");
       const isMarriage = this.config.lifecycle?.currentPhase === "married";
@@ -114,7 +145,6 @@ class AnniversaryManager {
         ? window.AnniversaryEngine.getAnniversaryStageBadge(pastYears, isMarriage)
         : (item.tag || "恒久契约");
 
-      // B. 时光流转环 (每年重复事件呈现)
       let orbitHtml = "";
       if (metrics.mode === "annual") {
         const percent = metrics.orbitPercent || 0;
@@ -130,7 +160,6 @@ class AnniversaryManager {
         `;
       }
 
-      // C. 天数与日期副标
       let daysLabel = "距离下一次还有";
       let daysNum = metrics.daysRemaining || 0;
       let daysUnit = "天";
@@ -157,7 +186,6 @@ class AnniversaryManager {
         }
       }
 
-      // D. 生日生命羁绊计算
       let lifeBondHtml = "";
       if (item.type === "countdown" && (item.tag?.includes("生日") || item.tag?.includes("诞辰") || item.title?.includes("生日"))) {
         const bond = window.AnniversaryEngine 
@@ -172,10 +200,8 @@ class AnniversaryManager {
         }
       }
 
-      // E. 照片暗纹 (Ghost Memories)
       const ghostStyle = item.bgImg ? `style="background-image: url('${item.bgImg}');"` : "";
 
-      // F. 10 秒声纹信物微播放器
       let voicePillHtml = "";
       if (item.voiceAudio) {
         voicePillHtml = `
@@ -186,7 +212,6 @@ class AnniversaryManager {
         `;
       }
 
-      // G. 专属折叠情书 (Love Memo)
       const hasMemo = Boolean(item.memo && item.memo.trim());
       let memoBtnHtml = "";
       let memoBoxHtml = "";
@@ -206,7 +231,6 @@ class AnniversaryManager {
         `;
       }
 
-      // 🌟 批次三新增：工具链交互按钮 (📅 加到手机日历 + 📸 导出单卡海报)
       const toolsBtnHtml = `
         <button class="anniversary-action-btn btn-add-calendar" data-idx="${index}" title="一键导入手机系统日历 (提前3天+当天闹钟提醒)">
           <span>📅 日历</span>
@@ -264,14 +288,9 @@ class AnniversaryManager {
     }
   }
 
-  /**
-   * 视口监听 (IntersectionObserver) 触发 SVG 进度动画与渲染节能
-   */
   setupIntersectionObserver() {
     if (!("IntersectionObserver" in window)) {
-      document.querySelectorAll(".anniversary-orbit-progress").forEach(el => {
-        el.style.strokeDashoffset = el.getAttribute("data-offset") || "0";
-      });
+      this.recalculateAllOrbits();
       return;
     }
 
@@ -287,18 +306,14 @@ class AnniversaryManager {
           observer.unobserve(card);
         }
       });
-    }, { threshold: 0.15 });
+    }, { threshold: 0.1 });
 
     document.querySelectorAll(".anniversary-card").forEach(card => {
       observer.observe(card);
     });
   }
 
-  /**
-   * 绑定交互手势 (情书展卷、声纹播放、日历导出、单卡海报)
-   */
   bindCardInteractions(list) {
-    // 1. 折叠情书展卷动效
     document.querySelectorAll(".btn-toggle-memo").forEach(btn => {
       btn.onclick = (e) => {
         e.preventDefault();
@@ -313,7 +328,6 @@ class AnniversaryManager {
       };
     });
 
-    // 2. 声纹录音微播放器
     document.querySelectorAll(".anniversary-voice-pill").forEach(pill => {
       pill.onclick = (e) => {
         e.preventDefault();
@@ -324,7 +338,6 @@ class AnniversaryManager {
       };
     });
 
-    // 3. 🌟 批次三新增：一键导出手机日历 (.ics)
     document.querySelectorAll(".btn-add-calendar").forEach(btn => {
       btn.onclick = (e) => {
         e.preventDefault();
@@ -337,7 +350,6 @@ class AnniversaryManager {
       };
     });
 
-    // 4. 🌟 批次三新增：生成单卡 300DPI 拍立得海报
     document.querySelectorAll(".btn-card-poster").forEach(btn => {
       btn.onclick = (e) => {
         e.preventDefault();
@@ -359,7 +371,6 @@ class AnniversaryManager {
       };
     });
 
-    // 5. 移动端长按卡片激活暗纹 (Ghost Memories)
     document.querySelectorAll(".anniversary-card").forEach(card => {
       const hasBg = card.getAttribute("data-bg");
       if (!hasBg) return;
@@ -382,9 +393,6 @@ class AnniversaryManager {
     });
   }
 
-  /**
-   * 切换播放声纹音频
-   */
   toggleVoiceAudio(url, id, pillElement) {
     if (!url) return;
 
@@ -432,21 +440,16 @@ class AnniversaryManager {
     }
   }
 
-  /**
-   * 触发今日纪念日全屏浪漫庆典
-   */
   triggerTodayCelebration() {
     this.hasCelebratedToday = true;
     setTimeout(() => {
       if (window.Effects) {
-        window.Effects.fireConfetti();
-        if (typeof window.Effects.fireFireworks === "function") {
-          window.Effects.fireFireworks();
+        if (typeof window.Effects.fireConfetti === "function") window.Effects.fireConfetti();
+        if (typeof window.Effects.fireFireworks === "function") window.Effects.fireFireworks();
+        if (typeof window.Effects.showMiniToast === "function") {
+          window.Effects.showMiniToast("🎉 愿爱如初！今天是你们专属的神圣纪念日 ✨");
         }
-        window.Effects.showMiniToast("🎉 愿爱如初！今天是你们专属的神圣纪念日 ✨");
       }
     }, 1200);
   }
 }
-
-window.AnniversaryManager = AnniversaryManager;
