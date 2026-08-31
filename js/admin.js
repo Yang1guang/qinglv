@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe) 控制中心主控
  * 文件名: js/admin.js
- * 作用: 全模块可视化看板、倒数日/纪念日双向数据流、模板一键填充、农历公历联动、R2 独立多媒体上传与全量持久化
+ * 作用: 全模块可视化看板、倒数日与纪念日、破冰信号箱控制中心、三阶段文案实时绑定、R2 独立多媒体上传与全量云端持久化
  */
 
 let currentConfig = null;
@@ -90,7 +90,7 @@ function parseSongFilename(filename) {
   return { artist: "本地上传", title: clean };
 }
 
-// 深度合并云端配置与本地默认基准 (含 anniversaries 防御合并)
+// 深度合并云端配置与本地默认基准 (含 anniversaries 与 icebreaker 严密防御合并)
 function mergeWithDefaultConfig(cloudCfg) {
   const base = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
   if (!cloudCfg || typeof cloudCfg !== "object") return base;
@@ -110,6 +110,12 @@ function mergeWithDefaultConfig(cloudCfg) {
     theme: { ...(base.theme || {}), ...(cloudCfg.theme || {}) },
     lifecycle: { ...(base.lifecycle || {}), ...(cloudCfg.lifecycle || {}) },
     anniversaries: (Array.isArray(cloudCfg.anniversaries) && cloudCfg.anniversaries.length > 0) ? cloudCfg.anniversaries : (base.anniversaries || []),
+    icebreaker: {
+      enabled: cloudCfg.icebreaker?.enabled !== false,
+      cooldownMinutes: cloudCfg.icebreaker?.cooldownMinutes || base.icebreaker?.cooldownMinutes || 15,
+      soundEnabled: cloudCfg.icebreaker?.soundEnabled !== false,
+      actions: cloudCfg.icebreaker?.actions || base.icebreaker?.actions || {}
+    },
     timeline: (Array.isArray(cloudCfg.timeline) && cloudCfg.timeline.length > 0) ? cloudCfg.timeline : (base.timeline || []),
     checklist100: (Array.isArray(cloudCfg.checklist100) && cloudCfg.checklist100.length > 0) ? cloudCfg.checklist100 : (base.checklist100 || []),
     scratchCards: (Array.isArray(cloudCfg.scratchCards) && cloudCfg.scratchCards.length > 0) ? cloudCfg.scratchCards : (base.scratchCards || []),
@@ -216,6 +222,7 @@ function renderAllForms() {
 
   renderTimelineList();
   renderAnniversariesList();
+  renderIcebreakerSettings();
   renderChecklist();
   renderScratchCards();
 
@@ -273,7 +280,7 @@ async function submitDomainLicense() {
   }
 }
 
-// ================= 🌟 5. 倒数日与恒久纪念日管理看板 =================
+// ================= 5. 倒数日与恒久纪念日管理看板 =================
 
 function renderAnniversariesList() {
   const container = document.getElementById("anniversariesListContainer");
@@ -296,7 +303,6 @@ function renderAnniversariesList() {
     const isLeap = Boolean(item.isLeapMonth);
     const isPinned = Boolean(item.pinToHero);
 
-    // 实时计算预览天数
     let previewMetrics = "";
     if (window.AnniversaryEngine) {
       const m = window.AnniversaryEngine.calculateAnniversaryMetrics(item);
@@ -538,6 +544,92 @@ function moveAnniversaryItem(idx, direction) {
   list[idx] = list[targetIdx];
   list[targetIdx] = temp;
   renderAnniversariesList();
+}
+
+// ================= 🌟 6. 破冰与情感信号箱控制中心 (Batch 4 新增) =================
+
+function renderIcebreakerSettings() {
+  if (!currentConfig) return;
+  const ib = currentConfig.icebreaker || {};
+  const enabledSelect = document.getElementById("icebreaker_enabled");
+  const cooldownInput = document.getElementById("icebreaker_cooldownMinutes");
+  const cooldownValText = document.getElementById("icebreaker_cooldown_val");
+  const soundSelect = document.getElementById("icebreaker_soundEnabled");
+
+  if (enabledSelect) enabledSelect.value = String(ib.enabled !== false);
+  if (cooldownInput) {
+    cooldownInput.value = ib.cooldownMinutes || 15;
+    if (cooldownValText) cooldownValText.textContent = `${ib.cooldownMinutes || 15} 分钟`;
+  }
+  if (soundSelect) soundSelect.value = String(ib.soundEnabled !== false);
+
+  const container = document.getElementById("icebreakerActionsContainer");
+  if (!container) return;
+
+  const stages = [
+    { key: "dating", name: "🌿 恋爱期 (坚守圣洁界限 · 严禁同居与室内私密行为引导)", color: "#38bdf8" },
+    { key: "engaged", name: "💍 订婚期 (盟约预备 · 化解现实筹备焦虑)", color: "#f59e0b" },
+    { key: "married", name: "🏠 结婚期 (合为一体 · 实体避风港 · 不可含怒到日落)", color: "#f43f5e" }
+  ];
+
+  const actionsData = ib.actions || window.LOVE_CONFIG?.icebreaker?.actions || {};
+
+  container.innerHTML = stages.map(st => {
+    const list = actionsData[st.key] || [];
+    return `
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px; margin-bottom:14px;">
+        <div style="font-size:14px; font-weight:900; color:${st.color}; margin-bottom:12px;">${st.name}</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          ${list.map((act, actIdx) => `
+            <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:12px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <span style="font-size:18px;">${act.icon || "💖"}</span>
+                <span style="font-size:13px; font-weight:800; color:#fff;">${escapeHtml(act.label || "动作名称")}</span>
+                <span style="font-size:11px; color:#94a3b8; margin-left:auto;">[类型: ${act.type}]</span>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size:11px;">自定义温情提示与和解台阶文案</label>
+                <textarea class="admin-textarea" rows="2" id="ib_${st.key}_${act.type}_desc" oninput="updateIcebreakerActionText('${st.key}', '${act.type}', this.value)">${escapeHtml(act.desc || "")}</textarea>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function updateIcebreakerActionText(stageKey, actionType, val) {
+  if (!currentConfig.icebreaker) currentConfig.icebreaker = {};
+  if (!currentConfig.icebreaker.actions) currentConfig.icebreaker.actions = {};
+  if (!Array.isArray(currentConfig.icebreaker.actions[stageKey])) {
+    const baseActions = window.LOVE_CONFIG?.icebreaker?.actions?.[stageKey] || [];
+    currentConfig.icebreaker.actions[stageKey] = JSON.parse(JSON.stringify(baseActions));
+  }
+  const target = currentConfig.icebreaker.actions[stageKey].find(a => a.type === actionType);
+  if (target) {
+    target.desc = val;
+  }
+}
+
+async function clearIcebreakerHistory() {
+  if (!confirm("⚠️ 确定要清空历史和好足迹与当前未决信号吗？此操作不可撤销。")) return;
+  showToast("⏳ 正在重置...");
+  try {
+    const token = getAuthToken();
+    const res = await fetch("/api/love/signal/clear", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-auth": token, "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert("✨ 已成功清空历史信号与和好足迹！");
+    } else {
+      alert("❌ 操作失败: " + (data.error || "服务端异常"));
+    }
+  } catch (err) {
+    alert("❌ 请求异常: " + err.message);
+  }
 }
 
 // 热门标签点击快捷搜索
@@ -1046,7 +1138,7 @@ document.getElementById("globalUploader").addEventListener("change", async (e) =
   }
 });
 
-// 发布全量配置到云端
+// 发布全量配置到云端 (全模块无损持久化)
 async function saveAllConfigToCloud() {
   if (!currentConfig) return;
   const customPwd = (document.getElementById("admin_customPassword")?.value || "521").trim();
@@ -1104,7 +1196,7 @@ async function saveAllConfigToCloud() {
     node.frontImg = document.getElementById(`tl_img_${idx}`)?.value || "";
   });
 
-  // 2. 🌟 同步纪念日全量数据
+  // 2. 同步纪念日全量数据
   (currentConfig.anniversaries || []).forEach((item, idx) => {
     item.title = document.getElementById(`anni_title_${idx}`)?.value.trim() || item.title || "契约纪念日";
     item.icon = document.getElementById(`anni_icon_${idx}`)?.value.trim() || item.icon || "💖";
@@ -1118,7 +1210,16 @@ async function saveAllConfigToCloud() {
     item.voiceAudio = document.getElementById(`anni_voice_${idx}`)?.value.trim() || item.voiceAudio || "";
   });
 
-  // 3. 同步播放列表
+  // 3. 🌟 同步破冰与情感信号箱配置
+  const ibCooldownVal = parseInt(document.getElementById("icebreaker_cooldownMinutes")?.value, 10) || 15;
+  currentConfig.icebreaker = {
+    enabled: document.getElementById("icebreaker_enabled")?.value === "true",
+    cooldownMinutes: ibCooldownVal,
+    soundEnabled: document.getElementById("icebreaker_soundEnabled")?.value === "true",
+    actions: currentConfig.icebreaker?.actions || window.LOVE_CONFIG?.icebreaker?.actions || {}
+  };
+
+  // 4. 同步播放列表
   const playlistToSave = (currentConfig.audio?.playlist || []).map((song, idx) => ({
     id: song.id || ("song_" + idx),
     title: document.getElementById(`pl_title_${idx}`)?.value.trim() || song.title || "背景音乐",
@@ -1150,7 +1251,7 @@ async function saveAllConfigToCloud() {
     if (data.success) {
       currentAdminToken = customPwd;
       localStorage.setItem("love_admin_token", customPwd);
-      showToast("✨ 全部配置、新管理密码与纪念日数据已成功发布！");
+      showToast("✨ 全部配置、新管理密码与破冰信号箱已成功发布！");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
