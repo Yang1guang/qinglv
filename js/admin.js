@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe) 控制中心主控
  * 文件名: js/admin.js
- * 作用: 全模块可视化看板、倒数日与纪念日、破冰信号箱、智能提醒与邮件中枢、待办备忘便签、R2 独立多媒体上传与全量云端持久化
+ * 作用: 全模块可视化看板、倒数日与纪念日、破冰信号箱控制中心、三阶段文案实时绑定、R2 独立多媒体上传与全量云端持久化
  */
 
 let currentConfig = null;
@@ -90,7 +90,7 @@ function parseSongFilename(filename) {
   return { artist: "本地上传", title: clean };
 }
 
-// 深度合并云端配置与本地默认基准 (含 anniversaries, icebreaker, reminder 防御合并)
+// 深度合并云端配置与本地默认基准 (含 anniversaries 与 icebreaker 严密防御合并)
 function mergeWithDefaultConfig(cloudCfg) {
   const base = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
   if (!cloudCfg || typeof cloudCfg !== "object") return base;
@@ -115,15 +115,6 @@ function mergeWithDefaultConfig(cloudCfg) {
       cooldownMinutes: cloudCfg.icebreaker?.cooldownMinutes || base.icebreaker?.cooldownMinutes || 15,
       soundEnabled: cloudCfg.icebreaker?.soundEnabled !== false,
       actions: cloudCfg.icebreaker?.actions || base.icebreaker?.actions || {}
-    },
-    reminder: {
-      enabled: cloudCfg.reminder?.enabled !== false,
-      resendApiKey: cloudCfg.reminder?.resendApiKey || base.reminder?.resendApiKey || "",
-      senderEmail: cloudCfg.reminder?.senderEmail || base.reminder?.senderEmail || "雅歌之印 <onboarding@resend.dev>",
-      boyEmail: cloudCfg.reminder?.boyEmail || base.reminder?.boyEmail || "",
-      girlEmail: cloudCfg.reminder?.girlEmail || base.reminder?.girlEmail || "",
-      advanceDays: Array.isArray(cloudCfg.reminder?.advanceDays) ? cloudCfg.reminder.advanceDays : (base.reminder?.advanceDays || [7, 3, 1, 0]),
-      memos: Array.isArray(cloudCfg.reminder?.memos) ? cloudCfg.reminder.memos : (base.reminder?.memos || [])
     },
     timeline: (Array.isArray(cloudCfg.timeline) && cloudCfg.timeline.length > 0) ? cloudCfg.timeline : (base.timeline || []),
     checklist100: (Array.isArray(cloudCfg.checklist100) && cloudCfg.checklist100.length > 0) ? cloudCfg.checklist100 : (base.checklist100 || []),
@@ -232,7 +223,6 @@ function renderAllForms() {
   renderTimelineList();
   renderAnniversariesList();
   renderIcebreakerSettings();
-  renderReminderSettings();
   renderChecklist();
   renderScratchCards();
 
@@ -556,7 +546,7 @@ function moveAnniversaryItem(idx, direction) {
   renderAnniversariesList();
 }
 
-// ================= 6. 破冰与情感信号箱控制中心 =================
+// ================= 🌟 6. 破冰与情感信号箱控制中心 (Batch 4 新增) =================
 
 function renderIcebreakerSettings() {
   if (!currentConfig) return;
@@ -636,134 +626,6 @@ async function clearIcebreakerHistory() {
       alert("✨ 已成功清空历史信号与和好足迹！");
     } else {
       alert("❌ 操作失败: " + (data.error || "服务端异常"));
-    }
-  } catch (err) {
-    alert("❌ 请求异常: " + err.message);
-  }
-}
-
-// ================= 🌟 7. 智能全时域提醒中枢管理看板 (Batch 3 新增) =================
-
-function renderReminderSettings() {
-  if (!currentConfig) return;
-  const rem = currentConfig.reminder || {};
-
-  const enabledSelect = document.getElementById("reminder_enabled");
-  const senderEmailInput = document.getElementById("reminder_senderEmail");
-  const apiKeyInput = document.getElementById("reminder_resendApiKey");
-  const boyEmailInput = document.getElementById("reminder_boyEmail");
-  const girlEmailInput = document.getElementById("reminder_girlEmail");
-
-  if (enabledSelect) enabledSelect.value = String(rem.enabled !== false);
-  if (senderEmailInput) senderEmailInput.value = rem.senderEmail || "雅歌之印 <onboarding@resend.dev>";
-  if (apiKeyInput) apiKeyInput.value = rem.resendApiKey || "";
-  if (boyEmailInput) boyEmailInput.value = rem.boyEmail || "";
-  if (girlEmailInput) girlEmailInput.value = rem.girlEmail || "";
-
-  // 策略勾选框
-  const advDays = Array.isArray(rem.advanceDays) ? rem.advanceDays : [7, 3, 1, 0];
-  [7, 3, 1, 0].forEach(d => {
-    const cb = document.getElementById(`reminder_adv_${d}`);
-    if (cb) cb.checked = advDays.includes(d);
-  });
-
-  renderReminderMemos();
-}
-
-function renderReminderMemos() {
-  const container = document.getElementById("reminderMemosContainer");
-  if (!container) return;
-  container.innerHTML = "";
-
-  if (!currentConfig.reminder) currentConfig.reminder = {};
-  if (!Array.isArray(currentConfig.reminder.memos)) currentConfig.reminder.memos = [];
-
-  const list = currentConfig.reminder.memos;
-  if (list.length === 0) {
-    container.innerHTML = `<div style="color:#94a3b8; font-size:12px; text-align:center; padding:14px;">🍃 暂无待办备忘便签，点击右上角【➕ 新增便签】添加。</div>`;
-    return;
-  }
-
-  list.forEach((memo, idx) => {
-    const card = document.createElement("div");
-    card.className = "item-card";
-    card.innerHTML = `
-      <div class="item-card-header">
-        <span class="item-card-title">📝 便签 #${idx + 1} - ${escapeHtml(memo.title || "待办事项")}</span>
-        <button class="btn-del" onclick="deleteReminderMemo(${idx})">🗑️ 删除</button>
-      </div>
-      <div class="form-grid">
-        <div class="form-group" style="grid-column: 1 / 3;">
-          <label>备忘事项内容</label>
-          <input type="text" class="admin-input" id="memo_title_${idx}" value="${escapeHtml(memo.title || "")}" oninput="currentConfig.reminder.memos[${idx}].title=this.value">
-        </div>
-        <div class="form-group">
-          <label>目标执行日期 (YYYY-MM-DD)</label>
-          <input type="text" class="admin-input" id="memo_date_${idx}" value="${escapeHtml(memo.targetDate || "")}" placeholder="例如: 2026-05-18" oninput="currentConfig.reminder.memos[${idx}].targetDate=this.value">
-        </div>
-        <div class="form-group">
-          <label>状态</label>
-          <select class="admin-select" id="memo_done_${idx}" onchange="currentConfig.reminder.memos[${idx}].done=(this.value==='true')">
-            <option value="false" ${!memo.done ? 'selected' : ''}>⏳ 进行中</option>
-            <option value="true" ${memo.done ? 'selected' : ''}>✓ 已完成</option>
-          </select>
-        </div>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-function addReminderMemo() {
-  if (!currentConfig.reminder) currentConfig.reminder = {};
-  if (!Array.isArray(currentConfig.reminder.memos)) currentConfig.reminder.memos = [];
-  currentConfig.reminder.memos.push({
-    id: "memo_" + Date.now(),
-    title: "准备两周年手写纪念情书与礼物",
-    targetDate: "2026-05-18",
-    done: false
-  });
-  renderReminderMemos();
-  showToast("✓ 已添加新备忘便签");
-}
-
-function deleteReminderMemo(idx) {
-  if (confirm("确定删除该待办备忘便签吗？")) {
-    currentConfig.reminder.memos.splice(idx, 1);
-    renderReminderMemos();
-  }
-}
-
-// 一键测试发送邮件
-async function sendTestReminderEmail() {
-  const apiKey = document.getElementById("reminder_resendApiKey")?.value.trim();
-  const boyEmail = document.getElementById("reminder_boyEmail")?.value.trim();
-  const girlEmail = document.getElementById("reminder_girlEmail")?.value.trim();
-  const senderEmail = document.getElementById("reminder_senderEmail")?.value.trim();
-
-  if (!apiKey) return alert("请先在上方输入有效的 Resend API Key！");
-  if (!boyEmail && !girlEmail) return alert("请至少填写一个收件人邮箱（男孩或女孩邮箱）！");
-
-  showToast("⏳ 正在调用 Resend 引擎发送测试邮件...");
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`/api/love/reminder/test?auth=${encodeURIComponent(token)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-auth": token, "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({
-        reminderConfig: {
-          resendApiKey: apiKey,
-          senderEmail,
-          boyEmail,
-          girlEmail
-        }
-      })
-    });
-    const data = await res.json();
-    if (data.success) {
-      alert(`🎉 ${data.message}`);
-    } else {
-      alert(`❌ 测试发信失败: ${data.error || "接口异常"}`);
     }
   } catch (err) {
     alert("❌ 请求异常: " + err.message);
@@ -1348,7 +1210,7 @@ async function saveAllConfigToCloud() {
     item.voiceAudio = document.getElementById(`anni_voice_${idx}`)?.value.trim() || item.voiceAudio || "";
   });
 
-  // 3. 同步破冰与情感信号箱配置
+  // 3. 🌟 同步破冰与情感信号箱配置
   const ibCooldownVal = parseInt(document.getElementById("icebreaker_cooldownMinutes")?.value, 10) || 15;
   currentConfig.icebreaker = {
     enabled: document.getElementById("icebreaker_enabled")?.value === "true",
@@ -1357,24 +1219,7 @@ async function saveAllConfigToCloud() {
     actions: currentConfig.icebreaker?.actions || window.LOVE_CONFIG?.icebreaker?.actions || {}
   };
 
-  // 4. 🌟 同步智能全时域提醒配置 (Batch 3 新增)
-  const checkedAdvDays = [];
-  [7, 3, 1, 0].forEach(d => {
-    const cb = document.getElementById(`reminder_adv_${d}`);
-    if (cb && cb.checked) checkedAdvDays.push(d);
-  });
-
-  currentConfig.reminder = {
-    enabled: document.getElementById("reminder_enabled")?.value === "true",
-    resendApiKey: document.getElementById("reminder_resendApiKey")?.value.trim() || "",
-    senderEmail: document.getElementById("reminder_senderEmail")?.value.trim() || "雅歌之印 <onboarding@resend.dev>",
-    boyEmail: document.getElementById("reminder_boyEmail")?.value.trim() || "",
-    girlEmail: document.getElementById("reminder_girlEmail")?.value.trim() || "",
-    advanceDays: checkedAdvDays.length > 0 ? checkedAdvDays : [7, 3, 1, 0],
-    memos: currentConfig.reminder?.memos || []
-  };
-
-  // 5. 同步播放列表
+  // 4. 同步播放列表
   const playlistToSave = (currentConfig.audio?.playlist || []).map((song, idx) => ({
     id: song.id || ("song_" + idx),
     title: document.getElementById(`pl_title_${idx}`)?.value.trim() || song.title || "背景音乐",
@@ -1406,7 +1251,7 @@ async function saveAllConfigToCloud() {
     if (data.success) {
       currentAdminToken = customPwd;
       localStorage.setItem("love_admin_token", customPwd);
-      showToast("✨ 全部配置、新管理密码与提醒中枢已成功发布！");
+      showToast("✨ 全部配置、新管理密码与破冰信号箱已成功发布！");
     } else {
       alert("❌ 保存失败: " + (data.error || "未授权"));
     }
