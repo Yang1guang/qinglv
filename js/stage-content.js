@@ -2,8 +2,8 @@
  * 众水不灭 · 雅歌之印
  * 文件名: js/stage-content.js
  * 作用: 
- *   1. 独立管理恋爱期、订婚期、结婚期三大阶段专属的待办清单与舍己特权券数据[cite: 5]
- *   2. 提供星轨中枢舞台生命周期管理器 (StageManager)，实现 iOS 滚动锁定、Hash 路由栈与生命周期广播
+ *   1. 独立管理恋爱期、订婚期、结婚期三大阶段专属的待办清单与舍己特权券数据
+ *   2. 提供星轨中枢舞台生命周期管理器 (StageManager)，实现 iOS 滚动锁定、Hash 路由栈、全局事件委托与生命周期广播
  */
 
 // ================= 1. 三大阶段核心清单与特权券数据 =================
@@ -242,44 +242,47 @@ class StageManager {
     this.container = null;
     this.overlay = null;
     this.isTransitioning = false;
+    this.initialized = false;
   }
 
   init() {
     this.container = document.getElementById("stage-modal-container");
     this.overlay = document.getElementById("stage-modal-overlay");
 
-    // 绑定中枢图标点击事件
-    document.querySelectorAll("[data-open-stage]").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const stageId = btn.getAttribute("data-open-stage");
-        this.openStage(stageId);
-      });
-    });
+    if (this.initialized) return;
+    this.initialized = true;
 
-    // 绑定分幕内关闭按钮
-    document.querySelectorAll(".stage-modal__close-btn, [data-close-stage]").forEach(btn => {
-      btn.addEventListener("click", (e) => {
+    // 核心改进 1: 全局事件委托 (全面捕获任意深度的点击，彻底消除 timing 导致事件漏绑)
+    document.addEventListener("click", (e) => {
+      // 捕获打开舞台
+      const openBtn = e.target.closest("[data-open-stage]");
+      if (openBtn) {
+        e.preventDefault();
+        const stageId = openBtn.getAttribute("data-open-stage");
+        this.openStage(stageId);
+        return;
+      }
+
+      // 捕获关闭舞台
+      const closeBtn = e.target.closest(".stage-modal__close-btn, [data-close-stage]");
+      if (closeBtn) {
         e.preventDefault();
         this.closeStage();
-      });
-    });
+        return;
+      }
 
-    // 监听背景遮罩点击关闭
-    if (this.overlay) {
-      this.overlay.addEventListener("click", (e) => {
-        if (e.target === this.overlay) {
-          this.closeStage();
-        }
-      });
-    }
+      // 捕获点击背景遮罩关闭
+      if (this.overlay && (e.target === this.overlay || e.target.id === "stage-modal-container")) {
+        this.closeStage();
+      }
+    });
 
     // 监听浏览器前进/后退/手势侧滑状态栈
     window.addEventListener("popstate", (e) => {
       if (e.state && e.state.stage) {
-        this.showStageDom(e.state.stage, false);
+        this.showStageDom(e.state.stage);
       } else if (this.currentStage) {
-        this.closeStageDom(false);
+        this.closeStageDom();
       }
     });
 
@@ -290,7 +293,7 @@ class StageManager {
       }
     });
 
-    // 如果初始 URL 带有 hash，自动打开对应分幕
+    // 初始 URL Hash 唤醒检测
     const initialHash = window.location.hash.replace("#", "");
     if (initialHash && document.getElementById(`stage-${initialHash}`)) {
       setTimeout(() => {
@@ -301,17 +304,21 @@ class StageManager {
 
   /**
    * 打开指定分幕舞台
-   * @param {string} stageId - 舞台ID (如 anniversary, icebreaker, timeline, checklist, scratch, poster)
+   * @param {string} stageId - 舞台ID (timeline, anniversary, icebreaker, checklist, scratch, poster)
    * @param {boolean} pushHistory - 是否压入浏览历史
    */
   openStage(stageId, pushHistory = true) {
-    if (this.isTransitioning) return;
+    if (!this.container || !this.overlay) {
+      this.container = document.getElementById("stage-modal-container");
+      this.overlay = document.getElementById("stage-modal-overlay");
+    }
+
     const stageEl = document.getElementById(`stage-${stageId}`);
-    if (!stageEl) return;
+    if (!stageEl || this.isTransitioning) return;
 
     this.isTransitioning = true;
 
-    // 1. 锁定背景滚动 (防 iOS 滚动穿透)
+    // 1. 锁定背景滚动 (防 iOS 穿透)
     this.lockScroll();
 
     // 2. 状态栈管理
@@ -319,10 +326,10 @@ class StageManager {
       window.history.pushState({ stage: stageId }, "", `#${stageId}`);
     }
 
-    // 3. 执行 DOM 激活与动效
+    // 3. 执行 DOM 激活
     this.showStageDom(stageId);
 
-    // 4. 生命周期广播 (通知下游子模块执行尺寸重绘与 Canvas 唤醒)
+    // 4. 生命周期广播 (唤醒子模块尺寸重绘与数据自愈)
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent("stage:opened", { detail: { stageId } }));
       window.dispatchEvent(new Event("resize"));
@@ -362,7 +369,6 @@ class StageManager {
   }
 
   showStageDom(stageId) {
-    // 隐藏其它已开启的 stage
     document.querySelectorAll(".stage-modal").forEach(el => {
       el.classList.remove("stage-modal--active");
     });
@@ -374,7 +380,6 @@ class StageManager {
       targetEl.classList.add("stage-modal--active");
       this.currentStage = stageId;
 
-      // 自动滚至舞台顶部
       const bodyWrapper = targetEl.querySelector(".stage-modal__body");
       if (bodyWrapper) bodyWrapper.scrollTop = 0;
     }
@@ -402,9 +407,14 @@ class StageManager {
   }
 }
 
-// 导出全局单例
+// 导出全局单例与快捷函数
 window.StageManager = new StageManager();
+window.openStage = (id) => window.StageManager.openStage(id);
+window.closeStage = () => window.StageManager.closeStage();
 
-document.addEventListener("DOMContentLoaded", () => {
+// 自执行安全挂载
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => window.StageManager.init());
+} else {
   window.StageManager.init();
-});
+}
