@@ -21,15 +21,15 @@
   <meta name="apple-mobile-web-app-title" content="雅歌之印">
 
   <!-- 🚀 核心样式表预加载与非阻塞链路 -->
-  <link rel="stylesheet" href="css/base.css?v=2.3">
-  <link rel="stylesheet" href="css/components.css?v=2.3">
-  <link rel="stylesheet" href="css/animations.css?v=2.3">
-  <link rel="stylesheet" href="css/themes.css?v=2.3">
-  <link rel="stylesheet" href="css/anniversary.css?v=2.3">
-  <link rel="stylesheet" href="css/icebreaker.css?v=2.3">
-  <link rel="stylesheet" href="css/photo-wall.css?v=2.3">
-  <link rel="stylesheet" href="css/pet.css?v=2.3">
-  <link rel="stylesheet" href="css/scratch-card.css?v=2.3">
+  <link rel="stylesheet" href="css/base.css?v=2.4">
+  <link rel="stylesheet" href="css/components.css?v=2.4">
+  <link rel="stylesheet" href="css/animations.css?v=2.4">
+  <link rel="stylesheet" href="css/themes.css?v=2.4">
+  <link rel="stylesheet" href="css/anniversary.css?v=2.4">
+  <link rel="stylesheet" href="css/icebreaker.css?v=2.4">
+  <link rel="stylesheet" href="css/photo-wall.css?v=2.4">
+  <link rel="stylesheet" href="css/pet.css?v=2.4">
+  <link rel="stylesheet" href="css/scratch-card.css?v=2.4">
   <style>
     .perspective-capsule {
       position: fixed;
@@ -82,7 +82,7 @@
       display: flex;
       justify-content: center;
       gap: 10px;
-      margin: 32px auto 16px auto;
+      margin: 16px auto 16px auto;
       max-width: 480px;
       padding: 6px;
       background: rgba(3, 7, 18, 0.6);
@@ -135,6 +135,7 @@
   <canvas id="starry-canvas" class="universe-canvas"></canvas>
   <canvas id="fireworks-canvas" class="fireworks-canvas"></canvas>
 
+  <!-- 🔒 门禁关卡 -->
   <section id="gatekeeper-screen" class="gatekeeper">
     <div class="gatekeeper__dialog">
       <div class="gatekeeper__header">
@@ -158,8 +159,9 @@
     </div>
   </section>
 
+  <!-- 🌌 主屏幕中枢 (Home Hub) -->
   <main id="main-container" class="main-container main-container--hidden">
-    <!-- 方案 C：名字置顶凸显 ➔ 胶囊徽章居中 ➔ 誓言副标题黄金流向 -->
+    <!-- 头部主角与同行时间守护 -->
     <header class="hero-section">
       <h1 class="hero-section__names" id="hero-names">张小阳 <span class="name-connector">&</span> 李小光</h1>
       <div class="hero-section__badge">THE ETERNAL SEAL</div>
@@ -179,36 +181,7 @@
       </div>
     </header>
 
-    <!-- 倒数日与恒久纪念日流式渲染看板 -->
-    <section class="anniversary-section" id="anniversary-section">
-      <div class="section-title">
-        <span class="section-title__icon">📅</span>
-        <h2 class="section-title__text">时光刻度 · 恒久倒数</h2>
-        <span class="section-title__desc">公历阴历智能校准 · 每一天都铭刻着恩典与守望</span>
-      </div>
-      <div class="anniversary-grid" id="anniversary-container"></div>
-    </section>
-
-    <!-- 破冰与情感信号箱交互面板 (含和好足迹备忘录) -->
-    <section class="icebreaker-section" id="icebreaker-section">
-      <div class="section-title">
-        <span class="section-title__icon">🕊️</span>
-        <h2 class="section-title__text">破冰和解 · 情感信号箱</h2>
-        <span class="section-title__desc">爱情不是讲理的地方，而是包容、理解与避风港</span>
-      </div>
-      <div class="icebreaker-card">
-        <div class="icebreaker-grid" id="icebreaker-container"></div>
-
-        <!-- 和好足迹备忘录挂载区 -->
-        <div class="icebreaker-history-wrap">
-          <div class="icebreaker-history-title">
-            <span>💑 我们的破冰与和好印记 (永恒备忘录)</span>
-          </div>
-          <div class="icebreaker-history-list" id="icebreaker-history-container"></div>
-        </div>
-      </div>
-    </section>
-
+    <!-- 主页告白真情手迹 -->
     <section class="confession-section">
       <div class="confession-card">
         <h3 class="confession-card__title" id="letter-title">致我生命中的唯一</h3>
@@ -223,66 +196,211 @@
       </div>
     </section>
 
-    <section class="timeline-section">
-      <div class="section-title">
-        <span class="section-title__icon">🪐</span>
-        <h2 class="section-title__text">时光轨迹 · 雅歌印记</h2>
-        <span class="section-title__desc">点击卡片可 3D 翻转查看独家私语与圣洁承诺</span>
+    <!-- 🌟 星轨功能中枢导航网格 (Navigation Dock) -->
+    <nav class="hub-dock" id="hub-dock">
+      <div class="hub-dock__header">
+        <span class="hub-dock__badge">SACRED ARCHIVES</span>
+        <h2 class="hub-dock__title">星轨功能中枢 · 契约秘境</h2>
       </div>
-      <div class="timeline-flow" id="timeline-flow"></div>
-    </section>
-
-    <div class="phase-switch-bar">
-      <button class="phase-tab-btn active" data-phase="dating">🌿 恋爱期</button>
-      <button class="phase-tab-btn" data-phase="engaged">💍 订婚期</button>
-      <button class="phase-tab-btn" data-phase="married">🏠 结婚期</button>
-    </div>
-
-    <section class="checklist-section">
-      <div class="section-title">
-        <span class="section-title__icon">📝</span>
-        <h2 class="section-title__text" id="checklist-section-title">恋爱期待办清单</h2>
-        <span class="section-title__desc" id="checklist-section-desc">在尊重与接纳中了解彼此，坚守圣洁、克制与纯粹</span>
-      </div>
-      <div class="checklist-card">
-        <div class="checklist-card__progress-bar">
-          <div class="checklist-card__progress-fill" id="checklist-progress-fill"></div>
+      <div class="hub-grid">
+        <div class="hub-btn" data-open-stage="timeline">
+          <div class="hub-btn__glow"></div>
+          <span class="hub-btn__icon">🪐</span>
+          <div class="hub-btn__info">
+            <span class="hub-btn__title">时光轨迹</span>
+            <span class="hub-btn__desc">雅歌印记 · 3D拍立得</span>
+          </div>
         </div>
-        <div class="checklist-card__stats" id="checklist-stats">已达成心愿 0 / 0 项 (0%)</div>
-        <div class="checklist-grid" id="checklist-container"></div>
-      </div>
-    </section>
 
-    <section class="scratch-section">
-      <div class="section-title">
-        <span class="section-title__icon">🎟️</span>
-        <h2 class="section-title__text" id="scratch-section-title">恋爱期 · 舍己与包容特权券</h2>
-        <span class="section-title__desc">真实刮开涂层 · 点击核销印章锁定承诺</span>
-      </div>
-      <div class="scratch-grid" id="scratch-container"></div>
-    </section>
+        <div class="hub-btn" data-open-stage="anniversary">
+          <div class="hub-btn__glow"></div>
+          <span class="hub-btn__icon">📅</span>
+          <div class="hub-btn__info">
+            <span class="hub-btn__title">时光刻度</span>
+            <span class="hub-btn__desc">恒久倒数 · 恩典纪念</span>
+          </div>
+        </div>
 
-    <section class="poster-section">
-      <div class="poster-card" style="display:flex; flex-direction:column; gap:14px;">
-        <div class="poster-card__info">
-          <h3 class="poster-card__title">📸 导出超清壁纸与数字永存资产</h3>
-          <p class="poster-card__desc">基于当前同行天数与时光回忆渲染高清海报，或将全站数据打包为独立 HTML 永久珍藏</p>
+        <div class="hub-btn" data-open-stage="icebreaker">
+          <div class="hub-btn__glow"></div>
+          <span class="hub-btn__icon">🕊️</span>
+          <div class="hub-btn__info">
+            <span class="hub-btn__title">破冰和解</span>
+            <span class="hub-btn__desc">情感信号箱 · 避风港</span>
+          </div>
         </div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button id="generate-poster-btn" class="btn-universe btn-universe--accent" style="flex:1;">
-            <span>✨ 生成纪念海报</span>
-          </button>
-          <button id="export-eternal-btn" class="btn-universe btn-universe--primary" style="flex:1;" onclick="EternalSealExporter.downloadSingleFileArchive()">
-            <span>📦 铸造永恒印记 (单文件下载)</span>
-          </button>
+
+        <div class="hub-btn" data-open-stage="checklist">
+          <div class="hub-btn__glow"></div>
+          <span class="hub-btn__icon">📝</span>
+          <div class="hub-btn__info">
+            <span class="hub-btn__title">同行清单</span>
+            <span class="hub-btn__desc">阶段待办 · 100件心愿</span>
+          </div>
+        </div>
+
+        <div class="hub-btn" data-open-stage="scratch">
+          <div class="hub-btn__glow"></div>
+          <span class="hub-btn__icon">🎟️</span>
+          <div class="hub-btn__info">
+            <span class="hub-btn__title">舍己特权</span>
+            <span class="hub-btn__desc">包容特权券 · 真实刮刮乐</span>
+          </div>
+        </div>
+
+        <div class="hub-btn" data-open-stage="poster">
+          <div class="hub-btn__glow"></div>
+          <span class="hub-btn__icon">📸</span>
+          <div class="hub-btn__info">
+            <span class="hub-btn__title">数字永存</span>
+            <span class="hub-btn__desc">超清海报 · 单文件铸造</span>
+          </div>
         </div>
       </div>
-    </section>
+    </nav>
 
     <footer class="universe-footer">
       <p class="universe-footer__text">✨ 爱情坚强如死，众水不能熄灭 · 雅歌之印 ✨</p>
     </footer>
   </main>
+
+  <!-- ================= 🎪 全屏沉浸分幕容器 (Stage Modals) ================= -->
+  <div id="stage-modal-overlay" class="stage-overlay"></div>
+  <div id="stage-modal-container" class="stage-container">
+
+    <!-- 舞台 1: 时光轨迹 · 雅歌印记 -->
+    <section id="stage-timeline" class="stage-modal">
+      <div class="stage-modal__header">
+        <div class="stage-modal__title-box">
+          <span class="stage-modal__icon">🪐</span>
+          <h2 class="stage-modal__title">时光轨迹 · 雅歌印记</h2>
+        </div>
+        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+      </div>
+      <div class="stage-modal__body">
+        <div class="section-title">
+          <span class="section-title__desc">点击卡片可 3D 翻转查看独家私语与圣洁承诺</span>
+        </div>
+        <div class="timeline-flow" id="timeline-flow"></div>
+      </div>
+    </section>
+
+    <!-- 舞台 2: 时光刻度 · 恒久倒数 -->
+    <section id="stage-anniversary" class="stage-modal">
+      <div class="stage-modal__header">
+        <div class="stage-modal__title-box">
+          <span class="stage-modal__icon">📅</span>
+          <h2 class="stage-modal__title">时光刻度 · 恒久倒数</h2>
+        </div>
+        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+      </div>
+      <div class="stage-modal__body">
+        <div class="section-title">
+          <span class="section-title__desc">公历阴历智能校准 · 每一天都铭刻着恩典与守望</span>
+        </div>
+        <div class="anniversary-grid" id="anniversary-container"></div>
+      </div>
+    </section>
+
+    <!-- 舞台 3: 破冰和解 · 情感信号箱 -->
+    <section id="stage-icebreaker" class="stage-modal">
+      <div class="stage-modal__header">
+        <div class="stage-modal__title-box">
+          <span class="stage-modal__icon">🕊️</span>
+          <h2 class="stage-modal__title">破冰和解 · 情感信号箱</h2>
+        </div>
+        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+      </div>
+      <div class="stage-modal__body">
+        <div class="section-title">
+          <span class="section-title__desc">爱情不是讲理的地方，而是包容、理解与避风港</span>
+        </div>
+        <div class="icebreaker-card">
+          <div class="icebreaker-grid" id="icebreaker-container"></div>
+          <div class="icebreaker-history-wrap">
+            <div class="icebreaker-history-title">
+              <span>💑 我们的破冰与和好印记 (永恒备忘录)</span>
+            </div>
+            <div class="icebreaker-history-list" id="icebreaker-history-container"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 舞台 4: 同行约定 · 待办清单 -->
+    <section id="stage-checklist" class="stage-modal">
+      <div class="stage-modal__header">
+        <div class="stage-modal__title-box">
+          <span class="stage-modal__icon">📝</span>
+          <h2 class="stage-modal__title" id="checklist-stage-header-title">同行约定 · 待办清单</h2>
+        </div>
+        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+      </div>
+      <div class="stage-modal__body">
+        <div class="phase-switch-bar">
+          <button class="phase-tab-btn active" data-phase="dating">🌿 恋爱期</button>
+          <button class="phase-tab-btn" data-phase="engaged">💍 订婚期</button>
+          <button class="phase-tab-btn" data-phase="married">🏠 结婚期</button>
+        </div>
+        <div class="section-title">
+          <h3 class="section-title__text" id="checklist-section-title">恋爱期待办清单</h3>
+          <span class="section-title__desc" id="checklist-section-desc">在尊重与接纳中了解彼此，坚守圣洁、克制与纯粹</span>
+        </div>
+        <div class="checklist-card">
+          <div class="checklist-card__progress-bar">
+            <div class="checklist-card__progress-fill" id="checklist-progress-fill"></div>
+          </div>
+          <div class="checklist-card__stats" id="checklist-stats">已达成心愿 0 / 0 项 (0%)</div>
+          <div class="checklist-grid" id="checklist-container"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 舞台 5: 舍己包容 · 特权刮刮乐 -->
+    <section id="stage-scratch" class="stage-modal">
+      <div class="stage-modal__header">
+        <div class="stage-modal__title-box">
+          <span class="stage-modal__icon">🎟️</span>
+          <h2 class="stage-modal__title" id="scratch-stage-header-title">舍己与包容特权券</h2>
+        </div>
+        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+      </div>
+      <div class="stage-modal__body">
+        <div class="section-title">
+          <h3 class="section-title__text" id="scratch-section-title">恋爱期 · 舍己与包容特权券</h3>
+          <span class="section-title__desc">真实刮开涂层 · 点击核销印章锁定承诺</span>
+        </div>
+        <div class="scratch-grid" id="scratch-container"></div>
+      </div>
+    </section>
+
+    <!-- 舞台 6: 永存资产 · 导出海报 -->
+    <section id="stage-poster" class="stage-modal">
+      <div class="stage-modal__header">
+        <div class="stage-modal__title-box">
+          <span class="stage-modal__icon">📸</span>
+          <h2 class="stage-modal__title">导出超清壁纸与数字资产</h2>
+        </div>
+        <button class="stage-modal__close-btn" title="返回主界面">✕</button>
+      </div>
+      <div class="stage-modal__body">
+        <div class="poster-card" style="display:flex; flex-direction:column; gap:14px; max-width:680px; margin:0 auto;">
+          <div class="poster-card__info">
+            <p class="poster-card__desc">基于当前同行天数与时光回忆渲染高清海报，或将全站数据打包为独立 HTML 永久珍藏</p>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="generate-poster-btn" class="btn-universe btn-universe--accent" style="flex:1;">
+              <span>✨ 生成纪念海报</span>
+            </button>
+            <button id="export-eternal-btn" class="btn-universe btn-universe--primary" style="flex:1;" onclick="EternalSealExporter.downloadSingleFileArchive()">
+              <span>📦 铸造永恒印记 (单文件下载)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
 
   <!-- ================= 3. 黑胶唱片控制台 (带歌单列表呼出按钮) ================= -->
   <aside class="vinyl-player" id="vinyl-player">
@@ -354,7 +472,7 @@
     </div>
   </div>
 
-  <!-- 🌟 破冰和好 300DPI 拍立得海报预览弹窗 (独立 DOM 隔离) -->
+  <!-- 🌟 破冰和好 300DPI 拍立得海报预览弹窗 -->
   <div class="poster-modal" id="icebreaker-poster-modal" style="display:none;">
     <div class="poster-modal__dialog">
       <div class="poster-modal__preview-box" id="icebreaker-poster-preview-box"></div>
@@ -366,21 +484,21 @@
     </div>
   </div>
 
-  <script src="js/config.js?v=2.3"></script>
-  <script src="js/theme-presets.js?v=2.3"></script>
-  <script src="js/stage-content.js?v=2.3"></script>
-  <script src="js/theme-engine.js?v=2.3"></script>
-  <script src="js/anniversary-engine.js?v=2.3"></script>
-  <script src="js/anniversary-tools.js?v=2.3"></script>
-  <script src="js/anniversary.js?v=2.3"></script>
-  <script src="js/icebreaker.js?v=2.3"></script>
-  <script src="js/lifecycle.js?v=2.3"></script>
-  <script src="js/photo-wall.js?v=2.3"></script>
-  <script src="js/effects.js?v=2.3"></script>
-  <script src="js/timeline.js?v=2.3"></script>
-  <script src="js/pet.js?v=2.3"></script>
-  <script src="js/export-eternal.js?v=2.3"></script>
-  <script src="js/core.js?v=2.3"></script>
+  <script src="js/config.js?v=2.4"></script>
+  <script src="js/theme-presets.js?v=2.4"></script>
+  <script src="js/stage-content.js?v=2.4"></script>
+  <script src="js/theme-engine.js?v=2.4"></script>
+  <script src="js/anniversary-engine.js?v=2.4"></script>
+  <script src="js/anniversary-tools.js?v=2.4"></script>
+  <script src="js/anniversary.js?v=2.4"></script>
+  <script src="js/icebreaker.js?v=2.4"></script>
+  <script src="js/lifecycle.js?v=2.4"></script>
+  <script src="js/photo-wall.js?v=2.4"></script>
+  <script src="js/effects.js?v=2.4"></script>
+  <script src="js/timeline.js?v=2.4"></script>
+  <script src="js/pet.js?v=2.4"></script>
+  <script src="js/export-eternal.js?v=2.4"></script>
+  <script src="js/core.js?v=2.4"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       if (window.ThemeEngine) {
