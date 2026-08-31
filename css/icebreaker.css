@@ -4,9 +4,9 @@
  * 作用: 破冰与情感信号箱视觉渲染体系 (晨雾平复滤镜、信笺展卷、全屏沉浸和解覆盖层、呼吸胶囊、和好足迹备忘录与双视角高对比度自适应)
  */
 
-/* ================= 1. 页面常驻信号交互卡片区域 ================= */
+/* ================= 1. 信号交互卡片区域 ================= */
 .icebreaker-section {
-  margin-bottom: 45px;
+  margin-bottom: 24px;
   contain: layout style;
   width: 100%;
 }
@@ -33,10 +33,9 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
-/* 信号触发动作按钮 */
 .icebreaker-btn {
   display: flex;
   flex-direction: column;
@@ -201,7 +200,6 @@
   letter-spacing: 0.5px;
 }
 
-/* ================= 4. 纸笺展卷动效 ================= */
 .icebreaker-letter {
   background: var(--confession-bg, rgba(255, 253, 245, 0.96));
   border: 1.5px dashed var(--confession-border, rgba(254, 205, 211, 0.6));
@@ -232,7 +230,6 @@
   font-family: "Songti SC", "STSong", "Noto Serif SC", serif, sans-serif;
 }
 
-/* 情绪冷静期倒计时锁 */
 .icebreaker-cooling-box {
   background: rgba(56, 189, 248, 0.1);
   border: 1px solid rgba(56, 189, 248, 0.3);
@@ -305,7 +302,7 @@
   50% { transform: scale(1.02); }
 }
 
-/* ================= 🌟 5. 破冰与和好足迹备忘录 (Batch 3 新增) ================= */
+/* ================= 4. 和好足迹备忘录 ================= */
 .icebreaker-history-wrap {
   margin-top: 24px;
   border-top: 1px dashed var(--border-card, rgba(245, 158, 11, 0.25));
@@ -410,7 +407,7 @@
   line-height: 1.6;
 }
 
-/* ================= 6. 👧 女生浅色主题高清晰渲染规则 ================= */
+/* ================= 5. 女生浅色主题高清晰渲染规则 ================= */
 body[data-theme-type="light"] .icebreaker-card {
   background: var(--bg-card, rgba(255, 255, 255, 0.95)) !important;
   border-color: var(--border-card, rgba(180, 83, 9, 0.35)) !important;
@@ -487,7 +484,7 @@ body[data-theme-type="light"] .icebreaker-history-btn {
   color: #78350f !important;
 }
 
-/* ================= 7. 移动端自适应 ================= */
+/* ================= 6. 移动端自适应 ================= */
 @media (max-width: 640px) {
   .icebreaker-grid {
     grid-template-columns: repeat(2, 1fr);
