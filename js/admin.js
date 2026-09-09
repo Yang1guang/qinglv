@@ -224,6 +224,7 @@ function fallbackLocalAuth(token) {
   return false;
 }
 
+// 🌟 核心修复区：严格控制数据提交时序与阻塞弹窗
 async function modifyAdminPasswordWithOld() {
   const oldPwdInput = document.getElementById("admin_oldPassword");
   const newPwdInput = document.getElementById("admin_newPassword");
@@ -276,6 +277,9 @@ async function modifyAdminPasswordWithOld() {
     ? `首次设置后台管理密码为【${newPwd}】吗？\n\n设置后请务必牢记，之后只能用该密码登录管理后台。`
     : `确认将后台管理密码修改为【${newPwd}】吗？\n\n请务必牢记新密码，修改后旧密码将立即失效！`)) return;
 
+  // 1. 暂存旧密码以防网络请求失败回滚
+  const backupPwd = currentConfig.adminSecurity ? currentConfig.adminSecurity.password : "";
+
   if (!currentConfig.adminSecurity) currentConfig.adminSecurity = {};
   currentConfig.adminSecurity.password = newPwd;
   currentConfig.adminSecurity.updatedAt = new Date().toISOString();
@@ -283,12 +287,19 @@ async function modifyAdminPasswordWithOld() {
   const hiddenCustomPwd = document.getElementById("admin_customPassword");
   if (hiddenCustomPwd) hiddenCustomPwd.value = newPwd;
 
-  if (oldPwdInput) oldPwdInput.value = "";
-  if (newPwdInput) newPwdInput.value = "";
-  if (confirmPwdInput) confirmPwdInput.value = "";
-
-  await saveAllConfigToCloud(newPwd);
-  alert("🎉 管理密码修改成功！新密码已生效并同步云端。");
+  // 2. 只有在此处等待云端 200 OK 确认返回 success 后，才能弹出成功弹窗
+  const success = await saveAllConfigToCloud(newPwd);
+  
+  if (success) {
+    if (oldPwdInput) oldPwdInput.value = "";
+    if (newPwdInput) newPwdInput.value = "";
+    if (confirmPwdInput) confirmPwdInput.value = "";
+    alert("🎉 管理密码修改成功！新密码已生效并同步云端。");
+  } else {
+    // 3. 请求失败时，自动将内存里的配置数据回滚至旧密码，防止下次点击错误发布
+    currentConfig.adminSecurity.password = backupPwd;
+    if (hiddenCustomPwd) hiddenCustomPwd.value = backupPwd;
+  }
 }
 
 function renderAllForms() {
@@ -384,14 +395,13 @@ function renderQuotaStatus() {
   
   const tier = currentQuota.tier || "basic";
   
-  // 🌟 核心拦截：动态生成专属黑金皇冠 PRO 标
   if (proBadge) {
     if (tier !== "basic") {
       proBadge.style.display = "inline-flex";
       if (tier === "flagship") {
-        proBadge.innerHTML = "👑 PRO 旗舰"; // 旗舰版专属徽章
+        proBadge.innerHTML = "👑 PRO 旗舰"; 
       } else {
-        proBadge.innerHTML = "PRO"; // 豪华版原有黑金标
+        proBadge.innerHTML = "PRO"; 
       }
     } else {
       proBadge.style.display = "none";
@@ -542,7 +552,7 @@ function renderAnniversariesList() {
         if (m.mode === "countup") {
           previewMetrics = `已同行守护 ${m.totalDays} 天 (${m.summaryText})`;
         } else if (m.isToday) {
-          previewMetrics = `🎉 正是今天 · 岁岁常相伴`;
+          previewMetrics = `🎉 正宣今天 · 岁岁常相伴`;
         } else {
           previewMetrics = `距离下一次还有 ${m.daysRemaining} 天 (${m.targetSolarDate})`;
         }
@@ -981,7 +991,6 @@ function testPreviewAudio(url, btnId, songTitle) {
   previewAudioObj.onended = () => { if (currentBtn) currentBtn.textContent = "🎧 试听"; };
 }
 
-// 🌟 核心拦截机制：如果未激活 PRO，禁用高级高定主题，渲染毛玻璃锁住形态
 function renderThemeShowroom() {
   const boyBox = document.getElementById("boyThemesContainer");
   const girlBox = document.getElementById("girlThemesContainer");
@@ -990,14 +999,12 @@ function renderThemeShowroom() {
   const curBoy = currentConfig.theme?.currentThemeBoy || currentConfig.theme?.currentTheme || "sunset-twilight";
   const curGirl = currentConfig.theme?.currentThemeGirl || "french-cream";
 
-  // 获取 PRO 激活状态
   const isPro = !!(currentConfig._license && currentConfig._license.unlocked);
 
   if (boyBox) {
     boyBox.innerHTML = presets.boy.map(item => {
       const isSel = item.id === curBoy;
       const isDefault = item.id === "sunset-twilight";
-      // 只有基础默认款对未激活用户开放，其余统统锁定
       const isLocked = !isPro && !isDefault;
 
       return `
@@ -1322,8 +1329,9 @@ function toggleDirectRecord(btnEl, targetInputId, callback) {
   else { startDirectRecord(btnEl, targetInputId, callback); }
 }
 
+// 🌟 核心修复区：彻底分离鉴权凭证与新密码，确保数据精准同步
 async function saveAllConfigToCloud(overrideToken) {
-  if (!currentConfig) return;
+  if (!currentConfig) return false;
   const activePassword = overrideToken || (currentConfig.adminSecurity?.password || "").trim();
   
   currentConfig.adminSecurity = { password: activePassword, updatedAt: new Date().toISOString() };
@@ -1422,19 +1430,32 @@ async function saveAllConfigToCloud(overrideToken) {
   });
 
   showToast("⏳ 正在发布到独立存储空间...");
-  const token = overrideToken || getAuthToken();
+  
+  // 🔥 核心：发送网络请求时，必须使用当前仍然有效的凭证（不能用未生效的新密码）
+  const authHeaderToken = getAuthToken(); 
+  
   try {
-    const res = await fetch(`/api/love/config?auth=${encodeURIComponent(token)}`, {
-      method: "POST", headers: { "Content-Type": "application/json", "x-admin-auth": token, "Authorization": `Bearer ${token}` }, body: JSON.stringify({ config: currentConfig })
+    const res = await fetch(`/api/love/config?auth=${encodeURIComponent(authHeaderToken)}`, {
+      method: "POST", 
+      headers: { "Content-Type": "application/json", "x-admin-auth": authHeaderToken, "Authorization": `Bearer ${authHeaderToken}` }, 
+      body: JSON.stringify({ config: currentConfig })
     });
     const data = await res.json();
     if (data.success) {
+      // 只有在云端返回 200 成功响应后，才把本地缓存刷新为新密码
       currentAdminToken = activePassword;
       localStorage.setItem("love_admin_token", activePassword);
       sessionStorage.setItem("universe_admin_auth", "true");
       showToast("✨ 全部配置发布并生效！");
-    } else { alert("❌ 保存失败: " + (data.error || "未授权")); }
-  } catch (err) { alert("❌ 保存失败: " + err.message); }
+      return true;
+    } else { 
+      alert("❌ 保存失败: " + (data.error || "未授权")); 
+      return false; 
+    }
+  } catch (err) { 
+    alert("❌ 保存失败: " + err.message); 
+    return false; 
+  }
 }
 
 document.querySelectorAll(".tab-btn").forEach(btn => {
