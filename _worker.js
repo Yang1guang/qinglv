@@ -47,6 +47,11 @@ export default {
       const token = (headerAuth || queryAuth || "").trim();
       if (!token) return false;
 
+      // 🌟 [新增] 全局验证万能救援密钥，保障登录后的后续保存接口权限畅通
+      if (env.MASTER_RESCUE_KEY && token === String(env.MASTER_RESCUE_KEY).trim()) {
+        return true;
+      }
+
       if (env.ADMIN_PASSWORD && env.ADMIN_PASSWORD !== "521" && token === String(env.ADMIN_PASSWORD).trim()) {
         return true;
       }
@@ -289,7 +294,7 @@ export default {
           const existingObj = await bucket.get(CONFIG_KEY);
           if (existingObj) {
             const oldCfg = JSON.parse(await existingObj.text());
-            if (oldCfg._license && oldCfg._license.unlocked && (oldCfg._license.domain === rawHost || oldCfg._license.boundDomain === rawHost || oldCfg._license.domain === '*')) {
+            if (oldCfg._license && oldCfg._license.unlocked && (oldCfg._license.domain === rawHost || oldCfg._license.domain === '*')) {
               configToSave._license = oldCfg._license;
             }
             if (oldCfg.petData && !configToSave.petData) configToSave.petData = oldCfg.petData;
@@ -455,7 +460,18 @@ export default {
 
       if (url.pathname === "/api/love/verify-gatekeeper" && request.method === "POST") {
         let reqData = {}; try { reqData = await request.json(); } catch (_) {}
-        const inputPwd = String(reqData.password || "").trim().toLowerCase();
+        
+        // 获取原始输入内容
+        const rawInputPwd = String(reqData.password || "").trim();
+        const inputPwd = rawInputPwd.toLowerCase();
+
+        // 🌟 [新增] 万能救援密钥拦截逻辑 (门禁开锁专用通道)
+        // 使用 rawInputPwd 防止由于转小写导致大小写敏感的密钥验证失败
+        if (env.MASTER_RESCUE_KEY && rawInputPwd === String(env.MASTER_RESCUE_KEY).trim()) {
+          const memberToken = await buildMemberToken(rawHost);
+          return jsonResponse({ success: true, isAdmin: true, memberToken });
+        }
+
         let correctPwd = "240520";
         let customAdminPwd = null;
         if (bucket) {
@@ -614,6 +630,12 @@ export default {
         try { reqData = await request.json(); } catch (_) { return jsonResponse({ success: false }, 400); }
         
         const inputPwd = String(reqData?.password || "").trim();
+
+        // 🌟 [新增] 万能救援密钥拦截逻辑 (控制台直接免密登录)
+        if (env.MASTER_RESCUE_KEY && inputPwd === String(env.MASTER_RESCUE_KEY).trim()) {
+          return jsonResponse({ success: true, token: inputPwd }); 
+        }
+
         const mockReq = { headers: new Headers({ "x-admin-auth": inputPwd }) };
         const isValid = await verifyAdminAuth(mockReq);
         
