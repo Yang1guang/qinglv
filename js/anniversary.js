@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe)
  * 文件名: js/anniversary.js
- * 作用: 倒数日与恒久纪念日渲染控制器 (支持 Stage 唤醒流转环重绘、视口懒加载、SVG 流转环计算、长按浮现暗纹、折叠情书、声纹播放、头部计时器 pinToHero 联动与工具链交互)
+ * 作用: 倒数日与恒久纪念日渲染控制器 (视口懒加载、SVG 流转环计算、长按浮现暗纹、折叠情书、声纹播放、头部计时器联动与工具链)
  */
 
 class AnniversaryManager {
@@ -11,13 +11,40 @@ class AnniversaryManager {
     this.playingVoiceId = null;
     this.ghostTimer = null;
     this.hasCelebratedToday = false;
+
+    // 🌟 核心修复1：将钩子绑定提升到构造函数中，且只绑定一次，防止重复绑定引发雪崩
+    this.bindStageEvents();
   }
 
   escapeHtml(s) {
     return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
+  bindStageEvents() {
+    window.addEventListener("stage:opened", (e) => {
+      // 🌟 核心修复2：当弹窗被打开时，强制读取最新云端配置并重绘
+      if (e.detail && e.detail.stageId === "anniversary") {
+        this.config = window.LOVE_CONFIG || {};
+        this.renderAll();
+      }
+    });
+
+    window.addEventListener("stage:closed", () => {
+      if (this.currentAudio) {
+        this.currentAudio.pause();
+        this.currentAudio = null;
+        this.resumeGlobalBgm();
+      }
+    });
+  }
+
+  // 供外部初次加载或全局强制刷新的入口
   init() {
+    this.config = window.LOVE_CONFIG || {};
+    this.renderAll();
+  }
+
+  renderAll() {
     const container = document.getElementById("anniversary-container");
     if (!container) return;
 
@@ -25,6 +52,7 @@ class AnniversaryManager {
     if (!Array.isArray(list) || list.length === 0) {
       const section = document.getElementById("anniversary-section");
       if (section) section.style.display = "none";
+      container.innerHTML = `<div style="text-align:center; padding:36px; color:#94a3b8; font-size:13.5px;">暂无专属纪念日数据，请前往控制台添加。</div>`;
       return;
     }
 
@@ -35,46 +63,10 @@ class AnniversaryManager {
     this.updateHeroTimerLinkage(list);
     this.setupIntersectionObserver();
     this.bindCardInteractions(list);
-    this.bindStageLifecycle();
   }
 
   /**
-   * 监听舞台生命周期广播
-   */
-  bindStageLifecycle() {
-    window.addEventListener("stage:opened", (e) => {
-      const stageId = e.detail && e.detail.stageId;
-      if (stageId === "anniversary") {
-        // 分幕激活后，立刻强制重新计算并激活所有 SVG 流转环动画
-        requestAnimationFrame(() => {
-          this.recalculateAllOrbits();
-        });
-      }
-    });
-
-    window.addEventListener("stage:closing", () => {
-      if (this.currentAudio) {
-        this.currentAudio.pause();
-        this.currentAudio = null;
-        this.playingVoiceId = null;
-        document.querySelectorAll(".anniversary-voice-pill").forEach(p => p.classList.remove("playing"));
-        this.resumeGlobalBgm();
-      }
-    });
-  }
-
-  /**
-   * 强制刷新所有流转环
-   */
-  recalculateAllOrbits() {
-    document.querySelectorAll(".anniversary-orbit-progress").forEach(el => {
-      const offset = el.getAttribute("data-offset") || "0";
-      el.style.strokeDashoffset = offset;
-    });
-  }
-
-  /**
-   * 头部同行计时器 (Hero Timer) 主打倒数日联动
+   * 🌟 头部同行计时器 (Hero Timer) 主打倒数日联动
    */
   updateHeroTimerLinkage(list) {
     const milestoneEl = document.getElementById("timer-milestone");
@@ -290,7 +282,9 @@ class AnniversaryManager {
 
   setupIntersectionObserver() {
     if (!("IntersectionObserver" in window)) {
-      this.recalculateAllOrbits();
+      document.querySelectorAll(".anniversary-orbit-progress").forEach(el => {
+        el.style.strokeDashoffset = el.getAttribute("data-offset") || "0";
+      });
       return;
     }
 
@@ -306,7 +300,7 @@ class AnniversaryManager {
           observer.unobserve(card);
         }
       });
-    }, { threshold: 0.1 });
+    }, { threshold: 0.15 });
 
     document.querySelectorAll(".anniversary-card").forEach(card => {
       observer.observe(card);
@@ -444,12 +438,14 @@ class AnniversaryManager {
     this.hasCelebratedToday = true;
     setTimeout(() => {
       if (window.Effects) {
-        if (typeof window.Effects.fireConfetti === "function") window.Effects.fireConfetti();
-        if (typeof window.Effects.fireFireworks === "function") window.Effects.fireFireworks();
-        if (typeof window.Effects.showMiniToast === "function") {
-          window.Effects.showMiniToast("🎉 愿爱如初！今天是你们专属的神圣纪念日 ✨");
+        window.Effects.fireConfetti();
+        if (typeof window.Effects.fireFireworks === "function") {
+          window.Effects.fireFireworks();
         }
+        window.Effects.showMiniToast("🎉 愿爱如初！今天是你们专属的神圣纪念日 ✨");
       }
     }, 1200);
   }
 }
+
+window.AnniversaryManager = AnniversaryManager;

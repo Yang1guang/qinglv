@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/theme-engine.js
- * 作用: 多维物理引擎、12 套男女主题切换、双视角胶囊激活联动与全视口浅色/深色背景智能穿透
+ * 作用: 多维物理引擎、12 套男女主题切换与 12 款专属定制动态粒子交互演算
  */
 
 class ThemeEngineCore {
@@ -11,7 +11,7 @@ class ThemeEngineCore {
     this.particles = [];
     this.animationFrameId = null;
     this.currentPerspective = localStorage.getItem("love_user_perspective") || "boy";
-    this.currentThemeId = "sunset-twilight";
+    this.currentThemeId = localStorage.getItem("love_current_theme_id") || "sunset-twilight";
   }
 
   init() {
@@ -24,7 +24,6 @@ class ThemeEngineCore {
     this.handleResize = () => this.resizeCanvas();
     window.addEventListener("resize", this.handleResize);
 
-    // 绑定前台胶囊点击事件（原生监听保障 100% 触发）
     this.bindCapsuleEvents();
     this.updateCapsuleUI();
 
@@ -42,7 +41,6 @@ class ThemeEngineCore {
     this.applyTheme(defaultTheme, customBg, false);
   }
 
-  // 确保底层全视口独立背景容器存在
   ensureBackgroundLayer() {
     let bgLayer = document.getElementById("universe-bg-layer");
     if (!bgLayer) {
@@ -85,7 +83,6 @@ class ThemeEngineCore {
     }
   }
 
-  // 切换男女视角
   switchPerspective(gender) {
     this.currentPerspective = gender;
     localStorage.setItem("love_user_perspective", gender);
@@ -108,7 +105,6 @@ class ThemeEngineCore {
   updateCapsuleUI() {
     const boyBtn = document.getElementById("btn-perspective-boy");
     const girlBtn = document.getElementById("btn-perspective-girl");
-
     if (boyBtn && girlBtn) {
       if (this.currentPerspective === "boy") {
         boyBtn.classList.add("active");
@@ -122,48 +118,35 @@ class ThemeEngineCore {
 
   applyTheme(themeId, customBgUrl = "", notify = false) {
     this.currentThemeId = themeId;
+    localStorage.setItem("love_current_theme_id", themeId);
+    localStorage.setItem("love_current_custom_bg", customBgUrl || "");
 
     const presets = window.THEME_PRESETS || { boy: [], girl: [] };
     const allThemes = [...(presets.boy || []), ...(presets.girl || [])];
-    let themeMeta = allThemes.find(t => t.id === themeId);
+    let themeMeta = allThemes.find(t => t.id === themeId) || { particleType: "meteor", themeType: "dark" };
 
-    if (!themeMeta) {
-      themeMeta = (presets.boy && presets.boy[0]) ? presets.boy[0] : { particleType: "meteor", themeType: "dark" };
-    }
+    const themeType = themeMeta.themeType === "light" ? "light" : "dark";
 
-    const isLight = themeMeta.themeType === "light" || this.currentPerspective === "girl";
-    const themeType = isLight ? "light" : "dark";
-
-    // 1. 设置 Body 类名与无障碍对比度主题类型属性
-    document.body.className = document.body.className
-      .replace(/theme-[a-z0-9-]+/g, "")
-      .trim();
+    document.body.className = document.body.className.replace(/theme-[a-z0-9-]+/g, "").trim();
     document.body.classList.add(`theme-${themeId}`);
     document.body.setAttribute("data-theme-type", themeType);
     document.documentElement.setAttribute("data-theme-type", themeType);
 
-    // 2. 将高清壁纸精准注入至独立全视口背景层 (未上传自定义壁纸时完全由 CSS 变量 --theme-bg-gradient 呈现)
     const bgLayer = this.ensureBackgroundLayer();
-    
     document.body.style.backgroundImage = "none";
     document.body.style.backgroundAttachment = "scroll";
 
     if (customBgUrl) {
-      const scrim = isLight 
+      const scrim = themeType === "light" 
         ? "linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4))"
         : "linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45))";
       bgLayer.style.backgroundImage = `${scrim}, url('${customBgUrl}')`;
     } else {
-      // 清空行内 style.backgroundImage，让 CSS 中定义的 --theme-bg-gradient 在电脑端与手机端 100% 完整生效
       bgLayer.style.backgroundImage = "";
     }
 
-    // 3. 启动物理粒子引擎 (浅色模式自动适配梦幻气泡或暖金阳光粒子)
-    let particleType = themeMeta.particleType || "meteor";
-    if (isLight && particleType === "meteor") {
-      particleType = "bubbles";
-    }
-    this.initParticlePhysics(particleType);
+    // 🌟 核心修复：精准触发独立物理引擎，避免重绘与 CPU 泄漏
+    this.initParticlePhysics(themeMeta.particleType);
 
     if (notify) {
       const msg = `✨ 已切入【${themeMeta.name || "专属"}】时空`;
@@ -175,17 +158,15 @@ class ThemeEngineCore {
     }
   }
 
+  // 12套物理引擎派发器：清理前序渲染栈
   initParticlePhysics(type) {
-    if (!this.canvas || !this.ctx) {
-      this.canvas = document.getElementById("starry-canvas");
-      this.ctx = this.canvas ? this.canvas.getContext("2d") : null;
-    }
-    if (!this.ctx) return;
-
+    if (!this.canvas || !this.ctx) return;
+    
+    // 强制截断上一主题的 RequestAnimationFrame 递归，防止渲染叠加变卡
     if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
 
     this.particles = [];
-    const count = window.innerWidth < 768 ? 25 : 50;
+    const count = window.innerWidth < 768 ? 35 : 70;
 
     for (let i = 0; i < count; i++) {
       this.particles.push(this.createParticle(type));
@@ -202,193 +183,159 @@ class ThemeEngineCore {
     renderLoop();
   }
 
+  // 构建 12 套独立的物理初态数据
   createParticle(type) {
-    const w = this.canvas.width || window.innerWidth;
-    const h = this.canvas.height || window.innerHeight;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
 
     switch (type) {
-      case "petals":
-      case "floralRipples":
-        return {
-          x: Math.random() * w,
-          y: Math.random() * h,
-          size: Math.random() * 8 + 6,
-          speedY: Math.random() * 1.2 + 0.6,
-          speedX: Math.sin(Math.random()) * 0.8,
-          rotation: Math.random() * 360,
-          rotSpeed: Math.random() * 2 - 1,
-          opacity: Math.random() * 0.6 + 0.3
-        };
+      case "meteor": // 暮色星河 (静谧繁星)
+        return { x: Math.random() * w, y: Math.random() * h, radius: Math.random() * 1.5 + 0.5, alpha: Math.random(), twinkle: Math.random() * 0.02 + 0.01 };
+      
+      case "cyberMatrix": // 赛博漫游 (向上升腾的黑客流)
+        return { x: Math.random() * w, y: Math.random() * h, length: Math.random() * 30 + 10, speedY: -(Math.random() * 5 + 2), opacity: Math.random() * 0.6 + 0.2 };
+      
+      case "fireflies": // 萤火森林 (正弦波仿生飞行)
+        return { x: Math.random() * w, y: Math.random() * h, radius: Math.random() * 2 + 1, angle: Math.random() * Math.PI * 2, speed: Math.random() * 0.5 + 0.2, alpha: Math.random(), twinkle: Math.random() * 0.02 + 0.01 };
+      
+      case "embers": // 炽热余烬 (上升并消散)
+        return { x: Math.random() * w, y: h + Math.random() * 100, radius: Math.random() * 2.5 + 1, speedY: -(Math.random() * 2 + 1), speedX: (Math.random() - 0.5) * 1, opacity: Math.random() * 0.8 + 0.2 };
+      
+      case "bioplankton": // 深海鲸落 (轻微洋流摇摆)
+        return { x: Math.random() * w, y: Math.random() * h, radius: Math.random() * 2 + 0.5, speedY: -(Math.random() * 0.6 + 0.2), offset: Math.random() * 100, opacity: Math.random() * 0.6 + 0.2 };
+      
+      case "aurora": // 极光夜幕 (横向缓慢光栅射线)
+        return { x: Math.random() * w, y: Math.random() * h, length: Math.random() * 100 + 50, speedX: Math.random() * 0.5 + 0.1, opacity: Math.random() * 0.3 + 0.1 };
 
-      case "sunDust":
-      case "dewDrops":
-        return {
-          x: Math.random() * w,
-          y: Math.random() * h,
-          radius: Math.random() * 2.5 + 1,
-          speedY: (Math.random() - 0.5) * 0.3,
-          speedX: (Math.random() - 0.5) * 0.3,
-          opacity: Math.random() * 0.7 + 0.2
-        };
-
-      case "bubbles":
-      case "seaSpray":
-        return {
-          x: Math.random() * w,
-          y: h + Math.random() * 50,
-          radius: Math.random() * 12 + 6,
-          speedY: -(Math.random() * 1.5 + 0.5),
-          speedX: Math.sin(Math.random()) * 0.5,
-          opacity: Math.random() * 0.4 + 0.3
-        };
-
-      case "fireflies":
-      case "bioplankton":
-        return {
-          x: Math.random() * w,
-          y: Math.random() * h,
-          radius: Math.random() * 2.2 + 1,
-          speedX: (Math.random() - 0.5) * 0.8,
-          speedY: (Math.random() - 0.5) * 0.8,
-          alpha: Math.random(),
-          alphaSpeed: Math.random() * 0.02 + 0.01
-        };
-
-      case "cyberMatrix":
-        return {
-          x: Math.random() * w,
-          y: Math.random() * h,
-          length: Math.random() * 40 + 20,
-          speedY: Math.random() * 6 + 3,
-          opacity: Math.random() * 0.5 + 0.2
-        };
-
-      case "meteor":
+      case "sunDust": // 法式奶油 (柔焦金粉)
+        return { x: Math.random() * w, y: Math.random() * h, radius: Math.random() * 3 + 1, speedY: (Math.random() - 0.5) * 0.4, speedX: (Math.random() - 0.5) * 0.4, opacity: Math.random() * 0.5 + 0.1 };
+      
+      case "petals": // 初雪樱花 (受重力飘落与旋转)
+        return { x: Math.random() * w, y: -Math.random() * h, sizeX: Math.random() * 5 + 4, sizeY: Math.random() * 3 + 2, speedY: Math.random() * 1.5 + 1, speedX: Math.random() * 1 + 0.5, rotation: Math.random() * 360, rotSpeed: Math.random() * 3 - 1.5, opacity: Math.random() * 0.7 + 0.3 };
+      
+      case "floralRipples": // 莫奈花园 (青绿布朗运动)
+        return { x: Math.random() * w, y: Math.random() * h, radius: Math.random() * 1.5 + 0.5, speedX: (Math.random() - 0.5) * 0.8, speedY: (Math.random() - 0.5) * 0.8, opacity: Math.random() * 0.6 + 0.2 };
+      
+      case "dewDrops": // 晨曦朝露 (垂直滴落)
+        return { x: Math.random() * w, y: -Math.random() * h, radius: Math.random() * 2 + 1, speedY: Math.random() * 3 + 2, opacity: Math.random() * 0.8 + 0.2 };
+      
+      case "bubbles": // 梦幻甜梦 (粉紫空心气泡摇曳)
+        return { x: Math.random() * w, y: h + Math.random() * h, radius: Math.random() * 8 + 4, speedY: -(Math.random() * 1 + 0.5), angle: Math.random() * Math.PI, opacity: Math.random() * 0.5 + 0.2 };
+      
+      case "seaSpray": // 橘子汽水 (金色碳酸高速翻滚)
+        return { x: Math.random() * w, y: h + Math.random() * 50, radius: Math.random() * 4 + 1.5, speedY: -(Math.random() * 3 + 1), speedX: (Math.random() - 0.5) * 0.6, opacity: Math.random() * 0.7 + 0.3 };
+      
       default:
-        return {
-          x: Math.random() * w,
-          y: Math.random() * h,
-          radius: Math.random() * 1.8 + 0.5,
-          twinkle: Math.random() * 0.03 + 0.01,
-          alpha: Math.random()
-        };
+        return { x: Math.random() * w, y: Math.random() * h, radius: Math.random() * 1.5, alpha: Math.random(), twinkle: 0.02 };
     }
   }
 
+  // 12套核心渲染画笔指令
   updateAndDrawParticle(p, type) {
     const ctx = this.ctx;
     const w = this.canvas.width;
     const h = this.canvas.height;
 
     switch (type) {
-      case "petals":
-      case "floralRipples":
-        p.y += p.speedY;
-        p.x += p.speedX;
-        p.rotation += p.rotSpeed;
-        if (p.y > h) p.y = -10;
-        if (p.x > w) p.x = 0;
+      case "meteor": // 白星闪烁
+        p.alpha += p.twinkle;
+        if (p.alpha > 1 || p.alpha < 0.1) p.twinkle = -p.twinkle;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(p.alpha)})`; ctx.fill();
+        break;
 
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate((p.rotation * Math.PI) / 180);
+      case "cyberMatrix": // 代码流线
+        p.y += p.speedY;
+        if (p.y < -p.length) { p.y = h; p.x = Math.random() * w; }
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + p.length);
+        ctx.strokeStyle = `rgba(56, 189, 248, ${p.opacity})`; ctx.lineWidth = 1.5; ctx.stroke();
+        break;
+
+      case "fireflies": // 萤火虫仿生寻迹
+        p.angle += 0.05;
+        p.x += Math.cos(p.angle) * p.speed;
+        p.y += Math.sin(p.angle) * p.speed - 0.2;
+        p.alpha += p.twinkle;
+        if (p.alpha > 1 || p.alpha < 0.2) p.twinkle = -p.twinkle;
+        if (p.y < 0) p.y = h; if (p.x < 0 || p.x > w) p.x = Math.random() * w;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(167, 243, 208, ${Math.abs(p.alpha)})`; ctx.fill();
+        break;
+
+      case "embers": // 余烬消散
+        p.x += p.speedX; p.y += p.speedY;
+        p.opacity -= 0.003;
+        if (p.opacity <= 0 || p.y < 0) { Object.assign(p, this.createParticle(type)); }
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(249, 115, 22, ${p.opacity})`; ctx.fill();
+        break;
+
+      case "bioplankton": // 幽蓝浮游
+        p.y += p.speedY;
+        p.x += Math.sin(p.y * 0.02 + p.offset) * 0.5;
+        if (p.y < 0) p.y = h;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(125, 211, 252, ${p.opacity})`; ctx.fill();
+        break;
+
+      case "aurora": // 极光流线
+        p.x += p.speedX;
+        if (p.x > w + p.length) p.x = -p.length;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.length, p.y - p.length * 0.3);
+        ctx.strokeStyle = `rgba(192, 132, 252, ${p.opacity})`; ctx.lineWidth = 2; ctx.stroke();
+        break;
+
+      case "sunDust": // 柔焦金光
+        p.x += p.speedX; p.y += p.speedY;
+        if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+        if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(217, 119, 6, ${p.opacity})`; ctx.fill();
+        break;
+
+      case "petals": // 樱花飘落
+        p.x += p.speedX; p.y += p.speedY; p.rotation += p.rotSpeed;
+        if (p.y > h) { p.y = -10; p.x = Math.random() * w; }
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate((p.rotation * Math.PI) / 180);
         ctx.fillStyle = `rgba(244, 114, 182, ${p.opacity})`;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, p.size, p.size / 2, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.ellipse(0, 0, p.sizeX, p.sizeY, 0, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
         break;
 
-      case "sunDust":
-      case "dewDrops":
-        p.x += p.speedX;
-        p.y += p.speedY;
-        if (p.x < 0) p.x = w;
-        if (p.x > w) p.x = 0;
-        if (p.y < 0) p.y = h;
-        if (p.y > h) p.y = 0;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(245, 158, 11, ${p.opacity})`;
-        ctx.shadowColor = "rgba(245, 158, 11, 0.6)";
-        ctx.shadowBlur = 6;
-        ctx.fill();
-        ctx.shadowBlur = 0;
+      case "floralRipples": // 青绿花粉
+        p.x += p.speedX; p.y += p.speedY;
+        if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+        if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(22, 163, 74, ${p.opacity})`; ctx.fill();
         break;
 
-      case "bubbles":
-      case "seaSpray":
+      case "dewDrops": // 垂直水滴
         p.y += p.speedY;
-        p.x += p.speedX;
-        if (p.y < -20) {
-          p.y = h + 20;
-          p.x = Math.random() * w;
-        }
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(192, 132, 252, ${p.opacity})`;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        ctx.fillStyle = `rgba(243, 232, 255, ${p.opacity * 0.25})`;
-        ctx.fill();
+        if (p.y > h) p.y = -10;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(14, 165, 233, ${p.opacity})`; ctx.fill();
         break;
 
-      case "fireflies":
-      case "bioplankton":
-        p.x += p.speedX;
-        p.y += p.speedY;
-        p.alpha += p.alphaSpeed;
-        if (p.alpha > 1 || p.alpha < 0.1) p.alphaSpeed = -p.alphaSpeed;
-        if (p.x < 0) p.x = w;
-        if (p.x > w) p.x = 0;
-        if (p.y < 0) p.y = h;
-        if (p.y > h) p.y = 0;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(52, 211, 153, ${Math.abs(p.alpha)})`;
-        ctx.shadowColor = "rgba(52, 211, 153, 0.8)";
-        ctx.shadowBlur = 8;
-        ctx.fill();
-        ctx.shadowBlur = 0;
+      case "bubbles": // 梦幻空心气泡
+        p.angle += 0.02; p.y += p.speedY; p.x += Math.sin(p.angle) * 0.5;
+        if (p.y < -20) { p.y = h + 20; p.x = Math.random() * w; }
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(192, 132, 252, ${p.opacity})`; ctx.lineWidth = 1.5; ctx.stroke();
         break;
 
-      case "cyberMatrix":
-        p.y += p.speedY;
-        if (p.y > h) {
-          p.y = -p.length;
-          p.x = Math.random() * w;
-        }
-
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x, p.y + p.length);
-        ctx.strokeStyle = `rgba(56, 189, 248, ${p.opacity})`;
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-        break;
-
-      case "meteor":
-      default:
-        p.alpha += p.twinkle;
-        if (p.alpha > 1 || p.alpha < 0.2) p.twinkle = -p.twinkle;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(p.alpha)})`;
-        ctx.fill();
+      case "seaSpray": // 橘色碳酸气泡
+        p.y += p.speedY; p.x += p.speedX;
+        if (p.y < -10) { Object.assign(p, this.createParticle(type)); }
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(234, 88, 12, ${p.opacity})`; ctx.fill();
         break;
     }
   }
 }
 
-// 导出全局单例并挂载原生 DOM 事件监听
 window.ThemeEngine = new ThemeEngineCore();
 
 document.addEventListener("DOMContentLoaded", () => {
-  if (window.ThemeEngine) {
-    window.ThemeEngine.init();
-  }
+  if (window.ThemeEngine) window.ThemeEngine.init();
 });

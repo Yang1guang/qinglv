@@ -1,11 +1,17 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe) 前台核心主控
  * 文件名: js/core.js
- * 作用: 门禁鉴权、软键盘失焦防白屏、打字机、彩蛋、专属姓名连接符美化、中枢舞台唤醒与 300DPI 标准几何中心拍立得海报生成
+ * 作用: 门禁鉴权、异步竞态锁防闪烁、高定版控制台密码入口、全局状态分发重组
  */
 
 document.addEventListener("DOMContentLoaded", () => {
   let config = window.LOVE_CONFIG || {};
+
+  if (sessionStorage.getItem("universe_unlocked") === "true") {
+    setTimeout(() => unlockMainUniverse(false), 50);
+  }
+
+  const cloudSyncPromise = syncCloudData();
 
   function escapeHtml(s) {
     return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -82,7 +88,8 @@ document.addEventListener("DOMContentLoaded", () => {
     posterPreviewBox: document.getElementById("poster-preview-box"),
     downloadPosterBtn: document.getElementById("download-poster-btn"),
     closePosterBtn: document.getElementById("close-poster-btn"),
-    universeFooterText: document.querySelector(".universe-footer__text")
+    universeFooterText: document.querySelector(".universe-footer__text"),
+    adminAuthModal: document.getElementById("hq-admin-auth-modal")
   };
 
   function mergeWithDefaultConfig(cloudCfg) {
@@ -103,41 +110,163 @@ document.addEventListener("DOMContentLoaded", () => {
       scratchCards: (Array.isArray(cloudCfg.scratchCards) && cloudCfg.scratchCards.length > 0) ? cloudCfg.scratchCards : (base.scratchCards || []),
       easterEggs: (Array.isArray(cloudCfg.easterEggs) && cloudCfg.easterEggs.length > 0) ? cloudCfg.easterEggs : (base.easterEggs || []),
       _license: cloudCfg._license || base._license || null,
-      adminSecurity: cloudCfg.adminSecurity || base.adminSecurity || null
+      adminSecurity: cloudCfg.adminSecurity || base.adminSecurity || { password: "" }
     };
   }
 
+  window.addEventListener('gatekeeper:bypass', () => {
+    unlockMainUniverse(true);
+  });
+
   initGatekeeperUI();
-  syncCloudData();
+  initAdminPortalTrigger(); 
+
+  const roseOverlay = document.getElementById('rose-click-overlay');
+  if (roseOverlay) {
+    roseOverlay.addEventListener('click', async () => {
+      roseOverlay.style.pointerEvents = 'none';
+      roseOverlay.style.display = 'none';
+      
+      await cloudSyncPromise;
+      
+      const isGatekeeperEnabled = config.gatekeeper && typeof config.gatekeeper.enabled !== 'undefined' 
+        ? config.gatekeeper.enabled 
+        : true;
+      
+      if (isGatekeeperEnabled) {
+        if (dom.gatekeeperDialog) dom.gatekeeperDialog.classList.remove('gatekeeper__dialog--hidden');
+      } else {
+        unlockMainUniverse(true);
+      }
+    });
+  }
 
   function initGatekeeperUI() {
     const gateCfg = config.gatekeeper || {};
-
     if (dom.gatekeeperTitle) dom.gatekeeperTitle.textContent = gateCfg.title || "🔒 验证恒久契约";
     if (dom.gatekeeperQuestion) dom.gatekeeperQuestion.textContent = gateCfg.question || "请输入纪念日口令，或点击麦克风念出誓言：";
     if (dom.gatekeeperHint) dom.gatekeeperHint.textContent = gateCfg.hint || "提示：包容与接纳，爱是永不止息";
-
     if (dom.gatekeeperBtn) {
-      dom.gatekeeperBtn.onclick = (e) => {
-        e.preventDefault();
-        verifyPassword(dom.gatekeeperInput ? dom.gatekeeperInput.value.trim() : "");
-      };
+      dom.gatekeeperBtn.onclick = (e) => { e.preventDefault(); verifyPassword(dom.gatekeeperInput ? dom.gatekeeperInput.value.trim() : ""); };
     }
-
     if (dom.gatekeeperInput) {
-      dom.gatekeeperInput.onkeydown = (e) => {
+      dom.gatekeeperInput.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); verifyPassword(dom.gatekeeperInput.value.trim()); } };
+    }
+    if (dom.voiceUnlockBtn) {
+      dom.voiceUnlockBtn.onclick = (e) => { e.preventDefault(); startVoiceRecognition(); };
+    }
+  }
+
+  function initAdminPortalTrigger() {
+    if (!dom.heroNames) return;
+    
+    const triggerAdminAction = async (e) => {
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      
+      const pwd = await showAdminAuthModal();
+      if (!pwd) return;
+
+      let isVerified = false;
+
+      // 🌟 核心修复：直接对接后端专用的鉴权路由 /api/auth/login 或 verify-gatekeeper
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: pwd })
+        });
+        const data = await res.json();
+        if (data.success) {
+          isVerified = true;
+        }
+      } catch (_) {}
+
+      // 兜底校验：尝试走通用门禁鉴权路由
+      if (!isVerified) {
+        try {
+          const res = await fetch("/api/love/verify-gatekeeper", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: pwd })
+          });
+          const data = await res.json();
+          if (data.success) {
+            isVerified = true;
+            if (data.memberToken) {
+              localStorage.setItem("love_owner_token", data.memberToken);
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (isVerified) {
+        localStorage.setItem("love_admin_token", pwd);
+        sessionStorage.setItem("universe_admin_auth", "true");
+        location.href = "admin.html";
+      } else {
+        showAuthError("❌ 管理密码错误或未授权，请重试。");
+      }
+    };
+
+    dom.heroNames.addEventListener('click', triggerAdminAction);
+    dom.heroNames.addEventListener('touchend', triggerAdminAction, { passive: false });
+  }
+
+  function showAdminAuthModal() {
+    return new Promise((resolve) => {
+      if (!dom.adminAuthModal) return resolve(null);
+      
+      const inputEl = document.getElementById("hq-admin-input");
+      const confirmBtn = document.getElementById("hq-admin-confirm");
+      const cancelBtn = document.getElementById("hq-admin-cancel");
+      const errorMsg = document.getElementById("hq-admin-error");
+      
+      if (inputEl) inputEl.value = "";
+      if (errorMsg) errorMsg.style.display = "none";
+      dom.adminAuthModal.style.display = "flex";
+      
+      setTimeout(() => dom.adminAuthModal.classList.add("active"), 10);
+      if (inputEl) inputEl.focus();
+
+      const cleanup = () => {
+        dom.adminAuthModal.classList.remove("active");
+        setTimeout(() => dom.adminAuthModal.style.display = "none", 300);
+        if (inputEl) inputEl.blur(); 
+        confirmBtn.onclick = null;
+        cancelBtn.onclick = null;
+        inputEl.onkeydown = null;
+      };
+
+      confirmBtn.onclick = () => {
+        const val = inputEl ? inputEl.value.trim() : "";
+        if (!val) {
+          if (errorMsg) { errorMsg.textContent = "请输入密钥"; errorMsg.style.display = "block"; }
+          return;
+        }
+        cleanup();
+        resolve(val);
+      };
+
+      cancelBtn.onclick = () => {
+        cleanup();
+        resolve(null);
+      };
+
+      inputEl.onkeydown = (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
-          verifyPassword(dom.gatekeeperInput.value.trim());
+          confirmBtn.click();
         }
       };
-    }
+    });
+  }
 
-    if (dom.voiceUnlockBtn) {
-      dom.voiceUnlockBtn.onclick = (e) => {
-        e.preventDefault();
-        startVoiceRecognition();
-      };
+  function showAuthError(msg) {
+    if (window.Effects && typeof window.Effects.showMiniToast === "function") {
+      window.Effects.showMiniToast(msg);
+    } else {
+      alert(msg);
     }
   }
 
@@ -262,11 +391,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.success && data.custom && data.config) {
         config = mergeWithDefaultConfig(data.config);
         window.LOVE_CONFIG = config;
+        
+        const isGatekeeperEnabled = config.gatekeeper ? config.gatekeeper.enabled !== false : true;
+        localStorage.setItem("love_gatekeeper_enabled_snapshot", isGatekeeperEnabled ? "true" : "false");
 
         initGatekeeperUI();
 
         if (window.Effects) {
           window.Effects.updateConfig(config);
+        }
+        
+        if (sessionStorage.getItem("universe_unlocked") === "true") {
+           if (window.AnniversaryManager) {
+               const currentInstance = Object.values(window).find(val => val instanceof window.AnniversaryManager);
+               if (currentInstance) currentInstance.init(); 
+           }
         }
       }
     } catch (_) {}
@@ -281,24 +420,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (config.meta.siteTitle) document.title = config.meta.siteTitle;
     }
 
-    if (window.ThemeEngine) {
-      window.ThemeEngine.init();
-    }
-
-    if (window.StageManager) {
-      window.StageManager.init();
-    }
-
+    if (window.ThemeEngine) window.ThemeEngine.init();
+    if (window.StageManager) window.StageManager.init();
     if (window.PhotoWallManager) {
       const photoWall = new window.PhotoWallManager(config);
       photoWall.init();
     }
 
     initLicenseActivationTrigger();
-
-    if (config.gatekeeper && config.gatekeeper.enabled === false) {
-      unlockMainUniverse(false);
-    }
   }
 
   async function verifyPassword(inputVal) {
@@ -318,25 +447,19 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await res.json();
 
       if (result.success) {
-        if (result.isAdmin) {
-          location.href = "admin.html";
-          return;
-        }
-
         if (window.Effects) {
           window.Effects.playAudio("gatekeeperPass");
           window.Effects.fireFireworks();
+        }
+        if (result.memberToken) {
+          try { sessionStorage.setItem("member_token", result.memberToken); } catch (_) {}
         }
         unlockMainUniverse(true);
       } else {
         triggerPasswordError();
       }
     } catch (_) {
-      if (inputVal === "240520" || inputVal === "521") {
-        if (inputVal === "521") {
-          location.href = "admin.html";
-          return;
-        }
+      if (inputVal === "240520") {
         unlockMainUniverse(true);
       } else {
         triggerPasswordError();
@@ -377,6 +500,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function unlockMainUniverse(withAnimation = true) {
+    sessionStorage.setItem("universe_unlocked", "true");
+    
     if (document.activeElement && typeof document.activeElement.blur === "function") {
       document.activeElement.blur();
     }
@@ -408,25 +533,40 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 50);
     }
 
-    // 唤醒并确保舞台管理器就绪
-    if (window.StageManager) {
-      window.StageManager.init();
-    }
-
+    if (window.StageManager) window.StageManager.init();
     if (window.LifecycleEngine) {
       const lifecycleMgr = new window.LifecycleEngine(config);
       lifecycleMgr.init();
     }
-
+    
+    if (window.AnniversaryManager) {
+        if (!window.AnniversaryInstance) {
+           window.AnniversaryInstance = new window.AnniversaryManager(config);
+        }
+        window.AnniversaryInstance.init();
+    }
+    
     if (window.TimelineManager) {
       const timelineMgr = new window.TimelineManager(config);
       timelineMgr.init();
     }
 
+    window.dispatchEvent(new CustomEvent("universe:unlocked"));
+
     startTypewriter();
 
     if (config.audio && config.audio.bgmAutoPlay !== false && window.Effects) {
-      window.Effects.playBgm();
+      try {
+        window.Effects.playBgm();
+      } catch (e) {
+        const fallbackPlay = () => {
+          try { window.Effects.playBgm(); } catch (err) {}
+          document.removeEventListener('click', fallbackPlay);
+          document.removeEventListener('touchstart', fallbackPlay);
+        };
+        document.addEventListener('click', fallbackPlay, { once: true });
+        document.addEventListener('touchstart', fallbackPlay, { once: true });
+      }
     }
   }
 

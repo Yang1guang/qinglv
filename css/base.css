@@ -1,8 +1,7 @@
-
 /**
  * 恋爱时光轴 & 漫游宇宙 (Love Universe)
  * 文件名: css/base.css
- * 版本: 2.4 — 滚动锁死修复版
+ * 版本: 2.5 — 滚动锁死修复版 + 底部排版深度调优
  * 
  * 【根因修复记录】
  * 致命Bug: overscroll-behavior:contain + 全局section/main overflow-x:hidden 
@@ -183,6 +182,33 @@ button, input, textarea {
   font-size: 12.5px;
   color: var(--text-muted);
   font-weight: 600;
+}
+
+/* ════════════ 🌟 全局底部版权样式 (修复居中与拥挤问题) ════════════ */
+.universe-footer {
+  width: 100%;
+  text-align: center; /* 强行居中 */
+  margin-top: 50px; /* 增加与上方卡片的距离，消除拥挤感 */
+  padding-bottom: 20px; /* 底部呼吸空间 */
+  position: relative;
+  z-index: 15;
+}
+
+.universe-footer__text {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-main, #ffffff);
+  opacity: 0.75; /* 降低透明度，更显高级，同时避免抢占视觉焦点 */
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.5); /* 增加文字辨识度 */
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: opacity 0.3s ease;
+}
+
+.universe-footer__text:hover {
+  opacity: 1; /* 交互时高亮 */
 }
 
 /* ════════════ 自定义滚动条样式 ════════════ */

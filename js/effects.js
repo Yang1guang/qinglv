@@ -1,8 +1,7 @@
-
 /**
  * 众水不灭 · 雅歌之印
  * 文件名: js/effects.js
- * 作用: 动效中枢、高稳定单曲/多曲目列表播放引擎、隐藏列表抽屉与黑胶唱针联动 (支持分幕生命周期 GPU 节能休眠)
+ * 作用: 动效中枢、高稳定单曲/多曲目播放列表引擎 (极简爱心音乐晶体控制、广播音乐播放与彩蛋成就)、隐藏列表抽屉联动 (支持分幕生命周期 GPU 节能休眠)
  */
 
 class EffectsEngine {
@@ -128,32 +127,15 @@ class EffectsEngine {
       this.bgmAudio.preload = "auto";
       this.bgmAudio.loop = false;
 
-      // 🔧 用户手势解锁音频上下文（解决 Autoplay Policy 阻断）
-      this._audioUnlocked = false;
-      const unlockAudio = () => {
-        if (this._audioUnlocked) return;
-        if (this.bgmAudio) {
-          const silencePromise = this.bgmAudio.play();
-          if (silencePromise !== undefined) {
-            silencePromise.then(() => {
-              // 播放成功后立即暂停，仅用于解锁上下文
-              this.bgmAudio.pause();
-              this.bgmAudio.currentTime = 0;
-              this._audioUnlocked = true;
-              console.log("[音频系统] ✅ 音频上下文已通过用户手势解锁");
-            }).catch(() => {});
-          }
-        }
-      };
-
-      // 在所有可能的用户交互元素上绑定一次性解锁
-      document.addEventListener("click", unlockAudio, { once: true });
-      document.addEventListener("touchstart", unlockAudio, { once: true, passive: true });
-
       this.bgmAudio.addEventListener("play", () => {
         this.isPlaying = true;
         this.setVinylVisualPlaying(true);
         this.renderDrawerPlaylist();
+
+        // 🌟 广播音乐播放成就信号
+        window.dispatchEvent(new CustomEvent("achievement:trigger", {
+          detail: { type: "music_played" }
+        }));
       });
 
       this.bgmAudio.addEventListener("pause", () => {
@@ -327,29 +309,12 @@ class EffectsEngine {
   }
 
   setVinylVisualPlaying(playing) {
-    const disc = document.getElementById("vinyl-disc");
-    const toggleBtn = document.getElementById("audio-toggle-btn");
-
-    if (disc) {
+    const heartCapsule = document.getElementById("heart-music-capsule");
+    if (heartCapsule) {
       if (playing) {
-        disc.classList.add("vinyl-disc--playing");
+        heartCapsule.classList.add("playing");
       } else {
-        disc.classList.remove("vinyl-disc--playing");
-      }
-    }
-    if (toggleBtn) {
-      toggleBtn.textContent = playing ? "⏸️" : "🎵";
-    }
-    this.setNeedleState(playing);
-  }
-
-  setNeedleState(onDisc) {
-    const needle = document.getElementById("vinyl-needle");
-    if (needle) {
-      if (onDisc) {
-        needle.classList.add("vinyl-needle--play");
-      } else {
-        needle.classList.remove("vinyl-needle--play");
+        heartCapsule.classList.remove("playing");
       }
     }
   }
@@ -357,7 +322,7 @@ class EffectsEngine {
   updateTrackInfoDisplay() {
     const track = this.getCurrentTrack();
     const coverImg = document.getElementById("vinyl-cover");
-    const defaultHeart = document.querySelector(".vinyl-player__default-heart");
+    const defaultHeart = document.querySelector(".heart-music-icon");
 
     if (coverImg) {
       if (track.cover) {
@@ -385,21 +350,49 @@ class EffectsEngine {
   }
 
   initEventListeners() {
-    const disc = document.getElementById("vinyl-disc");
-    const toggleBtn = document.getElementById("audio-toggle-btn");
-    const listBtn = document.getElementById("audio-list-btn");
+    const heartCapsule = document.getElementById("heart-music-capsule");
     const closeDrawerBtn = document.getElementById("playlist-drawer-close");
 
-    if (disc) disc.onclick = () => this.toggleBgm();
-    if (toggleBtn) toggleBtn.onclick = () => this.toggleBgm();
-    
-    if (listBtn) {
-      listBtn.onclick = (e) => {
+    if (heartCapsule) {
+      let pressTimer = null;
+      let isLongPress = false;
+
+      const startPress = () => {
+        isLongPress = false;
+        pressTimer = setTimeout(() => {
+          isLongPress = true;
+          if (navigator.vibrate) navigator.vibrate(30);
+          this.togglePlaylistDrawer();
+        }, 400);
+      };
+
+      const cancelPress = () => {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      };
+
+      heartCapsule.addEventListener("mousedown", startPress);
+      heartCapsule.addEventListener("mouseup", cancelPress);
+      heartCapsule.addEventListener("mouseleave", cancelPress);
+      heartCapsule.addEventListener("touchstart", startPress, { passive: true });
+      heartCapsule.addEventListener("touchend", cancelPress);
+      heartCapsule.addEventListener("touchcancel", cancelPress);
+
+      heartCapsule.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!isLongPress) {
+          this.toggleBgm();
+        }
+      });
+
+      heartCapsule.addEventListener("dblclick", (e) => {
         e.stopPropagation();
         this.togglePlaylistDrawer();
-      };
+      });
     }
-    
+
     if (closeDrawerBtn) {
       closeDrawerBtn.onclick = (e) => {
         e.stopPropagation();
@@ -414,6 +407,23 @@ class EffectsEngine {
         this.closePlaylistDrawer();
       }
     });
+
+    const starEgg = document.getElementById("egg-star");
+    const pawEgg = document.getElementById("egg-paw");
+    if (starEgg) {
+      starEgg.addEventListener("click", () => {
+        window.dispatchEvent(new CustomEvent("achievement:trigger", {
+          detail: { type: "egg_discovered" }
+        }));
+      });
+    }
+    if (pawEgg) {
+      pawEgg.addEventListener("click", () => {
+        window.dispatchEvent(new CustomEvent("achievement:trigger", {
+          detail: { type: "egg_discovered" }
+        }));
+      });
+    }
   }
 
   playAudio(soundName) {
@@ -534,3 +544,5 @@ class EffectsEngine {
     return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 }
+
+window.Effects = new EffectsEngine();

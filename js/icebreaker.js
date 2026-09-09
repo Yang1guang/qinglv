@@ -1,7 +1,7 @@
 /**
  * 众水不灭 · 雅歌之印 (Love Universe)
  * 文件名: js/icebreaker.js
- * 作用: 破冰与情感信号箱客户端主控 (支持 Stage 唤醒刷新、自适应退避轮询、Web Audio 降噪压制、双向状态机握手、和好足迹备忘录与 300DPI 拍立得海报离屏渲染)
+ * 作用: 破冰与情感信号箱客户端主控 (动态字典映射、长文本渲染、乐观 UI 更新)
  */
 
 class IceBreakerManager {
@@ -9,12 +9,13 @@ class IceBreakerManager {
     this.config = config || window.LOVE_CONFIG || {};
     this.deviceId = this.getOrCreateDeviceId();
     this.pollTimer = null;
-    this.pollInterval = 4000;
-    this.consecutiveNoChangeCount = 0;
-    this.currentActiveSignal = null;
     this.audioContext = null;
     this.currentPosterDataUrl = "";
-    this.hasCelebratedThisSignal = false;
+    
+    this.lastNotifiedFingerprint = null;
+    this.lastFetchTime = 0;
+    this.handledSignalIds = new Set();
+    this.toastTimeout = null;
   }
 
   getOrCreateDeviceId() {
@@ -75,6 +76,41 @@ class IceBreakerManager {
     }
   }
 
+  showToast(msg, type = "info") {
+    let toast = document.getElementById("icebreaker-toast-layer");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "icebreaker-toast-layer";
+      Object.assign(toast.style, {
+        position: "fixed", top: "20px", left: "50%", transform: "translateX(-50%) translateY(-20px)",
+        color: "#fff", padding: "12px 24px", borderRadius: "30px",
+        fontSize: "14px", fontWeight: "800", boxShadow: "0 12px 32px rgba(0,0,0,0.3)",
+        backdropFilter: "blur(12px)", zIndex: "99999", opacity: "0", pointerEvents: "none",
+        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)", whiteSpace: "nowrap"
+      });
+      document.body.appendChild(toast);
+    }
+
+    if (type === "error" || type === "warning") {
+      toast.style.background = "rgba(220, 38, 38, 0.95)"; 
+    } else if (type === "success") {
+      toast.style.background = "rgba(16, 185, 129, 0.95)"; 
+    } else {
+      toast.style.background = "rgba(31, 41, 55, 0.95)"; 
+    }
+
+    toast.innerHTML = msg;
+    void toast.offsetWidth; 
+    toast.style.opacity = "1";
+    toast.style.transform = "translateX(-50%) translateY(0)";
+
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    this.toastTimeout = setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateX(-50%) translateY(-20px)";
+    }, 3500);
+  }
+
   init() {
     const container = document.getElementById("icebreaker-container");
     if (!container) return;
@@ -83,7 +119,7 @@ class IceBreakerManager {
     this.bindGlobalEvents();
     this.bindStageLifecycle();
     this.initAudioContext();
-    this.startAdaptivePolling();
+    this.executePoll(); 
     this.fetchAndRenderHistory();
   }
 
@@ -101,15 +137,26 @@ class IceBreakerManager {
     const allActions = this.config.icebreaker?.actions || {};
     const currentActions = allActions[phase] || allActions["dating"] || [];
 
+    const section = document.getElementById("icebreaker-section");
     if (currentActions.length === 0) {
-      const section = document.getElementById("icebreaker-section");
       if (section) section.style.display = "none";
       return;
     }
-
-    const section = document.getElementById("icebreaker-section");
     if (section) section.style.display = "block";
 
+    // 🌟 核心拦截：如果是游客（无 Token），直接展示上锁界面，杜绝乱点
+    const isOwner = !!localStorage.getItem("love_owner_token");
+    if (!isOwner) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:24px; background:rgba(255,255,255,0.03); border:1.5px dashed rgba(255,255,255,0.15); border-radius:18px; margin-bottom:16px;">
+          <span style="font-size:32px; display:block; margin-bottom:12px; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));">🔒</span>
+          <span style="color:#e2e8f0; font-size:14px; font-weight:800; line-height:1.6; display:block;">展览模式：情感信号发射舱已锁定<br><span style="color:#94a3b8; font-size:12px;">仅持印者有权限发送破冰信笺</span></span>
+        </div>
+      `;
+      return;
+    }
+
+    // 正常主人的渲染逻辑
     container.innerHTML = currentActions.map(action => `
       <button class="icebreaker-btn" data-action-type="${action.type}">
         <span class="icebreaker-btn__icon">${action.icon}</span>
@@ -122,28 +169,52 @@ class IceBreakerManager {
       btn.onclick = (e) => {
         e.preventDefault();
         const actionType = btn.getAttribute("data-action-type");
-        this.handleSendSignal(actionType);
+        this.handleSendSignal(actionType, btn);
+        
+        if ("Notification" in window && Notification.permission === "default") {
+          Notification.requestPermission();
+        }
       };
     });
   }
 
-  async handleSendSignal(actionType) {
+  async handleSendSignal(actionType, clickedBtn) {
     const phase = this.config.lifecycle?.currentPhase || "dating";
     const perspective = (window.ThemeEngine && window.ThemeEngine.currentPerspective) || "boy";
 
     if (navigator.vibrate) navigator.vibrate([30, 40]);
 
+    const allBtns = document.querySelectorAll(".icebreaker-btn");
+    allBtns.forEach(btn => btn.style.pointerEvents = "none"); 
+
+    const originalHtml = clickedBtn ? clickedBtn.innerHTML : "";
+    const originalBorder = clickedBtn ? clickedBtn.style.borderColor : "";
+    const originalBg = clickedBtn ? clickedBtn.style.background : "";
+
+    if (clickedBtn) {
+      clickedBtn.innerHTML = `<span class="icebreaker-btn__icon">⏳</span><span class="icebreaker-btn__label" style="color:#f59e0b;">信号发射中...</span>`;
+    }
+
+    this.showToast("⏳ 正在飞向对方时空，请稍候...");
+
     try {
+      const signalPayload = (window.LOVE_ICE_ACTIONS && window.LOVE_ICE_ACTIONS.buildSignalPayload)
+        ? window.LOVE_ICE_ACTIONS.buildSignalPayload(this.config, {
+            stage: phase,
+            senderGender: perspective,
+            senderDeviceId: this.deviceId,
+            actionType
+          })
+        : { stage: phase, senderGender: perspective, senderDeviceId: this.deviceId, actionType, customText: "" };
+      
       const res = await fetch("/api/love/signal", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stage: phase,
-          senderGender: perspective,
-          senderDeviceId: this.deviceId,
-          actionType: actionType,
-          customText: ""
-        })
+        headers: { 
+          "Content-Type": "application/json",
+          // 附带 Token，否则会被后端熔断器拒绝
+          "x-member-token": localStorage.getItem("love_owner_token") || ""
+        },
+        body: JSON.stringify(signalPayload)
       });
 
       const data = await res.json();
@@ -153,50 +224,119 @@ class IceBreakerManager {
         if (data.status === "mutual_resolved") {
           this.showMutualCelebration(data.signal);
         } else {
-          if (window.Effects && typeof window.Effects.showMiniToast === "function") {
-            window.Effects.showMiniToast("🕊️ 情感信笺已飞向对方时空，愿爱包容一切。");
+          this.showToast("🕊️ 发送成功！破冰信笺已送达对方。", "success");
+          if (clickedBtn) {
+            clickedBtn.innerHTML = `<span class="icebreaker-btn__icon">✓</span><span class="icebreaker-btn__label" style="color:#10b981;">已发送</span>`;
+            clickedBtn.style.borderColor = "#10b981";
+            clickedBtn.style.background = "rgba(16, 185, 129, 0.05)";
           }
           this.triggerSendingPulse();
         }
-        this.pollInterval = 3000;
-        this.startAdaptivePolling();
+        
+        if (data.signal && data.signal.signalId) {
+          this.handledSignalIds.add(data.signal.signalId);
+        }
+        
+        this.executePoll(); 
         this.fetchAndRenderHistory();
       } else if (data.code === "IN_COOLDOWN") {
-        alert(`⏳ ${data.message} (还剩 ${data.remainingSeconds} 秒)`);
+        this.showToast(`⏳ 对方需要时间消化，请等待 ${data.remainingSeconds} 秒后再试`, "warning");
+        if (clickedBtn) clickedBtn.innerHTML = originalHtml;
       } else {
-        alert(`提示: ${data.message || data.error}`);
+        this.showToast(`⚠️ ${data.message || data.error}`, "error");
+        if (clickedBtn) clickedBtn.innerHTML = originalHtml;
       }
     } catch (err) {
       console.warn("[信号系统] 网络异常:", err.message);
+      this.showToast("⚠️ 网络异常，信号发射失败", "error");
+      if (clickedBtn) clickedBtn.innerHTML = originalHtml;
+    } finally {
+      allBtns.forEach(btn => btn.style.pointerEvents = "auto");
+      
+      if (clickedBtn) {
+        setTimeout(() => {
+          clickedBtn.innerHTML = originalHtml;
+          clickedBtn.style.borderColor = originalBorder;
+          clickedBtn.style.background = originalBg;
+        }, 3000);
+      }
     }
   }
 
-  startAdaptivePolling() {
+  async executePoll() {
+    this.lastFetchTime = Date.now();
     clearTimeout(this.pollTimer);
 
-    const executePoll = async () => {
-      if (document.hidden) {
-        return;
+    try {
+      const res = await fetch("/api/love/signal");
+      if (res.ok) {
+        const data = await res.json();
+        this.handleServerSignalResponse(data);
       }
+    } catch (_) {}
 
-      try {
-        const res = await fetch("/api/love/signal");
-        if (res.ok) {
-          const data = await res.json();
-          this.handleServerSignalResponse(data);
+    const nextInterval = document.hidden ? 600000 : 40000;
+    this.pollTimer = setTimeout(() => this.executePoll(), nextInterval);
+  }
+
+  _getActionMeta(actionType) {
+    const allActions = this.config.icebreaker?.actions || window.LOVE_CONFIG?.icebreaker?.actions || {};
+    const resolver = window.LOVE_ICE_ACTIONS && window.LOVE_ICE_ACTIONS.resolveActionMeta;
+    if (typeof resolver === "function") {
+      return resolver(allActions, actionType);
+    }
+    let foundMeta = null;
+    for (const stageKey in allActions) {
+      if (Array.isArray(allActions[stageKey])) {
+        const match = allActions[stageKey].find(a => a && a.type === actionType);
+        if (match) {
+          foundMeta = match;
+          break;
         }
-      } catch (_) {}
-
-      if (this.consecutiveNoChangeCount > 4) {
-        this.pollInterval = Math.min(12000, this.pollInterval + 2000);
-      } else {
-        this.pollInterval = Math.max(4000, this.pollInterval);
       }
-
-      this.pollTimer = setTimeout(executePoll, this.pollInterval);
+    }
+    return foundMeta || { 
+      label: "温情信笺", 
+      icon: "💌", 
+      desc: "对方发来了一封破冰信笺，希望能和你和好。" 
     };
+  }
 
-    this.pollTimer = setTimeout(executePoll, 1000);
+  triggerSystemNotification(signal) {
+    const fingerprint = `${signal.signalId}_${signal.status}`;
+    if (this.lastNotifiedFingerprint === fingerprint) return;
+    this.lastNotifiedFingerprint = fingerprint;
+
+    let title = "💌 收到新的情感信号";
+    let body = "对方递来了一封信笺...";
+    
+    if (signal.status === "mutual_resolved") {
+       title = "✨ 双向奔赴的和好";
+       body = "奇妙的默契！你们在同一刻选择了彼此与和好！";
+    } else if (signal.status === "accepted" && signal.senderDeviceId === this.deviceId) {
+       title = "🎉 破冰成功";
+       body = "对方已接纳了你的信号，愿爱永不止息。";
+    } else if (signal.status === "active") {
+       const senderTitle = signal.senderGender === "boy" ? "他" : "她";
+       const meta = this._getActionMeta(signal.actionType);
+       title = `${meta.icon} ${meta.label}`;
+       body = `${senderTitle} 发送了信笺：\n“${signal.content || meta.desc}”`;
+    } else {
+       return; 
+    }
+
+    if ("Notification" in window && Notification.permission === "granted") {
+      try {
+         const notification = new Notification(title, { 
+           body: body, 
+           icon: "/favicon-32x32.png" 
+         });
+         notification.onclick = () => {
+           window.focus();
+           notification.close();
+         };
+      } catch(e) {}
+    }
   }
 
   handleServerSignalResponse(data) {
@@ -204,14 +344,20 @@ class IceBreakerManager {
 
     if (!active) {
       this.hideBanner();
-      this.consecutiveNoChangeCount++;
       return;
     }
 
+    if (this.handledSignalIds.has(active.signalId)) {
+      if (active.status === "active" || active.status === "viewed" || active.status === "cooling") {
+        this.hideBanner();
+        return; 
+      }
+    }
+
     if (active.status === "mutual_resolved") {
-      this.consecutiveNoChangeCount = 0;
       if (!this.currentActiveSignal || this.currentActiveSignal.status !== "mutual_resolved") {
         this.currentActiveSignal = active;
+        this.triggerSystemNotification(active); 
         this.showMutualCelebration(active);
         this.fetchAndRenderHistory();
       }
@@ -219,9 +365,9 @@ class IceBreakerManager {
     }
 
     if (active.senderDeviceId === this.deviceId) {
-      this.consecutiveNoChangeCount = 0;
-      if (active.status === "accepted" && !this.hasCelebratedThisSignal) {
-        this.hasCelebratedThisSignal = true;
+      if (active.status === "accepted" && (!this.currentActiveSignal || this.currentActiveSignal.status !== "accepted")) {
+        this.currentActiveSignal = active;
+        this.triggerSystemNotification(active); 
         this.showAcceptedCelebration(active);
         this.fetchAndRenderHistory();
       }
@@ -229,9 +375,13 @@ class IceBreakerManager {
     }
 
     if (active.status === "active" || active.status === "viewed" || active.status === "cooling") {
-      this.consecutiveNoChangeCount = 0;
-      this.currentActiveSignal = active;
-      this.showIncomingBanner(active);
+      if (!this.currentActiveSignal || this.currentActiveSignal.status !== active.status) {
+        this.currentActiveSignal = active;
+        if (active.status === "active") {
+           this.triggerSystemNotification(active); 
+        }
+        this.showIncomingBanner(active);
+      }
     }
   }
 
@@ -241,12 +391,8 @@ class IceBreakerManager {
     if (!banner || !textEl) return;
 
     const senderTitle = signal.senderGender === "boy" ? "他" : "她";
-    let actionTip = `${senderTitle}递来了一封和解信笺...`;
-
-    if (signal.actionType === "calm_down") actionTip = `${senderTitle}需要片刻冷静...`;
-    else if (signal.actionType === "apology") actionTip = `${senderTitle}真诚地向你道歉了...`;
-    else if (signal.actionType === "miss_you") actionTip = `${senderTitle}正在深深地想念你...`;
-    else if (signal.actionType === "warm_hug") actionTip = `${senderTitle}隔空送来了温暖拥抱...`;
+    const meta = this._getActionMeta(signal.actionType);
+    let actionTip = `${senderTitle} 发送了：[${meta.label}]`;
 
     textEl.textContent = `💌 ${actionTip}`;
     banner.classList.add("show");
@@ -276,51 +422,69 @@ class IceBreakerManager {
     const actionsEl = document.getElementById("icebreaker-modal-actions");
 
     const senderTitle = signal.senderGender === "boy" ? "良人" : "佳偶";
+    const meta = this._getActionMeta(signal.actionType);
+    const displayDesc = signal.content || meta.desc;
+
     if (badgeEl) badgeEl.textContent = `SACRED COVENANT · ${senderTitle}的温情信笺`;
     if (titleEl) titleEl.textContent = "愿爱化解一切 · 我们的避风港";
-    if (letterEl) letterEl.textContent = `“ ${signal.content} ”`;
+    if (letterEl) {
+      letterEl.textContent = `“ ${displayDesc} ”`;
+      letterEl.style.lineHeight = "1.7";
+      letterEl.style.textAlign = "justify";
+    }
 
     if (actionsEl) {
-      if (signal.actionType === "calm_down") {
+      // 🌟 核心拦截：弹窗内的操作也必须验证权限
+      const isOwner = !!localStorage.getItem("love_owner_token");
+      
+      if (!isOwner) {
         actionsEl.innerHTML = `
-          <div class="icebreaker-cooling-box">
-            <span>🌿 情绪正在降温中，深呼吸，平静安息。</span>
-            <div class="icebreaker-cooling-timer" id="coolingTimerText">冷静期进行中</div>
+          <div style="text-align:center; padding:16px; margin-bottom:12px; background:rgba(255,255,255,0.05); border:1px dashed rgba(255,255,255,0.2); border-radius:12px;">
+            <span style="color:#cbd5e1; font-size:13.5px; font-weight:800;">🔒 展览模式：此信笺仅持印者可回应</span>
           </div>
-          <button class="icebreaker-btn-primary" id="btn-accept-peace"><span>🤝 握住这只手 (我也在调整心情)</span></button>
-          <button class="icebreaker-btn-secondary" id="btn-close-modal"><span>稍后回应 ✕</span></button>
+          <button class="icebreaker-btn-secondary" id="btn-close-modal"><span>收起 ✕</span></button>
         `;
+        const closeBtn = document.getElementById("btn-close-modal");
+        if (closeBtn) {
+          closeBtn.onclick = () => { this.hideBanner(); this.closeModal(); };
+        }
       } else {
+        // 主人正常可见操作按钮
         actionsEl.innerHTML = `
           <button class="icebreaker-btn-primary" id="btn-accept-peace"><span>🕊️ 握住这只手 (接纳并和好)</span></button>
           <button class="icebreaker-btn-secondary" id="btn-wait-peace"><span>还在整理心情中 (稍等片刻)</span></button>
           <button class="icebreaker-btn-secondary" id="btn-close-modal"><span>收起 ✕</span></button>
         `;
-      }
 
-      const acceptBtn = document.getElementById("btn-accept-peace");
-      const waitBtn = document.getElementById("btn-wait-peace");
-      const closeBtn = document.getElementById("btn-close-modal");
+        const acceptBtn = document.getElementById("btn-accept-peace");
+        const waitBtn = document.getElementById("btn-wait-peace");
+        const closeBtn = document.getElementById("btn-close-modal");
 
-      if (acceptBtn) {
-        acceptBtn.onclick = () => {
-          this.ackSignal("accept", signal.signalId, "我们和好吧，爱是永不止息。");
-          this.closeModal();
-          this.showAcceptedCelebration(signal);
-          this.fetchAndRenderHistory();
-        };
-      }
-      if (waitBtn) {
-        waitBtn.onclick = () => {
-          this.ackSignal("wait_a_bit", signal.signalId, "还在整理心情，很快就好。");
-          this.closeModal();
-          if (window.Effects && typeof window.Effects.showMiniToast === "function") {
-            window.Effects.showMiniToast("已通知对方你正在整理心情...");
-          }
-        };
-      }
-      if (closeBtn) {
-        closeBtn.onclick = () => this.closeModal();
+        if (acceptBtn) {
+          acceptBtn.onclick = () => {
+            this.handledSignalIds.add(signal.signalId); 
+            this.hideBanner();
+            this.closeModal();
+            this.ackSignal("accept", signal.signalId, "我们和好吧，爱是永不止息。");
+            this.showAcceptedCelebration(signal);
+            this.fetchAndRenderHistory();
+          };
+        }
+        if (waitBtn) {
+          waitBtn.onclick = () => {
+            this.handledSignalIds.add(signal.signalId); 
+            this.hideBanner();
+            this.closeModal();
+            this.ackSignal("wait_a_bit", signal.signalId, "还在整理心情，很快就好。");
+            this.showToast("💖 回应已送达！已通知对方你正在整理心情", "success");
+          };
+        }
+        if (closeBtn) {
+          closeBtn.onclick = () => {
+            this.hideBanner();
+            this.closeModal();
+          };
+        }
       }
     }
 
@@ -337,7 +501,10 @@ class IceBreakerManager {
     try {
       await fetch("/api/love/signal/ack", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-member-token": localStorage.getItem("love_owner_token") || ""
+        },
         body: JSON.stringify({
           signalId,
           responderGender: perspective,
@@ -351,13 +518,15 @@ class IceBreakerManager {
 
   showMutualCelebration(signal) {
     this.playGentleChime();
+    this.showToast("✨ 奇妙的默契！你们在同一刻选择了彼此与和好！💖", "success");
     if (window.Effects) {
       if (typeof window.Effects.fireConfetti === "function") window.Effects.fireConfetti();
       if (typeof window.Effects.fireFireworks === "function") window.Effects.fireFireworks();
-      if (typeof window.Effects.showMiniToast === "function") {
-        window.Effects.showMiniToast("✨ 奇妙的默契！你们在同一刻选择了彼此与和好！💖");
-      }
     }
+
+    window.dispatchEvent(new CustomEvent("achievement:trigger", {
+      detail: { type: "icebreaker_resolved" }
+    }));
 
     const modal = document.getElementById("icebreaker-modal");
     if (modal) {
@@ -371,13 +540,15 @@ class IceBreakerManager {
 
   showAcceptedCelebration(signal) {
     this.playGentleChime();
+    this.showToast("🎉 破冰成功！爱是恒久忍耐又有恩慈，愿爱永不止息。", "success");
     if (window.Effects) {
       if (typeof window.Effects.fireConfetti === "function") window.Effects.fireConfetti();
       if (typeof window.Effects.fireFireworks === "function") window.Effects.fireFireworks();
-      if (typeof window.Effects.showMiniToast === "function") {
-        window.Effects.showMiniToast("🎉 破冰成功！爱是恒久忍耐又有恩慈，愿爱永不止息。");
-      }
     }
+
+    window.dispatchEvent(new CustomEvent("achievement:trigger", {
+      detail: { type: "icebreaker_resolved" }
+    }));
   }
 
   triggerSendingPulse() {
@@ -406,6 +577,10 @@ class IceBreakerManager {
         `;
         return;
       }
+
+      window.dispatchEvent(new CustomEvent("achievement:trigger", {
+        detail: { type: "icebreaker_resolved" }
+      }));
 
       historyContainer.innerHTML = historyList.slice(0, 10).map((record, idx) => {
         const dateObj = new Date(record.resolvedAt || Date.now());
@@ -763,10 +938,22 @@ class IceBreakerManager {
   bindGlobalEvents() {
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
-        this.pollInterval = 3000;
-        this.startAdaptivePolling();
-        this.fetchAndRenderHistory();
+        this.executePoll(); 
       }
     });
+
+    const interactionHandler = () => {
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+      if (Date.now() - (this.lastFetchTime || 0) > 10000) {
+         this.executePoll();
+      }
+    };
+
+    document.addEventListener("click", interactionHandler, { passive: true });
+    document.addEventListener("touchstart", interactionHandler, { passive: true });
   }
 }
+
+window.IceBreakerManager = IceBreakerManager;
