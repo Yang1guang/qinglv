@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>印记 · 用户使用手册</title>
-  <!-- 🌟 核心植入：心形 Emoji 网页图标 -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>">
   
   <style>
     :root {
@@ -333,9 +332,38 @@
       .core-philosophy-card { padding: 25px 20px; }
       .toc-grid { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* 联系站长弹窗 */
+    .contact-modal-overlay {
+      position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px);
+      z-index: 10001; display: none; align-items: center; justify-content: center; animation: fadeIn 0.25s ease;
+    }
+    .contact-modal-card {
+      position: relative; background: #1e293b; border: 1.5px solid var(--gold);
+      padding: 30px 24px; border-radius: 24px; text-align: center; width: 90%; max-width: 370px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.8); animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .contact-close-btn {
+      position: absolute; top: 14px; right: 16px; background: none; border: none;
+      color: #94a3b8; font-size: 20px; cursor: pointer; transition: 0.2s;
+    }
+    .contact-close-btn:hover { color: #fff; }
+    @keyframes scaleUp { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   </style>
 </head>
 <body>
+
+  <div id="contactModal" class="contact-modal-overlay" onclick="closeContactModal(event)">
+    <div class="contact-modal-card" onclick="event.stopPropagation()">
+      <button class="contact-close-btn" onclick="closeContactModal()">✕</button>
+      <div style="font-size: 38px; margin-bottom: 8px;">👋</div>
+      <h3 style="font-size: 19px; color: #fde68a; margin-bottom: 6px; font-weight: 800;">联系站长</h3>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 18px; line-height: 1.6;">长按或扫码添加微信，随时为您提供支持与帮助</p>
+      <div style="background: #fff; padding: 10px; border-radius: 14px; display: inline-block; box-shadow: 0 6px 24px rgba(0,0,0,0.5);">
+        <img src="/微信二维码.jpg" alt="扫码加微信" onerror="this.src='微信二维码.jpg'" style="width: 220px; height: 220px; object-fit: cover; display: block; border-radius: 8px;">
+      </div>
+    </div>
+  </div>
 
   <div class="container">
     <div class="header">
@@ -539,10 +567,7 @@
         ✨ 印记 · 祝你们幸福长久 💕
     </p>
 
-    <!-- ==========================================
-         第二部分：前台主页手册 (Frontend Manual)
-         ========================================== -->
-    <div id="frontend-manual" class="manual-content">
+        <div id="frontend-manual" class="manual-content">
       
       <div class="direct-action-bar">
         <a href="../index.html" class="direct-btn">➔ 一键直达：印记 · 沉浸式主页时空</a>
@@ -761,6 +786,13 @@
       </div>
       
     </div>
+
+    <div style="text-align: center; margin-top: 10px; margin-bottom: 30px;">
+      <a href="javascript:void(0)" onclick="openContactModal()" style="display: inline-block; padding: 12px 32px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; text-decoration: none; border-radius: 24px; font-weight: bold; font-size: 15px; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3); transition: all 0.2s;">
+        💬 点击联系站长
+      </a>
+    </div>
+
   </div>
 
   <script>
@@ -776,6 +808,15 @@
         document.getElementById('frontend-manual').classList.add('active');
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function openContactModal() {
+      document.getElementById('contactModal').style.display = 'flex';
+    }
+    
+    function closeContactModal(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('contactModal').style.display = 'none';
     }
   </script>
 </body>
