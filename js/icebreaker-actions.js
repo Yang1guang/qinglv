@@ -47,13 +47,24 @@
 
   /**
    * 构造发送端提交给 /api/love/signal 的载荷。
-   * 让 customText 携带所点按钮的真实正文，从而后端透传、接收端按按钮显示对应内容。
+   * 🌟 核心增量：此处也对前后端传递的数据做深层合并兜底防丢失
    */
   function buildSignalPayload(config, opts) {
     opts = opts || {};
-    var actions = (config && config.icebreaker && config.icebreaker.actions) || {};
+    var customActions = (config && config.icebreaker && config.icebreaker.actions) || {};
+    var defaultActions = (typeof window !== "undefined" && window.LOVE_CONFIG && window.LOVE_CONFIG.icebreaker && window.LOVE_CONFIG.icebreaker.actions) || {};
+    
+    // 双向验证兜底
+    var mergedActions = Object.assign({}, defaultActions);
+    for (var k in customActions) {
+       if (Object.prototype.hasOwnProperty.call(customActions, k)) {
+           mergedActions[k] = customActions[k];
+       }
+    }
+
     var fallbackPhase = (config && config.lifecycle && config.lifecycle.currentPhase) || "dating";
-    var meta = resolveActionMeta(actions, opts.actionType);
+    var meta = resolveActionMeta(mergedActions, opts.actionType);
+    
     return {
       stage: opts.stage || fallbackPhase,
       senderGender: opts.senderGender || "boy",
