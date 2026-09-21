@@ -16,6 +16,8 @@ class IceBreakerManager {
     this.lastFetchTime = 0;
     this.handledSignalIds = new Set();
     this.toastTimeout = null;
+    // 🌟 新增：追踪当前前端面板激活的时期 Tab
+    this.activeIceStage = null; 
   }
 
   getOrCreateDeviceId() {
@@ -132,15 +134,17 @@ class IceBreakerManager {
     });
   }
 
+  // 🌟 核心重构区：渲染前台破冰面板
   renderActionButtons(container) {
-    // 🌟 核心修复区：双重字典精准合并，彻底解决生命周期不同步引发的文案错乱
-    const phase = this.config.lifecycle?.currentPhase || "dating";
+    // 1. 初始化当前激活的 Tab 时期（默认取后台系统真实的周期）
+    if (!this.activeIceStage) {
+      this.activeIceStage = this.config.lifecycle?.currentPhase || "dating";
+    }
+
     const customActions = this.config.icebreaker?.actions || {};
     const defaultActions = window.LOVE_CONFIG?.icebreaker?.actions || {};
     
-    // 1. 优先尝试拉取用户当前周期的自定义文案，若无则拉取当前周期的系统默认文案
-    let currentActions = customActions[phase] || defaultActions[phase];
-    // 2. 终极兜底：如果连系统默认该周期都无数据（极罕见），才降级到恋爱期
+    let currentActions = customActions[this.activeIceStage] || defaultActions[this.activeIceStage];
     if (!currentActions || currentActions.length === 0) {
       currentActions = customActions["dating"] || defaultActions["dating"] || [];
     }
@@ -155,7 +159,7 @@ class IceBreakerManager {
     const isOwner = !!localStorage.getItem("love_owner_token");
     if (!isOwner) {
       container.innerHTML = `
-        <div style="text-align:center; padding:24px; background:rgba(255,255,255,0.03); border:1.5px dashed rgba(255,255,255,0.15); border-radius:18px; margin-bottom:16px;">
+        <div style="grid-column: 1 / -1; text-align:center; padding:24px; background:rgba(255,255,255,0.03); border:1.5px dashed rgba(255,255,255,0.15); border-radius:18px; margin-bottom:16px;">
           <span style="font-size:32px; display:block; margin-bottom:12px; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));">🔒</span>
           <span style="color:#e2e8f0; font-size:14px; font-weight:800; line-height:1.6; display:block;">展览模式：情感信号发射舱已锁定<br><span style="color:#94a3b8; font-size:12px;">仅持印者有权限发送破冰信笺</span></span>
         </div>
@@ -163,19 +167,50 @@ class IceBreakerManager {
       return;
     }
 
-    container.innerHTML = currentActions.map(action => `
-      <button class="icebreaker-btn" data-action-type="${action.type}">
+    // 🌟 2. 动态生成 3 大时期切换 Tab 的 UI
+    const getTabStyle = (stage) => {
+      const isActive = this.activeIceStage === stage;
+      if (isActive) {
+        return `flex:1; max-width:140px; background:rgba(245,158,11,0.15); color:#fde68a; border:1px solid rgba(245,158,11,0.5); padding:8px 12px; border-radius:99px; font-size:13.5px; font-weight:800; cursor:pointer; transition:all 0.3s; box-shadow:0 4px 12px rgba(245,158,11,0.2);`;
+      }
+      return `flex:1; max-width:140px; background:transparent; color:#94a3b8; border:1px solid transparent; padding:8px 12px; border-radius:99px; font-size:13.5px; font-weight:800; cursor:pointer; transition:all 0.3s;`;
+    };
+
+    const tabsHtml = `
+      <div style="grid-column: 1 / -1; width: 100%; display:flex; justify-content:center; gap:8px; margin-bottom:20px; background:rgba(255,255,255,0.02); padding:6px; border-radius:99px; border:1px solid rgba(255,255,255,0.06); backdrop-filter: blur(10px); box-sizing:border-box;">
+        <button class="ib-stage-tab" data-stage="dating" style="${getTabStyle('dating')}">🌿 恋爱期</button>
+        <button class="ib-stage-tab" data-stage="engaged" style="${getTabStyle('engaged')}">💍 订婚期</button>
+        <button class="ib-stage-tab" data-stage="married" style="${getTabStyle('married')}">🏠 结婚期</button>
+      </div>
+    `;
+
+    // 3. 根据当前选中的 Tab 生成对应时期的破冰按钮群，并附上 data-stage 标记
+    const buttonsHtml = currentActions.map(action => `
+      <button class="icebreaker-btn" data-action-type="${action.type}" data-stage="${this.activeIceStage}">
         <span class="icebreaker-btn__icon">${action.icon}</span>
         <span class="icebreaker-btn__label">${action.label}</span>
         <span class="icebreaker-btn__desc">${this.escapeHtml(action.desc)}</span>
       </button>
     `).join("");
 
+    container.innerHTML = tabsHtml + buttonsHtml;
+
+    // 4. 绑定 Tab 切换事件：点击后修改 activeIceStage 状态并无感重绘
+    container.querySelectorAll(".ib-stage-tab").forEach(tabBtn => {
+      tabBtn.onclick = (e) => {
+        e.preventDefault();
+        this.activeIceStage = tabBtn.getAttribute("data-stage");
+        this.renderActionButtons(container);
+      };
+    });
+
+    // 5. 绑定发送事件
     container.querySelectorAll(".icebreaker-btn").forEach(btn => {
       btn.onclick = (e) => {
         e.preventDefault();
         const actionType = btn.getAttribute("data-action-type");
-        this.handleSendSignal(actionType, btn);
+        const stage = btn.getAttribute("data-stage");
+        this.handleSendSignal(actionType, stage, btn);
         
         if ("Notification" in window && Notification.permission === "default") {
           Notification.requestPermission();
@@ -184,8 +219,9 @@ class IceBreakerManager {
     });
   }
 
-  async handleSendSignal(actionType, clickedBtn) {
-    const phase = this.config.lifecycle?.currentPhase || "dating";
+  // 🌟 核心拦截：加入 stage 参数，让发射的信号精准匹配对应时期
+  async handleSendSignal(actionType, stage, clickedBtn) {
+    const phase = stage || this.activeIceStage || this.config.lifecycle?.currentPhase || "dating";
     const perspective = (window.ThemeEngine && window.ThemeEngine.currentPerspective) || "boy";
 
     if (navigator.vibrate) navigator.vibrate([30, 40]);
@@ -285,7 +321,6 @@ class IceBreakerManager {
   }
 
   _getActionMeta(actionType) {
-    // 🌟 同步在此处补充字典合并逻辑，避免接收端弹窗读取不到订婚期文案
     const customActions = this.config.icebreaker?.actions || {};
     const defaultActions = window.LOVE_CONFIG?.icebreaker?.actions || {};
     const mergedActions = Object.assign({}, defaultActions, customActions);
