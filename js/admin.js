@@ -98,6 +98,7 @@ function mergeWithDefaultConfig(cloudCfg) {
   const base = JSON.parse(JSON.stringify(window.LOVE_CONFIG || {}));
   if (!cloudCfg || typeof cloudCfg !== "object") return base;
 
+  // 🌟 核心拦截修改：在并入时严禁丢失任何阶段的 actions 数据
   return {
     ...base,
     ...cloudCfg,
@@ -117,7 +118,8 @@ function mergeWithDefaultConfig(cloudCfg) {
       enabled: cloudCfg.icebreaker?.enabled !== false,
       cooldownMinutes: cloudCfg.icebreaker?.cooldownMinutes || base.icebreaker?.cooldownMinutes || 15,
       soundEnabled: cloudCfg.icebreaker?.soundEnabled !== false,
-      actions: cloudCfg.icebreaker?.actions || base.icebreaker?.actions || {}
+      // 安全回滚：使用 Object.assign 完全接纳全量配置，杜绝单阶段覆写
+      actions: Object.assign({}, base.icebreaker?.actions || {}, cloudCfg.icebreaker?.actions || {})
     },
     timeline: (Array.isArray(cloudCfg.timeline) && cloudCfg.timeline.length > 0) ? cloudCfg.timeline : (base.timeline || []),
     checklist100: (Array.isArray(cloudCfg.checklist100) && cloudCfg.checklist100.length > 0) ? cloudCfg.checklist100 : (base.checklist100 || []),
@@ -224,7 +226,6 @@ function fallbackLocalAuth(token) {
   return false;
 }
 
-// 🌟 核心修复区：严格控制数据提交时序与阻塞弹窗
 async function modifyAdminPasswordWithOld() {
   const oldPwdInput = document.getElementById("admin_oldPassword");
   const newPwdInput = document.getElementById("admin_newPassword");
@@ -277,7 +278,6 @@ async function modifyAdminPasswordWithOld() {
     ? `首次设置后台管理密码为【${newPwd}】吗？\n\n设置后请务必牢记，之后只能用该密码登录管理后台。`
     : `确认将后台管理密码修改为【${newPwd}】吗？\n\n请务必牢记新密码，修改后旧密码将立即失效！`)) return;
 
-  // 1. 暂存旧密码以防网络请求失败回滚
   const backupPwd = currentConfig.adminSecurity ? currentConfig.adminSecurity.password : "";
 
   if (!currentConfig.adminSecurity) currentConfig.adminSecurity = {};
@@ -287,7 +287,6 @@ async function modifyAdminPasswordWithOld() {
   const hiddenCustomPwd = document.getElementById("admin_customPassword");
   if (hiddenCustomPwd) hiddenCustomPwd.value = newPwd;
 
-  // 2. 只有在此处等待云端 200 OK 确认返回 success 后，才能弹出成功弹窗
   const success = await saveAllConfigToCloud(newPwd);
   
   if (success) {
@@ -296,7 +295,6 @@ async function modifyAdminPasswordWithOld() {
     if (confirmPwdInput) confirmPwdInput.value = "";
     alert("🎉 管理密码修改成功！新密码已生效并同步云端。");
   } else {
-    // 3. 请求失败时，自动将内存里的配置数据回滚至旧密码，防止下次点击错误发布
     currentConfig.adminSecurity.password = backupPwd;
     if (hiddenCustomPwd) hiddenCustomPwd.value = backupPwd;
   }
@@ -1329,7 +1327,7 @@ function toggleDirectRecord(btnEl, targetInputId, callback) {
   else { startDirectRecord(btnEl, targetInputId, callback); }
 }
 
-// 🌟 核心修复区：彻底分离鉴权凭证与新密码，确保数据精准同步
+// 🌟 核心增量：保存时执行配置深度兜底合并机制，全状态驻留 R2 存储节点
 async function saveAllConfigToCloud(overrideToken) {
   if (!currentConfig) return false;
   const activePassword = overrideToken || (currentConfig.adminSecurity?.password || "").trim();
@@ -1394,11 +1392,18 @@ async function saveAllConfigToCloud(overrideToken) {
   });
 
   const ibCooldownVal = parseInt(document.getElementById("icebreaker_cooldownMinutes")?.value, 10) || 15;
+  
+  // 🌟 核心拦截：保存配置时，执行基于深拷贝的合并降级容错机制。
+  // 不管用户改没改其它阶段文案，它会将系统默认的所有阶段进行兜底，彻底杜绝被单属性覆盖掉数据。
+  const defaultIbActions = window.LOVE_CONFIG?.icebreaker?.actions || {};
+  const customIbActions = currentConfig.icebreaker?.actions || {};
+  const mergedIbActions = Object.assign({}, defaultIbActions, customIbActions);
+
   currentConfig.icebreaker = {
     enabled: document.getElementById("icebreaker_enabled")?.value === "true",
     cooldownMinutes: ibCooldownVal,
     soundEnabled: document.getElementById("icebreaker_soundEnabled")?.value === "true",
-    actions: currentConfig.icebreaker?.actions || window.LOVE_CONFIG?.icebreaker?.actions || {}
+    actions: mergedIbActions
   };
 
   const playlistToSave = (currentConfig.audio?.playlist || []).map((song, idx) => ({
@@ -1431,7 +1436,6 @@ async function saveAllConfigToCloud(overrideToken) {
 
   showToast("⏳ 正在发布到独立存储空间...");
   
-  // 🔥 核心：发送网络请求时，必须使用当前仍然有效的凭证（不能用未生效的新密码）
   const authHeaderToken = getAuthToken(); 
   
   try {
@@ -1442,7 +1446,6 @@ async function saveAllConfigToCloud(overrideToken) {
     });
     const data = await res.json();
     if (data.success) {
-      // 只有在云端返回 200 成功响应后，才把本地缓存刷新为新密码
       currentAdminToken = activePassword;
       localStorage.setItem("love_admin_token", activePassword);
       sessionStorage.setItem("universe_admin_auth", "true");
