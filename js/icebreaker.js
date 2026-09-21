@@ -133,9 +133,17 @@ class IceBreakerManager {
   }
 
   renderActionButtons(container) {
+    // 🌟 核心修复区：双重字典精准合并，彻底解决生命周期不同步引发的文案错乱
     const phase = this.config.lifecycle?.currentPhase || "dating";
-    const allActions = this.config.icebreaker?.actions || {};
-    const currentActions = allActions[phase] || allActions["dating"] || [];
+    const customActions = this.config.icebreaker?.actions || {};
+    const defaultActions = window.LOVE_CONFIG?.icebreaker?.actions || {};
+    
+    // 1. 优先尝试拉取用户当前周期的自定义文案，若无则拉取当前周期的系统默认文案
+    let currentActions = customActions[phase] || defaultActions[phase];
+    // 2. 终极兜底：如果连系统默认该周期都无数据（极罕见），才降级到恋爱期
+    if (!currentActions || currentActions.length === 0) {
+      currentActions = customActions["dating"] || defaultActions["dating"] || [];
+    }
 
     const section = document.getElementById("icebreaker-section");
     if (currentActions.length === 0) {
@@ -144,7 +152,6 @@ class IceBreakerManager {
     }
     if (section) section.style.display = "block";
 
-    // 🌟 核心拦截：如果是游客（无 Token），直接展示上锁界面，杜绝乱点
     const isOwner = !!localStorage.getItem("love_owner_token");
     if (!isOwner) {
       container.innerHTML = `
@@ -156,7 +163,6 @@ class IceBreakerManager {
       return;
     }
 
-    // 正常主人的渲染逻辑
     container.innerHTML = currentActions.map(action => `
       <button class="icebreaker-btn" data-action-type="${action.type}">
         <span class="icebreaker-btn__icon">${action.icon}</span>
@@ -211,7 +217,6 @@ class IceBreakerManager {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          // 附带 Token，否则会被后端熔断器拒绝
           "x-member-token": localStorage.getItem("love_owner_token") || ""
         },
         body: JSON.stringify(signalPayload)
@@ -280,15 +285,19 @@ class IceBreakerManager {
   }
 
   _getActionMeta(actionType) {
-    const allActions = this.config.icebreaker?.actions || window.LOVE_CONFIG?.icebreaker?.actions || {};
+    // 🌟 同步在此处补充字典合并逻辑，避免接收端弹窗读取不到订婚期文案
+    const customActions = this.config.icebreaker?.actions || {};
+    const defaultActions = window.LOVE_CONFIG?.icebreaker?.actions || {};
+    const mergedActions = Object.assign({}, defaultActions, customActions);
+
     const resolver = window.LOVE_ICE_ACTIONS && window.LOVE_ICE_ACTIONS.resolveActionMeta;
     if (typeof resolver === "function") {
-      return resolver(allActions, actionType);
+      return resolver(mergedActions, actionType);
     }
     let foundMeta = null;
-    for (const stageKey in allActions) {
-      if (Array.isArray(allActions[stageKey])) {
-        const match = allActions[stageKey].find(a => a && a.type === actionType);
+    for (const stageKey in mergedActions) {
+      if (Array.isArray(mergedActions[stageKey])) {
+        const match = mergedActions[stageKey].find(a => a && a.type === actionType);
         if (match) {
           foundMeta = match;
           break;
@@ -434,7 +443,6 @@ class IceBreakerManager {
     }
 
     if (actionsEl) {
-      // 🌟 核心拦截：弹窗内的操作也必须验证权限
       const isOwner = !!localStorage.getItem("love_owner_token");
       
       if (!isOwner) {
@@ -449,7 +457,6 @@ class IceBreakerManager {
           closeBtn.onclick = () => { this.hideBanner(); this.closeModal(); };
         }
       } else {
-        // 主人正常可见操作按钮
         actionsEl.innerHTML = `
           <button class="icebreaker-btn-primary" id="btn-accept-peace"><span>🕊️ 握住这只手 (接纳并和好)</span></button>
           <button class="icebreaker-btn-secondary" id="btn-wait-peace"><span>还在整理心情中 (稍等片刻)</span></button>
